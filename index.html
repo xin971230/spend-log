@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>收支快記｜手機版（快送＋餘額查詢）</title>
+  <title>收支快記｜手機版（快送＋各帳戶餘額）</title>
   <style>
     body{margin:0;font-family:system-ui,sans-serif;background:#0f172a;color:#f1f5f9}
     .wrap{max-width:520px;margin:auto;padding:12px}
@@ -21,6 +21,9 @@
     .log table{width:100%;border-collapse:collapse;font-size:14px}
     .log th,.log td{border-bottom:1px solid #334155;padding:8px;text-align:left}
     .neg{color:#fca5a5}.pos{color:#86efac}.muted{color:#93a5bf;font-size:12px}
+    .table{width:100%;border-collapse:collapse;margin-top:8px}
+    .table th,.table td{padding:8px;border-bottom:1px solid #334155;text-align:left}
+    .right{text-align:right}
   </style>
 </head>
 <body>
@@ -116,30 +119,28 @@
       <div class="log" id="log"></div>
     </div>
 
-    <!-- 餘額查詢 -->
+    <!-- 餘額查詢（按月份/登記人，顯示「各帳戶餘額」＋總計） -->
     <div class="card">
       <h1>餘額查詢</h1>
       <label>月份（yyyy-MM，可留空）</label>
       <input id="qMonth" placeholder="例如 2025-09">
-      <label>帳戶（可留空）</label>
-      <select id="qAccount">
-        <option value="">（全部）</option>
-        <option>合作金庫</option><option>刷卡</option><option>國泰世華</option><option>華南銀行</option>
-        <option>黃中信</option><option>黃現金</option><option>黃郵局</option><option>黃LINE</option>
-        <option>彰化銀行</option><option>蕭現金</option><option>蕭郵局</option><option>蕭LINE</option>
-      </select>
       <label>登記人（可留空）</label>
       <select id="qOwner">
         <option value="">（全部）</option>
         <option>欣宜</option>
         <option>喬猷</option>
       </select>
-      <label>命名範圍（可留空；若樞紐有命名範圍，如「目前餘額」）</label>
-      <input id="qNamed" placeholder="例如：目前餘額">
       <div class="rowbtns">
-        <button class="btn secondary row" id="btnBalance" type="button">查餘額</button>
+        <button class="btn secondary row" id="btnBalance" type="button">查詢各帳戶餘額</button>
       </div>
-      <p class="muted mono" id="balanceResult">—</p>
+      <div id="balanceArea">
+        <p class="muted mono" id="balanceResult">—</p>
+        <table class="table" id="balanceTable" style="display:none">
+          <thead><tr><th>帳戶</th><th class="right">餘額</th></tr></thead>
+          <tbody></tbody>
+          <tfoot><tr><th>總計</th><th class="right" id="balanceTotal">0.00</th></tr></tfoot>
+        </table>
+      </div>
     </div>
 
   </div>
@@ -149,6 +150,9 @@
   <script>
     const $ = id => document.getElementById(id);
     const toast = (msg) => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+
+    // 統一帳戶清單（也用於餘額表順序）
+    const ACCOUNTS = ['合作金庫','刷卡','國泰世華','華南銀行','黃中信','黃現金','黃郵局','黃LINE','彰化銀行','蕭現金','蕭郵局','蕭LINE'];
 
     // 初始日期（手機時區）
     $('date').value = new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -172,7 +176,7 @@
     };
 
     // 發送紀錄（localStorage）
-    const SENT_KEY = 'spend.sent.v6';
+    const SENT_KEY = 'spend.sent.v7';
     function loadSent(){ try{ return JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); }catch{ return []; } }
     function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
     function addSent(rec){ const list = loadSent(); list.push(rec); saveSent(list); }
@@ -215,15 +219,13 @@
       const body = new URLSearchParams(payloadObj).toString();
       const mime = 'application/x-www-form-urlencoded;charset=UTF-8';
       if (navigator.sendBeacon) {
-        const ok = navigator.sendBeacon(url, new Blob([body], {type: mime}));
-        return ok;
+        navigator.sendBeacon(url, new Blob([body], {type: mime}));
       } else {
         fetch(url, { method:'POST', headers:{'Content-Type': mime}, body, keepalive:true }).catch(()=>{});
-        return true;
       }
     }
 
-    // 送出（不等待回應，體感快）
+    // 送出（不等待回應，且送出後不再自動聚焦到金額）
     $('form').onsubmit = (e)=>{
       e.preventDefault();
 
@@ -244,7 +246,7 @@
       const endpoint = $('endpoint').value.trim();
       const apiKey = $('apiKey').value.trim();
 
-      // 樂觀 UI：本機紀錄 + 清空 + 聚焦
+      // 樂觀 UI：本機紀錄 + 清空
       const d = new Date(); const pad=n=>String(n).padStart(2,'0');
       const ts = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       const norm = s=>s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
@@ -257,7 +259,7 @@
       }
       renderLog();
 
-      // 清空/復原互轉鎖定
+      // 清空/復原互轉鎖定（不再自動 focus 到金額）
       $('amount').value=''; $('item').value=''; $('note').value='';
       if (isXfer) {
         $('isTransfer').checked=false;
@@ -265,7 +267,6 @@
         $('category').disabled=false;
         $('item').disabled=false;
       }
-      $('amount').focus();
       toast(isXfer ? '已送出（背景處理：互轉×2）' : '已送出（背景處理）');
 
       // 實際送出（單次請求；互轉後端拆兩筆）
@@ -275,29 +276,35 @@
       backgroundSend(endpoint, payload);
     };
 
-    // 餘額查詢
+    // 餘額查詢（各帳戶）
     $('btnBalance').onclick = async () => {
       const endpoint = $('endpoint').value.trim();
       if (!endpoint) { toast('請先在「設定」填入 Endpoint'); return; }
-      const params = new URLSearchParams({ balance: '1' });
+      const params = new URLSearchParams({ balance: '1', by: 'account' });
       const m = $('qMonth').value.trim();
-      const acc = $('qAccount').value.trim();
       const own = $('qOwner').value.trim();
-      const named = $('qNamed').value.trim();
       if (m) params.set('month', m);
-      if (acc) params.set('account', acc);
       if (own) params.set('owner', own);
-      if (named) params.set('namedRange', named);
 
+      $('balanceResult').textContent = '查詢中…';
+      $('balanceTable').style.display = 'none';
       try {
         const res = await fetch(`${endpoint}?${params.toString()}`);
         if (!res.ok) throw 0;
         const data = await res.json();
-        if (!data.ok) throw 0;
-        const val = (typeof data.balance === 'number') ? data.balance.toFixed(2) : String(data.balance);
-        $('balanceResult').textContent = `來源：${data.source || '-'}｜餘額：${val}` + (data.month?`｜月份：${data.month}`:'') + (data.account?`｜帳戶：${data.account}`:'') + (data.owner?`｜登記人：${data.owner}`:'') + (data.namedRange?`｜命名：${data.namedRange}`:'');
+        if (!data.ok || !Array.isArray(data.breakdown)) throw 0;
+
+        // 以固定帳戶清單為主，缺的補 0，順序一致
+        const map = new Map(data.breakdown.map(x => [x.account, Number(x.balance || 0)]));
+        const rows = ACCOUNTS.map(a => ({ account:a, balance: map.has(a)? map.get(a): 0 }));
+        const tbody = document.querySelector('#balanceTable tbody');
+        tbody.innerHTML = rows.map(r => `<tr><td>${r.account}</td><td class="right">${r.balance.toFixed(2)}</td></tr>`).join('');
+        const total = rows.reduce((s,r)=>s+r.balance,0);
+        $('balanceTotal').textContent = total.toFixed(2);
+        $('balanceResult').textContent = `來源：${data.source || 'detail.byAccount'}${m?`｜月份：${m}`:''}${own?`｜登記人：${own}`:''}`;
+        $('balanceTable').style.display = '';
       } catch {
-        $('balanceResult').textContent = '查詢失敗，請檢查 Endpoint/權限或命名範圍名稱';
+        $('balanceResult').textContent = '查詢失敗，請檢查 Endpoint/權限';
       }
     };
 
@@ -312,7 +319,6 @@
     (function init(){
       loadCfg(); renderLog();
       if ($('owner').value === '喬猷') $('account').value = '黃現金';
-      // 預熱 Apps Script，降低第一次延遲
       fetch($('endpoint').value.trim() + '?ping=1').catch(()=>{});
     })();
   </script>
