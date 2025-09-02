@@ -40,13 +40,13 @@
 
         <label>登記人</label>
         <select id="owner">
-          <option value="欣宜" selected>欣宜</option>
+          <option value="欣宜">欣宜</option>
           <option value="喬猷">喬猷</option>
         </select>
 
         <label>方向</label>
         <select id="direction">
-          <option value="支出" selected>支出</option>
+          <option value="支出">支出</option>
           <option value="收入">收入</option>
         </select>
 
@@ -55,6 +55,7 @@
 
         <label>分類</label>
         <select id="category">
+          <option value="">（請選擇）</option>
           <option>共用</option>
           <option>黃支出</option>
           <option>蕭支出</option>
@@ -68,14 +69,26 @@
 
         <label>帳戶（轉出帳戶）</label>
         <select id="account">
-          <option>合作金庫</option><option>刷卡</option><option>國泰世華</option><option>華南銀行</option>
-          <option>黃中信</option><option>黃現金</option><option>黃郵局</option><option>黃LINE</option>
-          <option>彰化銀行</option><option>蕭現金</option><option>蕭郵局</option><option>蕭LINE</option>
+          <option value="">（請選擇）</option>
+          <!-- 依你指定順序 -->
+          <option>黃現金</option>
+          <option>刷卡</option>
+          <option>蕭現金</option>
+          <option>合作金庫</option>
+          <option>蕭郵局</option>
+          <option>華南銀行</option>
+          <option>黃郵局</option>
+          <option>蕭LINE</option>
+          <option>彰化銀行</option>
+          <option>黃中信</option>
+          <option>黃LINE</option>
+          <option>國泰世華</option>
         </select>
 
         <label>項目</label>
         <div class="inline">
           <select id="itemSelect">
+            <option value="">（請選擇）</option>
             <option value="食物">食物</option>
             <option value="公司代墊">公司代墊</option>
             <option value="玩樂">玩樂</option>
@@ -95,9 +108,19 @@
         <div id="transferFields" style="display:none;">
           <label>轉入帳戶</label>
           <select id="accountIn">
-            <option>合作金庫</option><option>刷卡</option><option>國泰世華</option><option>華南銀行</option>
-            <option>黃中信</option><option>黃現金</option><option>黃郵局</option><option>黃LINE</option>
-            <option>彰化銀行</option><option>蕭現金</option><option>蕭郵局</option><option>蕭LINE</option>
+            <option value="">（請選擇）</option>
+            <option>黃現金</option>
+            <option>刷卡</option>
+            <option>蕭現金</option>
+            <option>合作金庫</option>
+            <option>蕭郵局</option>
+            <option>華南銀行</option>
+            <option>黃郵局</option>
+            <option>蕭LINE</option>
+            <option>彰化銀行</option>
+            <option>黃中信</option>
+            <option>黃LINE</option>
+            <option>國泰世華</option>
           </select>
         </div>
 
@@ -130,15 +153,15 @@
       <div class="log" id="log"></div>
     </div>
 
-    <!-- 最新 5 筆（從試算表查） -->
+    <!-- 最新 5 筆（雲端） -->
     <div class="card">
       <h1>最新 5 筆（雲端）</h1>
       <div class="inline">
         <select id="rAccount">
           <option value="">全部帳戶</option>
-          <option>合作金庫</option><option>刷卡</option><option>國泰世華</option><option>華南銀行</option>
-          <option>黃中信</option><option>黃現金</option><option>黃郵局</option><option>黃LINE</option>
-          <option>彰化銀行</option><option>蕭現金</option><option>蕭郵局</option><option>蕭LINE</option>
+          <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
+          <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
+          <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
         </select>
         <select id="rCategory">
           <option value="">全部分類</option>
@@ -194,25 +217,20 @@
     const $ = id => document.getElementById(id);
     const toast = (msg) => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
 
-    const ACCOUNTS = ['合作金庫','刷卡','國泰世華','華南銀行','黃中信','黃現金','黃郵局','黃LINE','彰化銀行','蕭現金','蕭郵局','蕭LINE'];
+    // 帳戶固定順序（供餘額表排序用）
+    const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
 
-    // 日期初值（手機時區）
+    // 初始日期
     $('date').value = new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 
-    // 登記人：喬猷→預設帳戶；欣宜→不改動
-    $('owner').onchange = () => {
-      if ($('owner').value === '喬猷') $('account').value = '黃現金';
-      // 欣宜時不做預設
-    };
-
-    // 項目：下拉「其他」才開啟手動輸入
+    // 項目：選「其他」才開放手動輸入
     const itemSelect = $('itemSelect'), itemOther = $('itemOther');
     itemSelect.onchange = () => {
       if (itemSelect.value === '其他') { itemOther.style.display='block'; itemOther.focus(); }
       else { itemOther.style.display='none'; itemOther.value=''; }
     };
 
-    // 互轉：帶入並鎖定 分類/項目
+    // 互轉：帶入並鎖定 分類/項目（不影響帳戶/分類在未勾選時的空白狀態）
     $('isTransfer').onchange = () => {
       const on = $('isTransfer').checked;
       $('transferFields').style.display = on ? 'block' : 'none';
@@ -222,15 +240,14 @@
         itemSelect.value = '其他';
         itemOther.style.display='block';
         itemOther.value = '內控互轉';
-        itemOther.disabled = false;
       } else {
         $('category').disabled = false;
-        // 還原項目選擇（不強制）
+        // 項目維持使用者目前選擇；不做預設
       }
     };
 
     // 本機發送紀錄
-    const SENT_KEY = 'spend.sent.v8';
+    const SENT_KEY = 'spend.sent.v9';
     function loadSent(){ try{ return JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); }catch{ return []; } }
     function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
     function addSent(rec){ const list = loadSent(); list.push(rec); saveSent(list); }
@@ -268,7 +285,7 @@
     $('btnExport').onclick = exportCSV;
     $('btnClear').onclick = ()=>{ if(confirm('清除本機發送紀錄？')){ localStorage.removeItem(SENT_KEY); renderLog(); } };
 
-    // 背景送出
+    // 背景送出：sendBeacon 優先，其次 fetch keepalive
     function backgroundSend(url, payloadObj){
       const body = new URLSearchParams(payloadObj).toString();
       const mime = 'application/x-www-form-urlencoded;charset=UTF-8';
@@ -279,7 +296,7 @@
       }
     }
 
-    // 送出（送出後不自動回到金額）
+    // 送出（不自動回到金額；且三欄需使用者自行選擇或互轉自動填）
     $('form').onsubmit = (e)=>{
       e.preventDefault();
 
@@ -288,19 +305,32 @@
       const direction = $('direction').value;
       const amount = $('amount').value;
       const isXfer = $('isTransfer').checked;
+
+      // 分類：互轉時固定平衡；否則必填
       const category = isXfer ? '平衡' : $('category').value;
+
+      // 帳戶必填
       const account = $('account').value;
-      const item = (isXfer ? '內控互轉' : (itemSelect.value === '其他' ? $('itemOther').value.trim() : itemSelect.value));
+
+      // 項目：互轉固定；否則依下拉或「其他」輸入
+      const item = isXfer
+        ? '內控互轉'
+        : ( (itemSelect.value === '其他') ? $('itemOther').value.trim() : itemSelect.value );
+
       const note = $('note').value.trim();
       const accountIn = $('accountIn').value;
 
-      if (!date || !amount || Number(amount) <= 0 || !category || !account || !item) { toast('請完整填寫資料'); return; }
-      if (isXfer && !accountIn){ toast('請填入「轉入帳戶」'); return; }
+      // 驗證
+      if (!date || !amount || Number(amount) <= 0) { toast('請輸入日期與金額'); return; }
+      if (!category) { toast('請選擇分類'); return; }
+      if (!account) { toast('請選擇帳戶'); return; }
+      if (!item) { toast('請選擇或輸入項目'); return; }
+      if (isXfer && !accountIn) { toast('請選擇轉入帳戶'); return; }
 
       const endpoint = $('endpoint').value.trim();
       const apiKey = $('apiKey').value.trim();
 
-      // 樂觀 UI：本機紀錄 + 清空
+      // 本機樂觀紀錄
       const d = new Date(); const pad=n=>String(n).padStart(2,'0');
       const ts = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       const norm = s=>s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
@@ -329,7 +359,7 @@
       backgroundSend(endpoint, payload);
     };
 
-    // 最新 5 筆查詢
+    // 最近 5 筆
     $('btnRecent').onclick = async ()=>{
       const endpoint = $('endpoint').value.trim();
       if (!endpoint) { toast('請先設定 Endpoint'); return; }
@@ -373,7 +403,7 @@
     $('btnBalance').onclick = async () => {
       const endpoint = $('endpoint').value.trim();
       if (!endpoint) { toast('請先在「設定」填入 Endpoint'); return; }
-      const params = new URLSearchParams({ balance: '1', by: 'account' });
+      const params = new URLSearchParams({ balance:'1', by:'account' });
       const m = $('qMonth').value.trim();
       const own = $('qOwner').value.trim();
       if (m) params.set('month', m);
@@ -393,7 +423,7 @@
         tbody.innerHTML = rows.map(r => `<tr><td>${r.account}</td><td class="right">${r.balance.toFixed(2)}</td></tr>`).join('');
         const total = rows.reduce((s,r)=>s+r.balance,0);
         $('balanceTotal').textContent = total.toFixed(2);
-        $('balanceResult').textContent = `來源：${data.source || 'detail.byAccount'}`;
+        $('balanceResult').textContent = `來源：${data.source || 'detail.byAccount'}${m?`｜月份：${m}`:''}${own?`｜登記人：${own}`:''}`;
         $('balanceTable').style.display = '';
       } catch {
         $('balanceResult').textContent = '查詢失敗，請檢查 Endpoint/權限';
@@ -410,7 +440,8 @@
 
     (function init(){
       loadCfg(); renderLog();
-      if ($('owner').value === '喬猷') $('account').value = '黃現金';
+      // 不對帳戶/分類/項目做任何預設
+      $('direction').value = '支出'; // 僅保留方向為常用預設（可自行改）
       fetch($('endpoint').value.trim() + '?ping=1').catch(()=>{});
     })();
   </script>
