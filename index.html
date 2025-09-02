@@ -5,662 +5,445 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>收支快記｜SPA</title>
 <style>
-  /* ========== 基礎 & 佈景 ========== */
   *, *::before, *::after { box-sizing: border-box; }
   :root{
     --bg:#0b1020; --panel:#141b2e; --panel-2:#0f172a;
     --text:#e6edf6; --muted:#9aa8bf; --line:#2a3857; --brand:#3b82f6; --ok:#86efac; --bad:#fca5a5;
-    --radius:16px; --radius-sm:12px; --shadow:0 8px 24px rgba(0,0,0,.28);
+    --radius:16px; --shadow:0 8px 24px rgba(0,0,0,.28);
   }
   html,body{height:100%}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
        background:linear-gradient(180deg,#0a0f1e 0%, #0e1326 100%); color:var(--text);}
   .container{max-width:720px;margin:auto;padding:12px 12px 56px}
-
-  /* ========== Tabs 導覽 ========== */
   .tabs{position:sticky;top:0;z-index:30;background:rgba(10,15,30,.7);backdrop-filter:blur(10px);
         padding:10px 12px;border-bottom:1px solid var(--line)}
   .tabbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
   .tab{display:flex;gap:8px;align-items:center;justify-content:center;
        padding:10px 12px;border:1px solid var(--line);border-radius:12px;color:var(--text);text-decoration:none;
-       background:var(--panel); box-shadow: inset 0 -2px 0 rgba(255,255,255,.02);}
-  .tab .ico{opacity:.9}
+       background:var(--panel);}
   .tab.active{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:var(--shadow)}
   section[hidden]{display:none}
-
-  /* ========== 卡片 & 文字 ========== */
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-        padding:16px;margin:14px 0;box-shadow:var(--shadow)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0;box-shadow:var(--shadow)}
   h1{font-size:20px;margin:0 0 10px}
   h2{font-size:16px;margin:0 0 8px;color:var(--muted)}
   label{font-size:14px;display:block;margin:10px 0 6px}
   .muted{color:var(--muted);font-size:12px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-
-  /* ========== 表單 ========== */
-  input,select,textarea{display:block;width:100%;max-width:100%;
-    padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:16px}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+  input,select{display:block;width:100%;max-width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:16px}
   .inline{display:flex;gap:10px;align-items:center}
   .inline > *{flex:1}
-  .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;
-       padding:12px 14px;border:none;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;font-size:16px;cursor:pointer}
+  .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 14px;border:none;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;font-size:16px;cursor:pointer}
   .btn.secondary{background:#465874}
   .rowbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-  .capsule{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
-
-  /* ========== 本機紀錄表格 ========== */
   .log{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:12px}
   .log table{width:100%;border-collapse:collapse;font-size:14px}
   .log th,.log td{border-bottom:1px solid var(--line);padding:8px;text-align:left}
   .neg{color:var(--bad)} .pos{color:var(--ok)}
-
-  /* ========== 最新 N 筆：卡片清單 ========== */
-  .list { display:grid; gap:10px; margin-top:8px }
-  .list-item { background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px }
-  .list-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px }
-  .list-amt { font-weight:800; font-size:18px }
-  .list-amt.neg{ color:var(--bad) } .list-amt.pos{ color:var(--ok) }
-  .list-meta { color:var(--muted); font-size:12px }
-  .list-body { margin-top:2px; font-size:14px }
-  .clamp2{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-
-  /* ========== 餘額表格 ========== */
+  .list{display:grid;gap:10px;margin-top:8px}
+  .list-item{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .list-amt{font-weight:800;font-size:18px}
+  .list-amt.neg{color:var(--bad)} .list-amt.pos{color:var(--ok)}
+  .list-meta{color:var(--muted);font-size:12px}
+  .list-body{margin-top:2px;font-size:14px}
+  .clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .table{width:100%;border-collapse:collapse;margin-top:8px}
   .table th,.table td{padding:10px;border-bottom:1px solid var(--line);text-align:left}
   .right{text-align:right}
-
-  /* ========== Toast ========== */
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-         background:var(--panel-2);color:var(--text);border:1px solid var(--line);
-         padding:10px 12px;border-radius:12px;display:none;box-shadow:var(--shadow)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel-2);color:var(--text);border:1px solid var(--line);padding:10px 12px;border-radius:12px;display:none;box-shadow:var(--shadow)}
   .toast.show{display:block}
 </style>
 </head>
 <body>
 
-  <!-- Tabs 導覽 -->
-  <div class="tabs">
-    <div class="tabbar">
-      <a class="tab" href="#home"><span class="ico">🧾</span><span>記帳</span></a>
-      <a class="tab" href="#recent"><span class="ico">🕒</span><span>最新</span></a>
-      <a class="tab" href="#balance"><span class="ico">📊</span><span>餘額</span></a>
-      <a class="tab" href="#settings"><span class="ico">⚙️</span><span>設定</span></a>
+<div class="tabs">
+  <div class="tabbar">
+    <a class="tab" href="#home">🧾 記帳</a>
+    <a class="tab" href="#recent">🕒 最新</a>
+    <a class="tab" href="#balance">📊 餘額</a>
+    <a class="tab" href="#settings">⚙️ 設定</a>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 記帳 -->
+  <section data-view="home">
+    <div class="card">
+      <h1>收支快記</h1>
+      <form id="form" autocomplete="off" style="margin-top:8px">
+        <label>日期</label><input type="date" id="date" required>
+        <label>登記人</label>
+        <select id="owner"><option>欣宜</option><option>喬猷</option></select>
+        <label>方向</label>
+        <select id="direction"><option>支出</option><option>收入</option></select>
+        <label>金額</label><input type="number" id="amount" min="0.01" step="0.01" inputmode="decimal" required>
+        <label>分類</label>
+        <select id="category">
+          <option value="">（請選擇）</option>
+          <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
+          <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
+        </select>
+        <label>帳戶（轉出帳戶）</label>
+        <select id="account">
+          <option value="">（請選擇）</option>
+          <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
+          <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
+          <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
+        </select>
+        <label>項目</label>
+        <div class="inline">
+          <select id="itemSelect">
+            <option value="">（請選擇）</option>
+            <option value="食物">食物</option><option value="公司代墊">公司代墊</option>
+            <option value="玩樂">玩樂</option><option value="交通">交通</option>
+            <option value="其他">其他（手動輸入）</option>
+          </select>
+          <input id="itemOther" placeholder="輸入其他項目" style="display:none">
+        </div>
+        <label>備註</label><input id="note" placeholder="">
+        <label><input type="checkbox" id="isTransfer"> 互轉（自動：分類=平衡、項目=內控互轉）</label>
+        <div id="transferFields" style="display:none;">
+          <label>轉入帳戶</label>
+          <select id="accountIn">
+            <option value="">（請選擇）</option>
+            <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
+            <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
+            <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
+          </select>
+        </div>
+        <div class="rowbtns"><button class="btn" type="submit">送出</button></div>
+      </form>
     </div>
-  </div>
 
-  <div class="container">
-    <!-- ================== View: 記帳 ================== -->
-    <section data-view="home">
-      <div class="card">
-        <h1>收支快記</h1>
-        <div class="capsule">單頁版 SPA｜背景送出不中斷</div>
-        <form id="form" autocomplete="off" style="margin-top:8px">
-          <label>日期</label>
-          <input type="date" id="date" required>
-
-          <label>登記人</label>
-          <select id="owner">
-            <option value="欣宜">欣宜</option>
-            <option value="喬猷">喬猷</option>
-          </select>
-
-          <label>方向</label>
-          <select id="direction">
-            <option value="支出">支出</option>
-            <option value="收入">收入</option>
-          </select>
-
-          <label>金額</label>
-          <input type="number" id="amount" min="0.01" step="0.01" inputmode="decimal" required>
-
-          <label>分類</label>
-          <select id="category">
-            <option value="">（請選擇）</option>
-            <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
-            <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
-          </select>
-
-          <label>帳戶（轉出帳戶）</label>
-          <select id="account">
-            <option value="">（請選擇）</option>
-            <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
-            <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
-            <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-          </select>
-
-          <label>項目</label>
-          <div class="inline">
-            <select id="itemSelect">
-              <option value="">（請選擇）</option>
-              <option value="食物">食物</option>
-              <option value="公司代墊">公司代墊</option>
-              <option value="玩樂">玩樂</option>
-              <option value="交通">交通</option>
-              <option value="其他">其他（手動輸入）</option>
-            </select>
-            <input id="itemOther" placeholder="輸入其他項目" style="display:none">
-          </div>
-
-          <label>備註</label>
-          <input id="note" placeholder="">
-
-          <label>
-            <input type="checkbox" id="isTransfer"> 互轉（自動：分類=平衡、項目=內控互轉）
-          </label>
-          <div id="transferFields" style="display:none;">
-            <label>轉入帳戶</label>
-            <select id="accountIn">
-              <option value="">（請選擇）</option>
-              <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
-              <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
-              <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-            </select>
-          </div>
-
-          <div class="rowbtns">
-            <button class="btn" type="submit">送出</button>
-          </div>
-        </form>
+    <div class="card">
+      <h1>發送紀錄</h1>
+      <div class="rowbtns">
+        <button class="btn secondary" id="btnExport" type="button">匯出 CSV</button>
+        <button class="btn secondary" id="btnClear" type="button">清除紀錄</button>
       </div>
+      <p class="muted">僅儲存在此裝置（本機），最多保留 50 筆。</p>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
 
-      <!-- 發送紀錄（本機） -->
-      <div class="card">
-        <h1>發送紀錄</h1>
-        <div class="rowbtns">
-          <button class="btn secondary" id="btnExport" type="button">匯出 CSV</button>
-          <button class="btn secondary" id="btnClear" type="button">清除紀錄</button>
-        </div>
-        <p class="muted">僅儲存在此裝置（本機）。最多保留 50 筆最新紀錄。</p>
-        <div class="log" id="log"></div>
+  <!-- 最新 -->
+  <section data-view="recent" hidden>
+    <div class="card">
+      <h1>最新 N 筆（雲端）</h1>
+      <div class="inline">
+        <input type="number" id="rLimit" value="5" min="1" max="50" style="max-width:110px" />
+        <select id="rAccount">
+          <option value="">全部帳戶</option>
+          <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
+          <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
+          <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
+        </select>
       </div>
-    </section>
-
-    <!-- ================== View: 最新 ================== -->
-    <section data-view="recent" hidden>
-      <div class="card">
-        <h1>最新 N 筆（雲端）</h1>
-        <div class="inline">
-          <input type="number" id="rLimit" value="5" min="1" max="50" style="max-width:110px" />
-          <select id="rAccount">
-            <option value="">全部帳戶</option>
-            <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
-            <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
-            <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-          </select>
-        </div>
-        <div class="inline" style="margin-top:8px">
-          <select id="rCategory">
-            <option value="">全部分類</option>
-            <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
-            <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
-          </select>
-          <select id="rOwner">
-            <option value="">全部登記人</option>
-            <option>欣宜</option><option>喬猷</option>
-          </select>
-        </div>
-        <div class="rowbtns">
-          <button class="btn secondary" id="btnRecent" type="button">查詢最新紀錄</button>
-        </div>
-        <p class="muted mono" id="recentHint">—</p>
-        <div class="list" id="recentList" style="display:none"></div>
+      <div class="inline" style="margin-top:8px">
+        <select id="rCategory">
+          <option value="">全部分類</option>
+          <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
+          <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
+        </select>
+        <select id="rOwner"><option value="">全部登記人</option><option>欣宜</option><option>喬猷</option></select>
       </div>
-    </section>
+      <div class="rowbtns"><button class="btn secondary" id="btnRecent" type="button">查詢最新紀錄</button></div>
+      <p class="muted mono" id="recentHint">—</p>
+      <div class="list" id="recentList" style="display:none"></div>
+    </div>
+  </section>
 
-    <!-- ================== View: 餘額 ================== -->
-    <section data-view="balance" hidden>
-      <div class="card">
-        <h1>餘額查詢</h1>
-        <div class="inline">
-          <input id="qMonth" placeholder="月份（yyyy-MM，可留空，例如 2025-09）">
-          <select id="qOwner">
-            <option value="">（全部登記人）</option>
-            <option>欣宜</option><option>喬猷</option>
-          </select>
-        </div>
-        <div class="rowbtns">
-          <button class="btn secondary" id="btnBalance" type="button">查詢各帳戶餘額</button>
-        </div>
-        <div id="balanceArea">
-          <p class="muted mono" id="balanceResult">—</p>
-          <table class="table" id="balanceTable" style="display:none">
-            <thead><tr><th>帳戶</th><th class="right">餘額</th></tr></thead>
-            <tbody></tbody>
-            <tfoot><tr><th>總計</th><th class="right" id="balanceTotal">0.00</th></tr></tfoot>
-          </table>
-        </div>
+  <!-- 餘額 -->
+  <section data-view="balance" hidden>
+    <div class="card">
+      <h1>餘額查詢</h1>
+      <div class="inline">
+        <input id="qMonth" placeholder="月份（yyyy-MM，可留空）">
+        <select id="qOwner"><option value="">（全部）</option><option>欣宜</option><option>喬猷</option></select>
       </div>
-    </section>
-
-    <!-- ================== View: 設定 ================== -->
-    <section data-view="settings" hidden>
-      <div class="card">
-        <h1>設定</h1>
-        <label>Endpoint URL</label>
-        <input id="endpoint" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec">
-        <label>API Key（可留空）</label>
-        <input id="apiKey">
-        <div class="rowbtns">
-          <button class="btn secondary" id="btnTest" type="button">連線測試</button>
-          <button class="btn secondary" id="btnSaveCfg" type="button">儲存設定</button>
-        </div>
-        <p class="muted mono" id="cfgHint"></p>
+      <div class="rowbtns"><button class="btn secondary" id="btnBalance" type="button">查詢各帳戶餘額</button></div>
+      <div id="balanceArea">
+        <p class="muted mono" id="balanceResult">—</p>
+        <table class="table" id="balanceTable" style="display:none">
+          <thead><tr><th>帳戶</th><th class="right">餘額</th></tr></thead>
+          <tbody></tbody>
+          <tfoot><tr><th>總計</th><th class="right" id="balanceTotal">0.00</th></tr></tfoot>
+        </table>
       </div>
+    </div>
+  </section>
 
-      <!-- 外送帳單匯入（手動） -->
-      <div class="card">
-        <h1>外送帳單匯入</h1>
-        <div class="inline">
-          <input id="importDays" type="number" min="1" max="90" value="30" placeholder="最近 N 天（預設 30）">
-          <button class="btn secondary" id="btnImport" type="button">抓取外送帳單</button>
-        </div>
-        <p class="muted">從 Gmail 解析 foodpanda / Uber Eats 訂單，匯入試算表《明細》。不重複寫入。</p>
-        <p class="muted mono" id="importHint">—</p>
+  <!-- 設定 -->
+  <section data-view="settings" hidden>
+    <div class="card">
+      <h1>設定</h1>
+      <label>Endpoint URL</label>
+      <input id="endpoint" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec">
+      <label>API Key（可留空）</label><input id="apiKey">
+      <div class="rowbtns">
+        <button class="btn secondary" id="btnTest" type="button">連線測試</button>
+        <button class="btn secondary" id="btnSaveCfg" type="button">儲存設定</button>
       </div>
+      <p class="muted mono" id="cfgHint"></p>
+    </div>
 
-      <div class="card">
-        <h2>小提醒</h2>
-        <ul class="muted">
-          <li>互轉會自動套用：分類=平衡、項目=內控互轉（後端會寫兩筆：轉出負、轉入正）。</li>
-          <li>本機的「發送紀錄」僅存裝置端，不同步雲端。</li>
-        </ul>
+    <div class="card">
+      <h1>外送帳單匯入</h1>
+      <div class="inline">
+        <input id="importDays" type="number" min="1" max="90" value="30" placeholder="最近 N 天（預設 30）">
+        <button class="btn secondary" id="btnImport" type="button">抓取外送帳單</button>
       </div>
-    </section>
-  </div>
+      <p class="muted">解析 Gmail（foodpanda / Uber Eats），不重複寫入《明細》。</p>
+      <p class="muted mono" id="importHint">—</p>
+    </div>
+  </section>
+</div>
 
-  <div id="toast" class="toast"></div>
+<div id="toast" class="toast"></div>
 
 <script>
-/* ====== 簡易 Router（hash）====== */
+/* Router */
 function showView(name){
-  document.querySelectorAll('section[data-view]').forEach(sec=>{
-    sec.hidden = sec.dataset.view !== name;
-  });
-  document.querySelectorAll('.tabbar .tab').forEach(a=>{
-    a.classList.toggle('active', a.getAttribute('href') === '#'+name);
-  });
+  document.querySelectorAll('section[data-view]').forEach(sec=>sec.hidden = sec.dataset.view !== name);
+  document.querySelectorAll('.tabbar .tab').forEach(a=>a.classList.toggle('active', a.getAttribute('href') === '#'+name));
 }
-function route(){
-  const name = (location.hash || '#home').slice(1);
-  const ok = ['home','recent','balance','settings'].includes(name) ? name : 'home';
-  showView(ok);
-}
+function route(){ const name=(location.hash||'#home').slice(1); showView(['home','recent','balance','settings'].includes(name)?name:'home'); }
 window.addEventListener('hashchange', route);
 
-/* ====== 工具 ====== */
+/* Utils */
 const $ = id => document.getElementById(id);
-const toast = (msg) => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
 
-/* ====== 常量（與記帳頁一致） ====== */
+/* 常量 */
 const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
 const CATEGORIES = ['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
 const ITEM_OPTIONS = ['食物','公司代墊','玩樂','交通','其他'];
 const OWNERS = ['欣宜','喬猷'];
 
-/* ====== 初始 ====== */
+/* 初始 */
 (function init(){
-  $('date').value = new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  $('date').value = new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
   fetch($('endpoint').value.trim() + '?ping=1').catch(()=>{});
   loadCfg(); renderLog(); route();
 })();
 
-/* ====== 項目「其他」切換（記帳頁） ====== */
+/* 記帳：項目其他 */
 const itemSelect = $('itemSelect'), itemOther = $('itemOther');
-itemSelect.onchange = () => {
-  if (itemSelect.value === '其他') { itemOther.style.display='block'; itemOther.focus(); }
-  else { itemOther.style.display='none'; itemOther.value=''; }
-};
+itemSelect.onchange = ()=>{ if(itemSelect.value==='其他'){ itemOther.style.display='block'; itemOther.focus(); } else { itemOther.style.display='none'; itemOther.value=''; } };
 
-/* ====== 互轉切換 ====== */
-$('isTransfer').onchange = () => {
+/* 記帳：互轉切換 */
+$('isTransfer').onchange = ()=>{
   const on = $('isTransfer').checked;
   $('transferFields').style.display = on ? 'block' : 'none';
-  if (on) {
-    $('category').value = '平衡';
-    $('category').disabled = true;
-    itemSelect.value = '其他';
-    itemOther.style.display='block';
-    itemOther.value = '內控互轉';
-  } else {
-    $('category').disabled = false;
-  }
+  if (on){ $('category').value='平衡'; $('category').disabled=true; itemSelect.value='其他'; itemOther.style.display='block'; itemOther.value='內控互轉'; }
+  else { $('category').disabled=false; }
 };
 
-/* ====== 本機發送紀錄 ====== */
-const SENT_KEY = 'spend.sent.v16';
-function loadSent(){ try{ return JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); }catch{ return []; } }
+/* 本機發送紀錄 */
+const SENT_KEY='spend.sent.v17';
+function loadSent(){ try{return JSON.parse(localStorage.getItem(SENT_KEY)||'[]');}catch{return[];} }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
-function addSent(rec){ const list = loadSent(); list.push(rec); saveSent(list); }
+function addSent(rec){ const list=loadSent(); list.push(rec); saveSent(list); }
 function renderLog(){
-  const list = loadSent().slice().reverse();
-  if (!list.length){ $('log').innerHTML = '<div class="muted" style="padding:12px">尚無紀錄</div>'; return; }
-  let html = '<table><thead><tr><th>時間</th><th>方向/金額</th><th>分類/帳戶</th><th>項目/備註</th><th>登記人</th></tr></thead><tbody>';
-  for (const r of list){
-    const isOut = r.direction==='支出';
-    const amt = Math.abs(Number(r.amount || 0));
-    html += `<tr>
-      <td class="muted">${r.ts||''}</td>
-      <td class="${isOut?'neg':'pos'}">${r.direction} ${isOut?'-':''}${amt.toFixed(2)}</td>
-      <td>${r.category}｜${r.account}</td>
-      <td>${r.item||''}｜${r.note||''}</td>
-      <td>${r.owner||''}</td>
-    </tr>`;
+  const list=loadSent().slice().reverse();
+  if(!list.length){ $('log').innerHTML='<div class="muted" style="padding:12px">尚無紀錄</div>'; return; }
+  let html='<table><thead><tr><th>時間</th><th>方向/金額</th><th>分類/帳戶</th><th>項目/備註</th><th>登記人</th></tr></thead><tbody>';
+  for(const r of list){
+    const isOut=r.direction==='支出'; const amt=Math.abs(Number(r.amount||0));
+    html+=`<tr><td class="muted">${r.ts||''}</td><td class="${isOut?'neg':'pos'}">${r.direction} ${isOut?'-':''}${amt.toFixed(2)}</td>
+      <td>${r.category}｜${r.account}</td><td>${r.item||''}｜${r.note||''}</td><td>${r.owner||''}</td></tr>`;
   }
-  html += '</tbody></table>';
-  $('log').innerHTML = html;
+  html+='</tbody></table>'; $('log').innerHTML=html;
 }
-function csvEscape(s){ if(s==null) return ''; const t=String(s).replace(/"/g,'""'); return /[",\n]/.test(t) ? `"${t}"` : t; }
-function exportCSV(){
-  const list = loadSent();
-  const header = ['日期','時間戳','方向','金額','分類','帳戶','項目','備註','登記人'];
-  const rows = [header.join(',')];
-  for (const r of list){
-    rows.push([r.date||'', r.ts||'', r.direction||'', r.amount||'', r.category||'', r.account||'', r.item||'', r.note||'', r.owner||''].map(csvEscape).join(','));
-  }
-  const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'spend-log.csv'; a.click();
-  URL.revokeObjectURL(url);
-}
-$('btnExport').onclick = exportCSV;
-$('btnClear').onclick = ()=>{ if(confirm('清除本機發送紀錄？')){ localStorage.removeItem(SENT_KEY); renderLog(); } };
+$('btnExport').onclick=()=>{
+  const list=loadSent(); const header=['日期','時間戳','方向','金額','分類','帳戶','項目','備註','登記人'];
+  const rows=[header.join(',')];
+  const esc=s=>{if(s==null)return'';const t=String(s).replace(/"/g,'""');return /[",\n]/.test(t)?`"${t}"`:t;}
+  for(const r of list){ rows.push([r.date||'',r.ts||'',r.direction||'',r.amount||'',r.category||'',r.account||'',r.item||'',r.note||'',r.owner||''].map(esc).join(',')); }
+  const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='spend-log.csv'; a.click(); URL.revokeObjectURL(url);
+};
+$('btnClear').onclick=()=>{ if(confirm('清除本機發送紀錄？')){ localStorage.removeItem(SENT_KEY); renderLog(); } };
 
-/* ====== 背景送出 ====== */
+/* 背景送出 */
 function backgroundSend(url, payloadObj){
-  const body = new URLSearchParams(payloadObj).toString();
-  const mime = 'application/x-www-form-urlencoded;charset=UTF-8';
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(url, new Blob([body], {type: mime}));
-  } else {
-    fetch(url, { method:'POST', headers:{'Content-Type': mime}, body, keepalive:true }).catch(()=>{});
-  }
+  const body=new URLSearchParams(payloadObj).toString();
+  const mime='application/x-www-form-urlencoded;charset=UTF-8';
+  if(navigator.sendBeacon){ navigator.sendBeacon(url,new Blob([body],{type:mime})); }
+  else{ fetch(url,{method:'POST',headers:{'Content-Type':mime},body,keepalive:true}).catch(()=>{}); }
 }
 
-/* ====== 表單送出（新增） ====== */
-$('form').onsubmit = (e)=>{
+/* 新增送出 */
+$('form').onsubmit=(e)=>{
   e.preventDefault();
+  const date=$('date').value, owner=$('owner').value, direction=$('direction').value, amount=$('amount').value, isXfer=$('isTransfer').checked;
+  const category=isXfer?'平衡':$('category').value;
+  const account=$('account').value;
+  const item=isXfer?'內控互轉':((itemSelect.value==='其他')?$('itemOther').value.trim():itemSelect.value);
+  const note=$('note').value.trim();
+  const accountIn=$('accountIn').value;
+  if(!date||!amount||Number(amount)<=0){ toast('請輸入日期與金額'); return; }
+  if(!category){ toast('請選擇分類'); return; }
+  if(!account){ toast('請選擇帳戶'); return; }
+  if(!item){ toast('請選擇或輸入項目'); return; }
+  if(isXfer&&!accountIn){ toast('請選擇轉入帳戶'); return; }
 
-  const date = $('date').value;
-  const owner = $('owner').value;
-  const direction = $('direction').value;
-  const amount = $('amount').value;
-  const isXfer = $('isTransfer').checked;
+  const endpoint=$('endpoint').value.trim(); const apiKey=$('apiKey').value.trim();
+  const d=new Date(); const pad=n=>String(n).padStart(2,'0'); const ts=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const norm=s=>s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
 
-  const category = isXfer ? '平衡' : $('category').value;
-  const account = $('account').value;
-  const item = isXfer ? '內控互轉' : ((itemSelect.value === '其他') ? $('itemOther').value.trim() : itemSelect.value);
-  const note = $('note').value.trim();
-  const accountIn = $('accountIn').value;
-
-  if (!date || !amount || Number(amount) <= 0) { toast('請輸入日期與金額'); return; }
-  if (!category) { toast('請選擇分類'); return; }
-  if (!account) { toast('請選擇帳戶'); return; }
-  if (!item) { toast('請選擇或輸入項目'); return; }
-  if (isXfer && !accountIn) { toast('請選擇轉入帳戶'); return; }
-
-  const endpoint = $('endpoint').value.trim();
-  const apiKey = $('apiKey').value.trim();
-
-  // 樂觀本機紀錄
-  const d = new Date(); const pad=n=>String(n).padStart(2,'0');
-  const ts = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  const norm = s=>s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
-
-  if (isXfer){
-    addSent({ ts, date, owner, direction:'支出', amount:Number(amount), category, account:norm(account), item, note });
-    addSent({ ts, date, owner, direction:'收入', amount:Number(amount), category, account:norm(accountIn), item, note });
-  } else {
-    addSent({ ts, date, owner, direction, amount:Number(amount), category, account:norm(account), item, note });
+  if(isXfer){
+    addSent({ts,date,owner,direction:'支出',amount:Number(amount),category,account:norm(account),item,note});
+    addSent({ts,date,owner,direction:'收入',amount:Number(amount),category,account:norm(accountIn),item,note});
+  }else{
+    addSent({ts,date,owner,direction,amount:Number(amount),category,account:norm(account),item,note});
   }
   renderLog();
-
-  // 清空手動欄位
   $('amount').value=''; $('itemOther').value=''; $('note').value='';
-  if (isXfer) {
-    $('isTransfer').checked=false;
-    $('transferFields').style.display='none';
-    $('category').disabled=false;
-  }
-  toast(isXfer ? '已送出（背景處理：互轉×2）' : '已送出（背景處理）');
+  if(isXfer){ $('isTransfer').checked=false; $('transferFields').style.display='none'; $('category').disabled=false; }
+  toast(isXfer?'已送出（背景處理：互轉×2）':'已送出（背景處理）');
 
-  // 真正送到後端（互轉由後端拆兩筆）
-  const payload = { date, owner, amount, category, account:norm(account), item, note, apiKey };
-  if (isXfer){ payload.isTransfer='true'; payload.accountIn=norm(accountIn); }
-  else { payload.direction = direction; }
-  backgroundSend(endpoint, payload);
+  const payload={ date, owner, amount, category, account:norm(account), item, note, apiKey };
+  if(isXfer){ payload.isTransfer='true'; payload.accountIn=norm(accountIn); } else { payload.direction=direction; }
+  backgroundSend(endpoint,payload);
 };
 
-/* ====== 最新 N 筆：查詢 & 渲染 ====== */
-$('btnRecent').onclick = async ()=>{
-  const endpoint = $('endpoint').value.trim();
-  if (!endpoint) { toast('請先設定 Endpoint'); return; }
-  const limit = Math.max(1, Math.min(50, Number($('rLimit').value)||5));
-  const params = new URLSearchParams({ recent:String(limit) });
-  const acc = $('rAccount').value.trim();
-  const cat = $('rCategory').value.trim();
-  const own = $('rOwner').value.trim();
-  if (acc) params.set('account', acc);
-  if (cat) params.set('category', cat);
-  if (own) params.set('owner', own);
-
-  $('recentHint').textContent = '查詢中…';
-  $('recentList').style.display = 'none';
-  try {
-    const res = await fetch(`${endpoint}?${params.toString()}`);
-    if (!res.ok) throw 0;
-    const data = await res.json();
-    if (!data.ok || !Array.isArray(data.records)) throw 0;
-
-    renderRecent(data.records);
-    $('recentHint').textContent = `顯示最近 ${Math.min(data.records.length, limit)} 筆`;
-    $('recentList').style.display = '';
-  } catch {
-    $('recentHint').textContent = '查詢失敗，請檢查 Endpoint/權限';
-  }
+/* 最新：查詢與渲染 */
+$('btnRecent').onclick=async()=>{
+  const endpoint=$('endpoint').value.trim(); if(!endpoint){ toast('請先設定 Endpoint'); return; }
+  const limit=Math.max(1,Math.min(50,Number($('rLimit').value)||5));
+  const params=new URLSearchParams({recent:String(limit)});
+  const acc=$('rAccount').value.trim(), cat=$('rCategory').value.trim(), own=$('rOwner').value.trim();
+  if(acc)params.set('account',acc); if(cat)params.set('category',cat); if(own)params.set('owner',own);
+  $('recentHint').textContent='查詢中…'; $('recentList').style.display='none';
+  try{
+    const res=await fetch(`${endpoint}?${params.toString()}`); if(!res.ok) throw 0;
+    const data=await res.json(); if(!data.ok||!Array.isArray(data.records)) throw 0;
+    renderRecent(data.records); $('recentHint').textContent=`顯示最近 ${Math.min(data.records.length,limit)} 筆`; $('recentList').style.display='';
+  }catch{ $('recentHint').textContent='查詢失敗，請檢查 Endpoint/權限'; }
 };
 
 function makeOptions(list, selected, includeEmpty=true, emptyLabel='（不更改）'){
-  const opts = [];
-  if (includeEmpty) opts.push(`<option value="">${emptyLabel}</option>`);
-  for (const v of list){
-    const sel = (v === selected) ? ' selected' : '';
-    opts.push(`<option value="${v}"${sel}>${v}</option>`);
-  }
+  const opts=[]; if(includeEmpty)opts.push(`<option value="">${emptyLabel}</option>`);
+  for(const v of list){ opts.push(`<option value="${v}"${v===selected?' selected':''}>${v}</option>`); }
   return opts.join('');
 }
 
 function renderRecent(records){
-  const listEl = $('recentList');
-  listEl.innerHTML = records.map((r)=>{
-    const amtRaw = Number(r.amount||0);
-    const isOut = (r.direction === '支出');
-    const amt = Math.abs(amtRaw);
-    const cls = isOut ? 'neg' : 'pos';
-    const meta = `${r.category||''}・${r.account||''}・${r.owner||''}`;
-    const text = `${r.item||''}${r.note?`｜${r.note}`:''}`;
-    const k = r.createdAt || r.date || '';
-
-    const isTransferRow = (r.category==='平衡' && r.item==='內控互轉');
-
-    // 項目選單：若原值不在選單內，預設選「其他」並把原值放入 other 欄
-    const itemInList = ITEM_OPTIONS.includes(r.item||'');
-    const itemSelValue = itemInList ? (r.item||'') : '其他';
-    const itemOtherValue = itemInList ? '' : (r.item||'');
-
+  const listEl=$('recentList');
+  listEl.innerHTML=records.map((r)=>{
+    const amtRaw=Number(r.amount||0), isOut=(r.direction==='支出'); const amt=Math.abs(amtRaw);
+    const cls=isOut?'neg':'pos'; const meta=`${r.category||''}・${r.account||''}・${r.owner||''}`;
+    const text=`${r.item||''}${r.note?`｜${r.note}`:''}`; const k=r.createdAt||r.date||'';
+    const isTransferRow=(r.category==='平衡' && r.item==='內控互轉');
+    const itemInList=ITEM_OPTIONS.includes(r.item||''); const itemSelValue=itemInList?(r.item||''):'其他'; const itemOtherValue=itemInList?'':(r.item||'');
     return `<div class="list-item" data-key="${k}">
-      <div class="list-head">
-        <div class="list-amt ${cls}">${isOut?'-':''}${amt.toFixed(2)}</div>
-        <div class="list-meta">${r.createdAt || r.date || ''}</div>
-      </div>
+      <div class="list-head"><div class="list-amt ${cls}">${isOut?'-':''}${amt.toFixed(2)}</div><div class="list-meta">${r.createdAt||r.date||''}</div></div>
       <div class="list-meta">${meta}</div>
       <div class="list-body clamp2">${text}</div>
-
       <div class="rowbtns" style="margin-top:8px">
-        <button class="btn secondary" type="button" onclick="toggleEdit('${k}', ${isOut})">✏️ 編輯</button>
+        <button class="btn secondary" type="button" onclick="toggleEdit('${k}')">✏️ 編輯</button>
         <button class="btn secondary" type="button" onclick="askDelete('${k}')">🗑 刪除</button>
       </div>
-
       <form class="editbox" id="edit-${cssEscape(k)}" style="display:none;margin-top:8px">
         <div class="inline">
           <input name="amount" id="amt-${cssEscape(k)}" type="number" step="0.01" placeholder="金額（必填）" value="${amt||''}">
           <input name="note"   id="note-${cssEscape(k)}" placeholder="備註" value="${r.note||''}">
         </div>
-
         <div class="inline" style="margin-top:8px">
-          <select name="account" id="acc-${cssEscape(k)}">
-            ${makeOptions(ACCOUNTS, r.account, true, '（不更改）')}
-          </select>
+          <select name="account" id="acc-${cssEscape(k)}">${makeOptions(ACCOUNTS, r.account, true, '（不更改）')}</select>
           <select name="item" id="itemSel-${cssEscape(k)}" onchange="editItemChanged('${cssEscape(k)}')">
             ${makeOptions(ITEM_OPTIONS, itemSelValue, true, '（不更改）')}
           </select>
         </div>
-
-        <input id="itemOther-${cssEscape(k)}" placeholder="輸入其他項目"
-               style="margin-top:8px;${itemSelValue==='其他'?'':'display:none;'}" value="${itemOtherValue}">
-
+        <input id="itemOther-${cssEscape(k)}" placeholder="輸入其他項目" style="margin-top:8px;${itemSelValue==='其他'?'':'display:none;'}" value="${itemOtherValue}">
         <div class="inline" style="margin-top:8px">
-          <select name="category" id="cat-${cssEscape(k)}">
-            ${makeOptions(CATEGORIES, r.category, true, '（不更改）')}
-          </select>
-          <select name="owner" id="owner-${cssEscape(k)}">
-            ${makeOptions(OWNERS, r.owner, true, '（不更改）')}
-          </select>
+          <select name="category" id="cat-${cssEscape(k)}">${makeOptions(CATEGORIES, r.category, true, '（不更改）')}</select>
+          <select name="owner" id="owner-${cssEscape(k)}">${makeOptions(OWNERS, r.owner, true, '（不更改）')}</select>
         </div>
-
-        ${ isTransferRow
-            ? `<select name="accountIn" id="accIn-${cssEscape(k)}" style="margin-top:8px">
-                 ${makeOptions(ACCOUNTS, '', true, '（轉入帳戶-不更改）')}
-               </select>`
-            : '' }
-
+        ${ isTransferRow ? `<select name="accountIn" id="accIn-${cssEscape(k)}" style="margin-top:8px">${makeOptions(ACCOUNTS,'',true,'（轉入帳戶-不更改）')}</select>` : '' }
         <div class="rowbtns" style="margin-top:8px">
-          <button class="btn" type="button"
-                  onclick="submitEdit('${cssEscape(k)}', ${isTransferRow ? 'true':'false'}, '${isOut?'支出':'收入'}')">儲存</button>
+          <button class="btn" type="button" onclick="submitEdit('${cssEscape(k)}','${isOut?'支出':'收入'}',${isTransferRow?'true':'false'})">儲存</button>
         </div>
       </form>
     </div>`;
   }).join('');
 }
-
 function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
-
-function toggleEdit(key){ const el = $('edit-'+cssEscape(key)); if (el) el.style.display = el.style.display==='none' ? 'block' : 'none'; }
-
+function toggleEdit(key){ const el=$('edit-'+cssEscape(key)); if(el) el.style.display = el.style.display==='none' ? 'block' : 'none'; }
 function editItemChanged(key){
-  const sel = $('itemSel-'+key);
-  const other = $('itemOther-'+key);
-  if (!sel || !other) return;
-  if (sel.value === '其他') { other.style.display='block'; other.focus(); }
-  else { other.style.display='none'; other.value=''; }
+  const sel=$('itemSel-'+key), other=$('itemOther-'+key); if(!sel||!other) return;
+  if(sel.value==='其他'){ other.style.display='block'; other.focus(); } else { other.style.display='none'; other.value=''; }
 }
 
-async function submitEdit(key, isTransfer, dir){
-  // 讀取欄位（空白 = 不更改；金額必填）
-  const amt = Number(($('amt-'+key)?.value)||'0');
-  if (!(amt>0)) { toast('金額必填'); return; }
-
-  const note   = $('note-'+key)?.value ?? '';
-  const account= $('acc-'+key)?.value ?? '';
+async function submitEdit(key, dir, isTransfer){
+  const amt=Number(($('amt-'+key)?.value)||'0'); if(!(amt>0)){ toast('金額必填'); return; }
+  const note=$('note-'+key)?.value ?? '';
+  const account=$('acc-'+key)?.value ?? '';
   const category=$('cat-'+key)?.value ?? '';
-  const owner  = $('owner-'+key)?.value ?? '';
-  const itemSel= $('itemSel-'+key)?.value ?? '';
-  const itemOther = $('itemOther-'+key)?.value?.trim() ?? '';
-  const item = (itemSel === '其他') ? itemOther : itemSel;
+  const owner=$('owner-'+key)?.value ?? '';
+  const itemSel=$('itemSel-'+key)?.value ?? '';
+  const itemOther=$('itemOther-'+key)?.value?.trim() ?? '';
+  const item=(itemSel==='其他')?itemOther:itemSel;
+  const apiKey=$('apiKey').value.trim(); // ★修正：更新時也帶上 API Key
 
-  const payload = {
-    action:'update', createdAt: key,
-    amount: String(amt),
-    note, account, category, owner,
-    item: item || ''
-  };
-
-  if (isTransfer) {
-    payload.isTransfer = 'true';
-    const ain = $('accIn-'+key)?.value ?? '';
-    if (ain) payload.accountIn = ain;
-  } else {
-    payload.direction = dir; // 維持原方向
-  }
+  const payload={ action:'update', createdAt:key, amount:String(amt), note, account, category, owner, item:item||'', apiKey };
+  if(isTransfer){ const ain=$('accIn-'+key)?.value ?? ''; payload.isTransfer='true'; if(ain) payload.accountIn=ain; }
+  else { payload.direction=dir; }
 
   try{
-    const res = await fetch($('endpoint').value.trim(), {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-      body: new URLSearchParams(payload).toString()
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error||'更新失敗');
-    toast('已更新');
-    $('btnRecent').click(); // 重新載入列表
-  }catch(e){
-    toast('更新失敗：'+e.message);
-  }
+    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:new URLSearchParams(payload).toString() });
+    const data=await res.json(); if(!data.ok) throw new Error(data.error||'更新失敗');
+    toast('已更新'); $('btnRecent').click();
+  }catch(e){ toast('更新失敗：'+e.message); }
 }
 
-/* ====== 餘額（各帳戶） ====== */
-$('btnBalance').onclick = async () => {
-  const endpoint = $('endpoint').value.trim();
-  if (!endpoint) { toast('請先在「設定」填入 Endpoint'); return; }
-  const params = new URLSearchParams({ balance:'1', by:'account' });
-  const m = $('qMonth').value.trim();
-  const own = $('qOwner').value.trim();
-  if (m) params.set('month', m);
-  if (own) params.set('owner', own);
-
-  $('balanceResult').textContent = '查詢中…';
-  $('balanceTable').style.display = 'none';
-  try {
-    const res = await fetch(`${endpoint}?${params.toString()}`);
-    if (!res.ok) throw 0;
-    const data = await res.json();
-    if (!data.ok || !Array.isArray(data.breakdown)) throw 0;
-
-    const map = new Map(data.breakdown.map(x => [x.account, Number(x.balance || 0)]));
-    const rows = ACCOUNTS.map(a => ({ account:a, balance: map.has(a)? map.get(a): 0 }));
-    const tbody = document.querySelector('#balanceTable tbody');
-    tbody.innerHTML = rows.map(r => `<tr><td>${r.account}</td><td class="right">${r.balance.toFixed(2)}</td></tr>`).join('');
-    const total = rows.reduce((s,r)=>s+r.balance,0);
-    $('balanceTotal').textContent = total.toFixed(2);
-    $('balanceResult').textContent = `來源：${data.source || 'detail.byAccount'}${m?`｜月份：${m}`:''}${own?`｜登記人：${own}`:''}`;
-    $('balanceTable').style.display = '';
-  } catch {
-    $('balanceResult').textContent = '查詢失敗，請檢查 Endpoint/權限';
-  }
-};
-
-/* ====== 設定 & 測試 ====== */
-function loadCfg(){ $('cfgHint').textContent = $('endpoint').value ? '已設定 Endpoint' : '尚未設定 Endpoint'; }
-$('btnTest').onclick = async ()=>{
-  try { const r = await fetch($('endpoint').value.trim() + '?ping=1'); toast(r.ok ? '連線正常' : '連線失敗'); }
-  catch { toast('連線失敗'); }
-};
-$('btnSaveCfg').onclick = ()=>{ loadCfg(); toast('設定已儲存'); };
-
-/* ====== 外送帳單匯入（手動觸發） ====== */
-$('btnImport').onclick = async () => {
-  const endpoint = $('endpoint').value.trim();
-  if (!endpoint) { toast('請先在「設定」填入 Endpoint'); return; }
-  const days = Math.max(1, Math.min(90, Number($('importDays').value) || 30));
-  $('importHint').textContent = '處理中…（解析 Gmail 並寫入明細）';
+async function askDelete(key){
+  if(!confirm('確定刪除此筆（互轉會自動刪兩列）？')) return;
+  const apiKey=$('apiKey').value.trim();
   try{
-    const res = await fetch(endpoint, {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-      body: new URLSearchParams({
-        action: 'ingest_gmail',
-        days: String(days),
-        apiKey: $('apiKey').value.trim()
-      }).toString()
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || '匯入失敗');
-    toast(`完成：新增 ${data.added||0} 筆`);
-    $('importHint').textContent = `完成：新增 ${data.added||0} 筆（耗時 ${data.elapsedMs||0} ms）`;
-    if (location.hash === '#recent') { $('btnRecent').click(); }
-  }catch(e){
-    $('importHint').textContent = '失敗：' + e.message;
-    toast('匯入失敗：' + e.message);
-  }
+    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:new URLSearchParams({action:'delete', createdAt:key, apiKey}).toString() });
+    const data=await res.json(); if(!data.ok) throw new Error(data.error||'刪除失敗');
+    toast('已刪除'); $('btnRecent').click();
+  }catch(e){ toast('刪除失敗：'+e.message); }
+}
+
+/* 餘額 */
+$('btnBalance').onclick=async()=>{
+  const endpoint=$('endpoint').value.trim(); if(!endpoint){ toast('請先在「設定」填入 Endpoint'); return; }
+  const params=new URLSearchParams({balance:'1',by:'account'}); const m=$('qMonth').value.trim(), own=$('qOwner').value.trim();
+  if(m)params.set('month',m); if(own)params.set('owner',own);
+  $('balanceResult').textContent='查詢中…'; $('balanceTable').style.display='none';
+  try{
+    const res=await fetch(`${endpoint}?${params.toString()}`); if(!res.ok) throw 0;
+    const data=await res.json(); if(!data.ok||!Array.isArray(data.breakdown)) throw 0;
+    const map=new Map(data.breakdown.map(x=>[x.account,Number(x.balance||0)]));
+    const rows=ACCOUNTS.map(a=>({account:a,balance:map.has(a)?map.get(a):0}));
+    const tbody=document.querySelector('#balanceTable tbody');
+    tbody.innerHTML=rows.map(r=>`<tr><td>${r.account}</td><td class="right">${r.balance.toFixed(2)}</td></tr>`).join('');
+    const total=rows.reduce((s,r)=>s+r.balance,0);
+    $('balanceTotal').textContent=total.toFixed(2);
+    $('balanceResult').textContent=`來源：${data.source||'detail.byAccount'}${m?`｜月份：${m}`:''}${own?`｜登記人：${own}`:''}`;
+    $('balanceTable').style.display='';
+  }catch{ $('balanceResult').textContent='查詢失敗，請檢查 Endpoint/權限'; }
+};
+
+/* 設定 */
+function loadCfg(){ $('cfgHint').textContent = $('endpoint').value ? '已設定 Endpoint' : '尚未設定 Endpoint'; }
+$('btnTest').onclick=async()=>{ try{ const r=await fetch($('endpoint').value.trim()+'?ping=1'); toast(r.ok?'連線正常':'連線失敗'); }catch{ toast('連線失敗'); } };
+$('btnSaveCfg').onclick=()=>{ loadCfg(); toast('設定已儲存'); };
+
+/* 手動匯入 Gmail 外送帳單 */
+$('btnImport').onclick=async()=>{
+  const endpoint=$('endpoint').value.trim(); if(!endpoint){ toast('請先在「設定」填入 Endpoint'); return; }
+  const days=Math.max(1,Math.min(90,Number($('importDays').value)||30)); $('importHint').textContent='處理中…';
+  try{
+    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:new URLSearchParams({action:'ingest_gmail',days:String(days),apiKey:$('apiKey').value.trim()}).toString()});
+    const data=await res.json(); if(!data.ok) throw new Error(data.error||'匯入失敗');
+    toast(`完成：新增 ${data.added||0} 筆`); $('importHint').textContent=`完成：新增 ${data.added||0} 筆（耗時 ${data.elapsedMs||0} ms）`;
+    if(location.hash==='#recent'){ $('btnRecent').click(); }
+  }catch(e){ $('importHint').textContent='失敗：'+e.message; toast('匯入失敗：'+e.message); }
 };
 </script>
 </body>
