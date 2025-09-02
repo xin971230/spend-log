@@ -91,7 +91,6 @@
   <div class="container">
     <!-- ================== View: 記帳 ================== -->
     <section data-view="home">
-      <!-- 表單 -->
       <div class="card">
         <h1>收支快記</h1>
         <div class="capsule">單頁版 SPA｜背景送出不中斷</div>
@@ -292,7 +291,7 @@ window.addEventListener('hashchange', route);
 const $ = id => document.getElementById(id);
 const toast = (msg) => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
 
-/* ====== 常量 ====== */
+/* ====== 常量（與記帳頁一致） ====== */
 const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
 const CATEGORIES = ['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
 const ITEM_OPTIONS = ['食物','公司代墊','玩樂','交通','其他'];
@@ -305,7 +304,7 @@ const OWNERS = ['欣宜','喬猷'];
   loadCfg(); renderLog(); route();
 })();
 
-/* ====== 項目「其他」切換 ====== */
+/* ====== 項目「其他」切換（記帳頁） ====== */
 const itemSelect = $('itemSelect'), itemOther = $('itemOther');
 itemSelect.onchange = () => {
   if (itemSelect.value === '其他') { itemOther.style.display='block'; itemOther.focus(); }
@@ -328,7 +327,7 @@ $('isTransfer').onchange = () => {
 };
 
 /* ====== 本機發送紀錄 ====== */
-const SENT_KEY = 'spend.sent.v15';
+const SENT_KEY = 'spend.sent.v16';
 function loadSent(){ try{ return JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); }catch{ return []; } }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
 function addSent(rec){ const list = loadSent(); list.push(rec); saveSent(list); }
@@ -516,6 +515,9 @@ function renderRecent(records){
           </select>
         </div>
 
+        <input id="itemOther-${cssEscape(k)}" placeholder="輸入其他項目"
+               style="margin-top:8px;${itemSelValue==='其他'?'':'display:none;'}" value="${itemOtherValue}">
+
         <div class="inline" style="margin-top:8px">
           <select name="category" id="cat-${cssEscape(k)}">
             ${makeOptions(CATEGORIES, r.category, true, '（不更改）')}
@@ -524,9 +526,6 @@ function renderRecent(records){
             ${makeOptions(OWNERS, r.owner, true, '（不更改）')}
           </select>
         </div>
-
-        <input id="itemOther-${cssEscape(k)}" placeholder="輸入其他項目"
-               style="margin-top:8px;${itemSelValue==='其他'?'':'display:none;'}" value="${itemOtherValue}">
 
         ${ isTransferRow
             ? `<select name="accountIn" id="accIn-${cssEscape(k)}" style="margin-top:8px">
@@ -556,7 +555,7 @@ function editItemChanged(key){
 }
 
 async function submitEdit(key, isTransfer, dir){
-  // 讀取欄位（保留空值 = 不更改）
+  // 讀取欄位（空白 = 不更改；金額必填）
   const amt = Number(($('amt-'+key)?.value)||'0');
   if (!(amt>0)) { toast('金額必填'); return; }
 
