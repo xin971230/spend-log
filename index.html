@@ -248,6 +248,17 @@
         <p class="muted mono" id="cfgHint"></p>
       </div>
 
+      <!-- 外送帳單匯入（手動） -->
+      <div class="card">
+        <h1>外送帳單匯入</h1>
+        <div class="inline">
+          <input id="importDays" type="number" min="1" max="90" value="30" placeholder="最近 N 天（預設 30）">
+          <button class="btn secondary" id="btnImport" type="button">抓取外送帳單</button>
+        </div>
+        <p class="muted">從 Gmail 解析 foodpanda / Uber Eats 訂單，匯入試算表《明細》。不重複寫入。</p>
+        <p class="muted mono" id="importHint">—</p>
+      </div>
+
       <div class="card">
         <h2>小提醒</h2>
         <ul class="muted">
@@ -314,7 +325,7 @@ $('isTransfer').onchange = () => {
 };
 
 /* ====== 本機發送紀錄 ====== */
-const SENT_KEY = 'spend.sent.v13';
+const SENT_KEY = 'spend.sent.v14';
 function loadSent(){ try{ return JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); }catch{ return []; } }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
 function addSent(rec){ const list = loadSent(); list.push(rec); saveSent(list); }
@@ -583,6 +594,33 @@ $('btnTest').onclick = async ()=>{
   catch { toast('連線失敗'); }
 };
 $('btnSaveCfg').onclick = ()=>{ loadCfg(); toast('設定已儲存'); };
+
+/* ====== 外送帳單匯入（手動觸發） ====== */
+$('btnImport').onclick = async () => {
+  const endpoint = $('endpoint').value.trim();
+  if (!endpoint) { toast('請先在「設定」填入 Endpoint'); return; }
+  const days = Math.max(1, Math.min(90, Number($('importDays').value) || 30));
+  $('importHint').textContent = '處理中…（解析 Gmail 並寫入明細）';
+  try{
+    const res = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body: new URLSearchParams({
+        action: 'ingest_gmail',
+        days: String(days),
+        apiKey: $('apiKey').value.trim()
+      }).toString()
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || '匯入失敗');
+    toast(`完成：新增 ${data.added||0} 筆`);
+    $('importHint').textContent = `完成：新增 ${data.added||0} 筆（耗時 ${data.elapsedMs||0} ms）`;
+    if (location.hash === '#recent') { $('btnRecent').click(); }
+  }catch(e){
+    $('importHint').textContent = '失敗：' + e.message;
+    toast('匯入失敗：' + e.message);
+  }
+};
 </script>
 </body>
 </html>
