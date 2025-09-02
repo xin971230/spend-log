@@ -42,7 +42,7 @@
   .list{display:grid;gap:10px;margin-top:8px}
   .list-item{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px}
   .list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-  .list-amt{font-weight:800;font-size:18px}
+  .list-amt{font-weight:800; font-size:18px}
   .list-amt.neg{color:var(--bad)} .list-amt.pos{color:var(--ok)}
   .list-meta{color:var(--muted);font-size:12px}
   .list-body{margin-top:2px;font-size:14px}
@@ -213,6 +213,7 @@ window.addEventListener('hashchange', route);
 /* Utils */
 const $ = id => document.getElementById(id);
 const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
 
 /* 常量 */
 const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
@@ -240,7 +241,7 @@ $('isTransfer').onchange = ()=>{
 };
 
 /* 本機發送紀錄 */
-const SENT_KEY='spend.sent.v17';
+const SENT_KEY='spend.sent.v18';
 function loadSent(){ try{return JSON.parse(localStorage.getItem(SENT_KEY)||'[]');}catch{return[];} }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
 function addSent(rec){ const list=loadSent(); list.push(rec); saveSent(list); }
@@ -334,61 +335,73 @@ function renderRecent(records){
   listEl.innerHTML=records.map((r)=>{
     const amtRaw=Number(r.amount||0), isOut=(r.direction==='支出'); const amt=Math.abs(amtRaw);
     const cls=isOut?'neg':'pos'; const meta=`${r.category||''}・${r.account||''}・${r.owner||''}`;
-    const text=`${r.item||''}${r.note?`｜${r.note}`:''}`; const k=r.createdAt||r.date||'';
+    const text=`${r.item||''}${r.note?`｜${r.note}`:''}`;
+    const rawKey = r.createdAt || r.date || '';         // 原始 createdAt（給後端）
+    const escKey = cssEscape(rawKey);                   // 轉義後（作為 DOM id）
     const isTransferRow=(r.category==='平衡' && r.item==='內控互轉');
-    const itemInList=ITEM_OPTIONS.includes(r.item||''); const itemSelValue=itemInList?(r.item||''):'其他'; const itemOtherValue=itemInList?'':(r.item||'');
-    return `<div class="list-item" data-key="${k}">
-      <div class="list-head"><div class="list-amt ${cls}">${isOut?'-':''}${amt.toFixed(2)}</div><div class="list-meta">${r.createdAt||r.date||''}</div></div>
+    const itemInList=ITEM_OPTIONS.includes(r.item||'');
+    const itemSelValue=itemInList?(r.item||''):'其他';
+    const itemOtherValue=itemInList?'':(r.item||'');
+
+    return `<div class="list-item" data-key="${rawKey}">
+      <div class="list-head"><div class="list-amt ${cls}">${isOut?'-':''}${amt.toFixed(2)}</div><div class="list-meta">${rawKey}</div></div>
       <div class="list-meta">${meta}</div>
       <div class="list-body clamp2">${text}</div>
       <div class="rowbtns" style="margin-top:8px">
-        <button class="btn secondary" type="button" onclick="toggleEdit('${k}')">✏️ 編輯</button>
-        <button class="btn secondary" type="button" onclick="askDelete('${k}')">🗑 刪除</button>
+        <button class="btn secondary" type="button" onclick="toggleEdit('${rawKey}')">✏️ 編輯</button>
+        <button class="btn secondary" type="button" onclick="askDelete('${rawKey}')">🗑 刪除</button>
       </div>
-      <form class="editbox" id="edit-${cssEscape(k)}" style="display:none;margin-top:8px">
+      <form class="editbox" id="edit-${escKey}" style="display:none;margin-top:8px">
         <div class="inline">
-          <input name="amount" id="amt-${cssEscape(k)}" type="number" step="0.01" placeholder="金額（必填）" value="${amt||''}">
-          <input name="note"   id="note-${cssEscape(k)}" placeholder="備註" value="${r.note||''}">
+          <input name="amount" id="amt-${escKey}" type="number" step="0.01" placeholder="金額（必填）" value="${amt||''}">
+          <input name="note"   id="note-${escKey}" placeholder="備註" value="${r.note||''}">
         </div>
         <div class="inline" style="margin-top:8px">
-          <select name="account" id="acc-${cssEscape(k)}">${makeOptions(ACCOUNTS, r.account, true, '（不更改）')}</select>
-          <select name="item" id="itemSel-${cssEscape(k)}" onchange="editItemChanged('${cssEscape(k)}')">
+          <select name="account" id="acc-${escKey}">${makeOptions(ACCOUNTS, r.account, true, '（不更改）')}</select>
+          <select name="item" id="itemSel-${escKey}" onchange="editItemChanged('${rawKey}')">
             ${makeOptions(ITEM_OPTIONS, itemSelValue, true, '（不更改）')}
           </select>
         </div>
-        <input id="itemOther-${cssEscape(k)}" placeholder="輸入其他項目" style="margin-top:8px;${itemSelValue==='其他'?'':'display:none;'}" value="${itemOtherValue}">
+        <input id="itemOther-${escKey}" placeholder="輸入其他項目" style="margin-top:8px;${itemSelValue==='其他'?'':'display:none;'}" value="${itemOtherValue}">
         <div class="inline" style="margin-top:8px">
-          <select name="category" id="cat-${cssEscape(k)}">${makeOptions(CATEGORIES, r.category, true, '（不更改）')}</select>
-          <select name="owner" id="owner-${cssEscape(k)}">${makeOptions(OWNERS, r.owner, true, '（不更改）')}</select>
+          <select name="category" id="cat-${escKey}">${makeOptions(CATEGORIES, r.category, true, '（不更改）')}</select>
+          <select name="owner" id="owner-${escKey}">${makeOptions(OWNERS, r.owner, true, '（不更改）')}</select>
         </div>
-        ${ isTransferRow ? `<select name="accountIn" id="accIn-${cssEscape(k)}" style="margin-top:8px">${makeOptions(ACCOUNTS,'',true,'（轉入帳戶-不更改）')}</select>` : '' }
+        ${ isTransferRow ? `<select name="accountIn" id="accIn-${escKey}" style="margin-top:8px">${makeOptions(ACCOUNTS,'',true,'（轉入帳戶-不更改）')}</select>` : '' }
         <div class="rowbtns" style="margin-top:8px">
-          <button class="btn" type="button" onclick="submitEdit('${cssEscape(k)}','${isOut?'支出':'收入'}',${isTransferRow?'true':'false'})">儲存</button>
+          <button class="btn" type="button" onclick="submitEdit('${rawKey}', ${isTransferRow?'true':'false'}, '${isOut?'支出':'收入'}')">儲存</button>
         </div>
       </form>
     </div>`;
   }).join('');
 }
-function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
-function toggleEdit(key){ const el=$('edit-'+cssEscape(key)); if(el) el.style.display = el.style.display==='none' ? 'block' : 'none'; }
-function editItemChanged(key){
-  const sel=$('itemSel-'+key), other=$('itemOther-'+key); if(!sel||!other) return;
+
+function toggleEdit(rawKey){
+  const escKey = cssEscape(rawKey);
+  const el=$('edit-'+escKey);
+  if(el) el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+function editItemChanged(rawKey){
+  const escKey = cssEscape(rawKey);
+  const sel=$('itemSel-'+escKey), other=$('itemOther-'+escKey); if(!sel||!other) return;
   if(sel.value==='其他'){ other.style.display='block'; other.focus(); } else { other.style.display='none'; other.value=''; }
 }
 
-async function submitEdit(key, dir, isTransfer){
-  const amt=Number(($('amt-'+key)?.value)||'0'); if(!(amt>0)){ toast('金額必填'); return; }
-  const note=$('note-'+key)?.value ?? '';
-  const account=$('acc-'+key)?.value ?? '';
-  const category=$('cat-'+key)?.value ?? '';
-  const owner=$('owner-'+key)?.value ?? '';
-  const itemSel=$('itemSel-'+key)?.value ?? '';
-  const itemOther=$('itemOther-'+key)?.value?.trim() ?? '';
+async function submitEdit(rawKey, isTransfer, dir){
+  const escKey = cssEscape(rawKey);
+  const amt=Number(($('amt-'+escKey)?.value)||'0'); if(!(amt>0)){ toast('金額必填'); return; }
+  const note=$('note-'+escKey)?.value ?? '';
+  const account=$('acc-'+escKey)?.value ?? '';
+  const category=$('cat-'+escKey)?.value ?? '';
+  const owner=$('owner-'+escKey)?.value ?? '';
+  const itemSel=$('itemSel-'+escKey)?.value ?? '';
+  const itemOther=$('itemOther-'+escKey)?.value?.trim() ?? '';
   const item=(itemSel==='其他')?itemOther:itemSel;
-  const apiKey=$('apiKey').value.trim(); // ★修正：更新時也帶上 API Key
+  const apiKey=$('apiKey').value.trim();
 
-  const payload={ action:'update', createdAt:key, amount:String(amt), note, account, category, owner, item:item||'', apiKey };
-  if(isTransfer){ const ain=$('accIn-'+key)?.value ?? ''; payload.isTransfer='true'; if(ain) payload.accountIn=ain; }
+  const payload={ action:'update', createdAt:rawKey, amount:String(amt), note, account, category, owner, item:item||'', apiKey };
+  if(isTransfer){ const ain=$('accIn-'+escKey)?.value ?? ''; payload.isTransfer='true'; if(ain) payload.accountIn=ain; }
   else { payload.direction=dir; }
 
   try{
@@ -398,11 +411,11 @@ async function submitEdit(key, dir, isTransfer){
   }catch(e){ toast('更新失敗：'+e.message); }
 }
 
-async function askDelete(key){
+async function askDelete(rawKey){
   if(!confirm('確定刪除此筆（互轉會自動刪兩列）？')) return;
   const apiKey=$('apiKey').value.trim();
   try{
-    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:new URLSearchParams({action:'delete', createdAt:key, apiKey}).toString() });
+    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:new URLSearchParams({action:'delete', createdAt:rawKey, apiKey}).toString() });
     const data=await res.json(); if(!data.ok) throw new Error(data.error||'刪除失敗');
     toast('已刪除'); $('btnRecent').click();
   }catch(e){ toast('刪除失敗：'+e.message); }
@@ -443,7 +456,7 @@ $('btnImport').onclick=async()=>{
     const data=await res.json(); if(!data.ok) throw new Error(data.error||'匯入失敗');
     toast(`完成：新增 ${data.added||0} 筆`); $('importHint').textContent=`完成：新增 ${data.added||0} 筆（耗時 ${data.elapsedMs||0} ms）`;
     if(location.hash==='#recent'){ $('btnRecent').click(); }
-  }catch(e){ $('importHint').textContent='失敗：'+e.message; toast('匯入失敗：'+e.message); }
+  }catch(e){ $('importHint').textContent='失敗：' + e.message; toast('匯入失敗：' + e.message); }
 };
 </script>
 </body>
