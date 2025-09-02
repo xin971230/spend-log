@@ -117,7 +117,7 @@
           <label>分類</label>
           <select id="category">
             <option value="">（請選擇）</option>
-            <option>共用</option><option>黃支出</option><option>蕭支出</option><option>信用卡</option>
+            <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
             <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
           </select>
 
@@ -192,7 +192,7 @@
         <div class="inline" style="margin-top:8px">
           <select id="rCategory">
             <option value="">全部分類</option>
-            <option>共用</option><option>黃支出</option><option>蕭支出</option><option>信用卡</option>
+            <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
             <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
           </select>
           <select id="rOwner">
@@ -294,6 +294,9 @@ const toast = (msg) => { const t=$('toast'); t.textContent=msg; t.classList.add(
 
 /* ====== 常量 ====== */
 const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
+const CATEGORIES = ['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
+const ITEM_OPTIONS = ['食物','公司代墊','玩樂','交通','其他'];
+const OWNERS = ['欣宜','喬猷'];
 
 /* ====== 初始 ====== */
 (function init(){
@@ -325,7 +328,7 @@ $('isTransfer').onchange = () => {
 };
 
 /* ====== 本機發送紀錄 ====== */
-const SENT_KEY = 'spend.sent.v14';
+const SENT_KEY = 'spend.sent.v15';
 function loadSent(){ try{ return JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); }catch{ return []; } }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
 function addSent(rec){ const list = loadSent(); list.push(rec); saveSent(list); }
@@ -457,6 +460,16 @@ $('btnRecent').onclick = async ()=>{
   }
 };
 
+function makeOptions(list, selected, includeEmpty=true, emptyLabel='（不更改）'){
+  const opts = [];
+  if (includeEmpty) opts.push(`<option value="">${emptyLabel}</option>`);
+  for (const v of list){
+    const sel = (v === selected) ? ' selected' : '';
+    opts.push(`<option value="${v}"${sel}>${v}</option>`);
+  }
+  return opts.join('');
+}
+
 function renderRecent(records){
   const listEl = $('recentList');
   listEl.innerHTML = records.map((r)=>{
@@ -467,6 +480,14 @@ function renderRecent(records){
     const meta = `${r.category||''}・${r.account||''}・${r.owner||''}`;
     const text = `${r.item||''}${r.note?`｜${r.note}`:''}`;
     const k = r.createdAt || r.date || '';
+
+    const isTransferRow = (r.category==='平衡' && r.item==='內控互轉');
+
+    // 項目選單：若原值不在選單內，預設選「其他」並把原值放入 other 欄
+    const itemInList = ITEM_OPTIONS.includes(r.item||'');
+    const itemSelValue = itemInList ? (r.item||'') : '其他';
+    const itemOtherValue = itemInList ? '' : (r.item||'');
+
     return `<div class="list-item" data-key="${k}">
       <div class="list-head">
         <div class="list-amt ${cls}">${isOut?'-':''}${amt.toFixed(2)}</div>
@@ -474,57 +495,94 @@ function renderRecent(records){
       </div>
       <div class="list-meta">${meta}</div>
       <div class="list-body clamp2">${text}</div>
+
       <div class="rowbtns" style="margin-top:8px">
         <button class="btn secondary" type="button" onclick="toggleEdit('${k}', ${isOut})">✏️ 編輯</button>
         <button class="btn secondary" type="button" onclick="askDelete('${k}')">🗑 刪除</button>
       </div>
+
       <form class="editbox" id="edit-${cssEscape(k)}" style="display:none;margin-top:8px">
         <div class="inline">
-          <input name="amount" type="number" step="0.01" placeholder="金額（必填）" value="${amt||''}">
-          <input name="note" placeholder="備註" value="${r.note||''}">
+          <input name="amount" id="amt-${cssEscape(k)}" type="number" step="0.01" placeholder="金額（必填）" value="${amt||''}">
+          <input name="note"   id="note-${cssEscape(k)}" placeholder="備註" value="${r.note||''}">
         </div>
+
         <div class="inline" style="margin-top:8px">
-          <input name="account" placeholder="帳戶（留空=不變）" value="${r.account||''}">
-          <input name="item" placeholder="項目（留空=不變）" value="${r.item||''}">
+          <select name="account" id="acc-${cssEscape(k)}">
+            ${makeOptions(ACCOUNTS, r.account, true, '（不更改）')}
+          </select>
+          <select name="item" id="itemSel-${cssEscape(k)}" onchange="editItemChanged('${cssEscape(k)}')">
+            ${makeOptions(ITEM_OPTIONS, itemSelValue, true, '（不更改）')}
+          </select>
         </div>
+
         <div class="inline" style="margin-top:8px">
-          <input name="category" placeholder="分類（留空=不變）" value="${r.category||''}">
-          <input name="owner" placeholder="登記人（留空=不變）" value="${r.owner||''}">
+          <select name="category" id="cat-${cssEscape(k)}">
+            ${makeOptions(CATEGORIES, r.category, true, '（不更改）')}
+          </select>
+          <select name="owner" id="owner-${cssEscape(k)}">
+            ${makeOptions(OWNERS, r.owner, true, '（不更改）')}
+          </select>
         </div>
-        ${ (r.category==='平衡' && r.item==='內控互轉')
-            ? '<input name="accountIn" placeholder="轉入帳戶（互轉）" style="margin-top:8px" value="">' 
+
+        <input id="itemOther-${cssEscape(k)}" placeholder="輸入其他項目"
+               style="margin-top:8px;${itemSelValue==='其他'?'':'display:none;'}" value="${itemOtherValue}">
+
+        ${ isTransferRow
+            ? `<select name="accountIn" id="accIn-${cssEscape(k)}" style="margin-top:8px">
+                 ${makeOptions(ACCOUNTS, '', true, '（轉入帳戶-不更改）')}
+               </select>`
             : '' }
+
         <div class="rowbtns" style="margin-top:8px">
-          <button class="btn" type="button" onclick="submitEdit('`+k+`', ${ (r.category==='平衡' && r.item==='內控互轉') ? 'true':'false' }, '${isOut?'支出':'收入'}')">儲存</button>
+          <button class="btn" type="button"
+                  onclick="submitEdit('${cssEscape(k)}', ${isTransferRow ? 'true':'false'}, '${isOut?'支出':'收入'}')">儲存</button>
         </div>
       </form>
     </div>`;
   }).join('');
 }
+
 function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
+
 function toggleEdit(key){ const el = $('edit-'+cssEscape(key)); if (el) el.style.display = el.style.display==='none' ? 'block' : 'none'; }
+
+function editItemChanged(key){
+  const sel = $('itemSel-'+key);
+  const other = $('itemOther-'+key);
+  if (!sel || !other) return;
+  if (sel.value === '其他') { other.style.display='block'; other.focus(); }
+  else { other.style.display='none'; other.value=''; }
+}
+
 async function submitEdit(key, isTransfer, dir){
-  const form = $('edit-'+cssEscape(key));
-  if (!form) return;
-  const fd = new FormData(form);
-  const amount = Number(fd.get('amount')||'0');
-  if (!(amount>0)) { toast('金額必填'); return; }
+  // 讀取欄位（保留空值 = 不更改）
+  const amt = Number(($('amt-'+key)?.value)||'0');
+  if (!(amt>0)) { toast('金額必填'); return; }
+
+  const note   = $('note-'+key)?.value ?? '';
+  const account= $('acc-'+key)?.value ?? '';
+  const category=$('cat-'+key)?.value ?? '';
+  const owner  = $('owner-'+key)?.value ?? '';
+  const itemSel= $('itemSel-'+key)?.value ?? '';
+  const itemOther = $('itemOther-'+key)?.value?.trim() ?? '';
+  const item = (itemSel === '其他') ? itemOther : itemSel;
+
   const payload = {
     action:'update', createdAt: key,
-    amount: String(amount),
-    note: fd.get('note')||'',
-    account: fd.get('account')||'',
-    item: fd.get('item')||'',
-    category: fd.get('category')||'',
-    owner: fd.get('owner')||'',
+    amount: String(amt),
+    note, account, category, owner,
+    item: item || ''
   };
+
   if (isTransfer) {
     payload.isTransfer = 'true';
-    const ain = fd.get('accountIn')||'';
+    const ain = $('accIn-'+key)?.value ?? '';
     if (ain) payload.accountIn = ain;
   } else {
     payload.direction = dir; // 維持原方向
   }
+
   try{
     const res = await fetch($('endpoint').value.trim(), {
       method:'POST',
@@ -537,22 +595,6 @@ async function submitEdit(key, isTransfer, dir){
     $('btnRecent').click(); // 重新載入列表
   }catch(e){
     toast('更新失敗：'+e.message);
-  }
-}
-async function askDelete(key){
-  if (!confirm('確定刪除這筆（若為互轉會刪兩筆）？')) return;
-  try{
-    const res = await fetch($('endpoint').value.trim(), {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-      body: new URLSearchParams({ action:'delete', createdAt:key }).toString()
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error||'刪除失敗');
-    toast('已刪除');
-    $('btnRecent').click();
-  }catch(e){
-    toast('刪除失敗：'+e.message);
   }
 }
 
