@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>收支快記｜手機版</title>
   <style>
+    /* 讓寬度以邊框計算，避免 100% + padding 造成溢出 */
+    *, *::before, *::after { box-sizing: border-box; }
+
     body{margin:0;font-family:system-ui,sans-serif;background:#0f172a;color:#f1f5f9}
     .wrap{max-width:520px;margin:auto;padding:12px}
     .card{background:#1e293b;border-radius:14px;padding:16px;margin-bottom:14px}
     h1{font-size:20px;margin:0 0 10px}
     label{font-size:14px;display:block;margin:8px 0 4px}
-    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:16px}
+
+    /* 表單欄位齊平、不超出 */
+    input,select,textarea{display:block;width:100%;max-width:100%;
+      padding:12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:16px}
     .btn{display:block;width:100%;padding:14px;margin-top:12px;border:none;border-radius:10px;font-size:16px;font-weight:600;background:#3b82f6;color:#fff}
     .btn.secondary{background:#475569}.btn.row{width:auto;display:inline-block;margin-right:8px}
     .rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
@@ -26,6 +32,22 @@
     .right{text-align:right}
     .inline{display:flex;gap:8px;align-items:center}
     .inline > *{flex:1}
+
+    /* 最新5筆：卡片清單樣式（手機更好讀） */
+    .list { display: grid; gap: 10px; margin-top: 8px; }
+    .list-item { background:#0b1222; border:1px solid #334155; border-radius:12px; padding:10px; }
+    .list-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+    .list-amt { font-weight:700; font-size:18px; }
+    .list-amt.neg { color:#fca5a5; }   /* 支出 */
+    .list-amt.pos { color:#86efac; }   /* 收入 */
+    .list-meta { color:#93a5bf; font-size:12px; }
+    .list-body { margin-top:2px; font-size:14px; }
+
+    /* 兩行省略（項目/備註可能很長） */
+    .clamp2 {
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
   </style>
 </head>
 <body>
@@ -70,7 +92,7 @@
         <label>帳戶（轉出帳戶）</label>
         <select id="account">
           <option value="">（請選擇）</option>
-          <!-- 依你指定順序 -->
+          <!-- 按你的指定順序 -->
           <option>黃現金</option>
           <option>刷卡</option>
           <option>蕭現金</option>
@@ -178,10 +200,7 @@
       </div>
       <div id="recentArea">
         <p class="muted mono" id="recentHint">—</p>
-        <table class="table" id="recentTable" style="display:none">
-          <thead><tr><th>時間</th><th>方向</th><th class="right">金額</th><th>分類/帳戶</th><th>項目/備註</th><th>登記人</th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div class="list" id="recentList" style="display:none"></div>
       </div>
     </div>
 
@@ -217,7 +236,7 @@
     const $ = id => document.getElementById(id);
     const toast = (msg) => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
 
-    // 帳戶固定順序（供餘額表排序用）
+    // 帳戶固定順序（也用於餘額表輸出）
     const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
 
     // 初始日期
@@ -230,7 +249,7 @@
       else { itemOther.style.display='none'; itemOther.value=''; }
     };
 
-    // 互轉：帶入並鎖定 分類/項目（不影響帳戶/分類在未勾選時的空白狀態）
+    // 互轉：帶入並鎖定 分類/項目
     $('isTransfer').onchange = () => {
       const on = $('isTransfer').checked;
       $('transferFields').style.display = on ? 'block' : 'none';
@@ -242,12 +261,11 @@
         itemOther.value = '內控互轉';
       } else {
         $('category').disabled = false;
-        // 項目維持使用者目前選擇；不做預設
       }
     };
 
     // 本機發送紀錄
-    const SENT_KEY = 'spend.sent.v9';
+    const SENT_KEY = 'spend.sent.v10';
     function loadSent(){ try{ return JSON.parse(localStorage.getItem(SENT_KEY) || '[]'); }catch{ return []; } }
     function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
     function addSent(rec){ const list = loadSent(); list.push(rec); saveSent(list); }
@@ -285,7 +303,7 @@
     $('btnExport').onclick = exportCSV;
     $('btnClear').onclick = ()=>{ if(confirm('清除本機發送紀錄？')){ localStorage.removeItem(SENT_KEY); renderLog(); } };
 
-    // 背景送出：sendBeacon 優先，其次 fetch keepalive
+    // 背景送出
     function backgroundSend(url, payloadObj){
       const body = new URLSearchParams(payloadObj).toString();
       const mime = 'application/x-www-form-urlencoded;charset=UTF-8';
@@ -296,7 +314,7 @@
       }
     }
 
-    // 送出（不自動回到金額；且三欄需使用者自行選擇或互轉自動填）
+    // 送出（不自動回到金額；三欄需使用者自行選擇或互轉自動填）
     $('form').onsubmit = (e)=>{
       e.preventDefault();
 
@@ -306,21 +324,12 @@
       const amount = $('amount').value;
       const isXfer = $('isTransfer').checked;
 
-      // 分類：互轉時固定平衡；否則必填
       const category = isXfer ? '平衡' : $('category').value;
-
-      // 帳戶必填
       const account = $('account').value;
-
-      // 項目：互轉固定；否則依下拉或「其他」輸入
-      const item = isXfer
-        ? '內控互轉'
-        : ( (itemSelect.value === '其他') ? $('itemOther').value.trim() : itemSelect.value );
-
+      const item = isXfer ? '內控互轉' : ((itemSelect.value === '其他') ? $('itemOther').value.trim() : itemSelect.value);
       const note = $('note').value.trim();
       const accountIn = $('accountIn').value;
 
-      // 驗證
       if (!date || !amount || Number(amount) <= 0) { toast('請輸入日期與金額'); return; }
       if (!category) { toast('請選擇分類'); return; }
       if (!account) { toast('請選擇帳戶'); return; }
@@ -359,7 +368,7 @@
       backgroundSend(endpoint, payload);
     };
 
-    // 最近 5 筆
+    // 最新 5 筆：卡片清單渲染
     $('btnRecent').onclick = async ()=>{
       const endpoint = $('endpoint').value.trim();
       if (!endpoint) { toast('請先設定 Endpoint'); return; }
@@ -372,28 +381,30 @@
       if (own) params.set('owner', own);
 
       $('recentHint').textContent = '查詢中…';
-      $('recentTable').style.display = 'none';
+      $('recentList').style.display = 'none';
       try {
         const res = await fetch(`${endpoint}?${params.toString()}`);
         if (!res.ok) throw 0;
         const data = await res.json();
         if (!data.ok || !Array.isArray(data.records)) throw 0;
 
-        const tbody = document.querySelector('#recentTable tbody');
-        tbody.innerHTML = data.records.map(r=>{
-          const cls = r.direction==='支出' ? 'neg':'pos';
+        const listEl = $('recentList');
+        listEl.innerHTML = data.records.map(r=>{
           const amt = Number(r.amount||0);
-          return `<tr>
-            <td class="muted">${r.createdAt||r.date||''}</td>
-            <td>${r.direction||''}</td>
-            <td class="right ${cls}">${r.direction==='支出'?'-':''}${amt.toFixed(2)}</td>
-            <td>${r.category||''}｜${r.account||''}</td>
-            <td>${r.item||''}｜${r.note||''}</td>
-            <td>${r.owner||''}</td>
-          </tr>`;
+          const cls = r.direction==='支出' ? 'neg' : 'pos';
+          const meta = `${r.category||''}・${r.account||''}・${r.owner||''}`;
+          const text = `${r.item||''}${r.note?`｜${r.note}`:''}`;
+          return `<div class="list-item">
+            <div class="list-head">
+              <div class="list-amt ${cls}">${r.direction==='支出'?'-':''}${amt.toFixed(2)}</div>
+              <div class="list-meta">${r.createdAt || r.date || ''}</div>
+            </div>
+            <div class="list-meta">${meta}</div>
+            <div class="list-body clamp2">${text}</div>
+          </div>`;
         }).join('');
-        $('recentHint').textContent = `總筆數：${data.count}（顯示最近 ${data.records.length} 筆）`;
-        $('recentTable').style.display = '';
+        $('recentHint').textContent = `顯示最近 ${data.records.length} 筆`;
+        $('recentList').style.display = '';
       } catch {
         $('recentHint').textContent = '查詢失敗，請檢查 Endpoint/權限';
       }
@@ -440,8 +451,6 @@
 
     (function init(){
       loadCfg(); renderLog();
-      // 不對帳戶/分類/項目做任何預設
-      $('direction').value = '支出'; // 僅保留方向為常用預設（可自行改）
       fetch($('endpoint').value.trim() + '?ping=1').catch(()=>{});
     })();
   </script>
