@@ -2,191 +2,99 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>收支快記｜行動版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>收支快記｜SPA</title>
 <style>
-  /* ===== Reset & Theme ===== */
+  /* 極簡深色（無漸層），行動優先 */
   *, *::before, *::after { box-sizing: border-box; }
   :root{
-    --bg:#0a0f1e; --panel:#12182b; --panel-2:#0e1528;
-    --text:#eef3fb; --muted:#9fb0c9; --line:#253354; --brand:#3b82f6;
-    --ok:#86efac; --bad:#fca5a5; --warn:#f59e0b;
-    --radius:16px; --radius-sm:12px; --shadow:0 10px 30px rgba(0,0,0,.35);
-    --safe-bottom: env(safe-area-inset-bottom, 12px);
-  }
-  @media (prefers-color-scheme: light){
-    :root{ --bg:#f4f7fb; --panel:#ffffff; --panel-2:#f8fafc; --text:#0b1324; --muted:#63708a; --line:#e5e9f2; --shadow:0 8px 24px rgba(0,10,40,.08); }
-    .tab.active{ color:#fff }
+    --bg:#0e1116; --panel:#141820; --panel2:#0f131a;
+    --text:#e7eaf0; --muted:#9aa3af; --line:#2b3240; --brand:#3b82f6; --ok:#86efac; --bad:#fca5a5;
+    --radius:14px; --shadow:0 8px 24px rgba(0,0,0,.28);
   }
   html,body{height:100%}
-  body{
-    margin:0;
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-    color:var(--text);
-    background:
-      radial-gradient(1200px 600px at 50% -200px, rgba(59,130,246,.18), transparent 60%),
-      linear-gradient(180deg,var(--bg) 0%, #0b1226 80%);
-  }
-  .container{max-width:900px;margin:auto;padding:16px 14px 96px}
-
-  /* ===== Top bar (title) ===== */
-  .topbar{
-    position:sticky; top:0; z-index:40;
-    background:linear-gradient(180deg, rgba(10,15,30,.85), rgba(10,15,30,.55));
-    backdrop-filter: blur(10px);
-    border-bottom:1px solid var(--line);
-    padding:10px 14px;
-  }
-  .topbar h1{margin:0;font-size:18px;letter-spacing:.5px;opacity:.95}
-
-  /* ===== Bottom Tabs (mobile thumb reach) ===== */
-  .tabs{
-    position:fixed; left:0; right:0; bottom:0; z-index:50;
-    background:rgba(12,16,30,.88); backdrop-filter: blur(8px);
-    border-top:1px solid var(--line);
-    padding:8px 10px calc(6px + var(--safe-bottom));
-  }
-  .tabbar{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; max-width:900px; margin:auto}
-  .tab{
-    display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center;
-    padding:10px 8px; border-radius:12px; text-decoration:none; border:1px solid transparent;
-    color:var(--muted); font-weight:600; font-size:12px; line-height:1.2; transition:.2s;
-  }
-  .tab .ico{font-size:18px}
-  .tab:active{transform:scale(.98)}
-  .tab.active{
-    color:#fff; background:linear-gradient(180deg,rgba(59,130,246,.28),rgba(59,130,246,.18));
-    border-color:#2b4ea3;
-    box-shadow: inset 0 0 0 1px rgba(59,130,246,.35);
-  }
-
-  /* ===== Cards / Sections ===== */
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+       background:var(--bg); color:var(--text);}
+  .container{max-width:720px;margin:auto;padding:12px 12px 72px}
+  .tabs{position:sticky;top:0;z-index:30;background:var(--bg);padding:8px 12px;border-bottom:1px solid var(--line)}
+  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tab{display:flex;gap:8px;align-items:center;justify-content:center;
+       padding:10px 12px;border:1px solid var(--line);border-radius:12px;color:var(--text);text-decoration:none;
+       background:var(--panel);font-size:14px}
+  .tab.active{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:var(--shadow)}
   section[hidden]{display:none}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin:14px 0; box-shadow:var(--shadow)}
-  .card h1{font-size:18px;margin:0 0 10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;box-shadow:var(--shadow)}
+  h1{font-size:18px;margin:0 0 8px}
+  h2{font-size:14px;margin:0 0 6px;color:var(--muted)}
+  label{font-size:14px;display:block;margin:10px 0 6px}
   .muted{color:var(--muted);font-size:12px}
   .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-
-  /* ===== Forms ===== */
-  label{font-size:13px;display:block;margin:8px 0 6px}
-  input,select{
-    width:100%; padding:13px 12px; border-radius:12px; border:1px solid var(--line);
-    background:var(--panel-2); color:var(--text); font-size:16px;
-  }
-  .row{display:grid; grid-template-columns:1fr; gap:10px}
-  @media (min-width: 640px){ .row{ grid-template-columns:1fr 1fr } }
-  .inline{display:flex; gap:10px; align-items:center}
+  input,select{display:block;width:100%;max-width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:16px}
+  .inline{display:flex;gap:10px;align-items:center}
   .inline > *{flex:1}
-  .rowbtns{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
-  .btn{
-    flex:1 1 auto; display:inline-flex; justify-content:center; align-items:center; gap:8px;
-    padding:13px 16px; border:none; border-radius:14px; background:var(--brand); color:#fff;
-    font-weight:800; font-size:16px; letter-spacing:.3px; cursor:pointer; box-shadow:var(--shadow);
-  }
-  .btn.secondary{ background:linear-gradient(180deg,#41506f,#31415f) }
-  .btn:active{ transform: translateY(1px) }
-
-  /* Nice switch for transfer */
-  .switch{display:flex; align-items:center; gap:10px; margin:8px 0 4px}
-  .toggle{
-    appearance:none; width:48px; height:28px; border-radius:28px; position:relative; outline:none;
-    background:#2a3552; border:1px solid var(--line); transition:.2s;
-  }
-  .toggle::after{
-    content:""; position:absolute; width:22px; height:22px; top:2px; left:2px; border-radius:50%;
-    background:#fff; transition:.2s; box-shadow:0 2px 6px rgba(0,0,0,.3);
-  }
-  .toggle:checked{ background:#3066d3; }
-  .toggle:checked::after{ transform:translateX(20px); }
-
-  /* ===== Local Log ===== */
-  .log{max-height:360px; overflow:auto; border:1px solid var(--line); border-radius:14px; background:var(--panel-2)}
-  .log table{width:100%; border-collapse:collapse; font-size:14px}
-  .log th,.log td{padding:10px; border-bottom:1px solid var(--line); text-align:left}
+  .rowbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 14px;border:none;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;font-size:16px;cursor:pointer}
+  .btn.secondary{background:#465874}
+  .log{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .log table{width:100%;border-collapse:collapse;font-size:14px}
+  .log th,.log td{border-bottom:1px solid var(--line);padding:8px;text-align:left}
   .neg{color:var(--bad)} .pos{color:var(--ok)}
-
-  /* ===== Recent list ===== */
-  .list{display:grid; gap:10px; margin-top:8px}
-  .list-item{
-    background:linear-gradient(180deg, var(--panel), var(--panel-2));
-    border:1px solid var(--line); border-radius:14px; padding:12px;
-  }
-  .list-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px}
-  .list-amt{font-weight:900; font-size:20px}
+  .list{display:grid;gap:10px;margin-top:8px}
+  .list-item{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:10px}
+  .list-amt{font-weight:800; font-size:18px}
   .list-amt.neg{color:var(--bad)} .list-amt.pos{color:var(--ok)}
-  .chip{display:inline-block; padding:4px 8px; font-size:11px; border-radius:999px; border:1px solid var(--line); color:var(--muted); margin-right:6px}
-  .list-meta{color:var(--muted); font-size:12px}
-  .list-body{margin-top:6px; font-size:15px}
+  .list-meta{color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px}
+  .list-body{margin-top:2px;font-size:14px}
   .clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-
-  /* ===== Table (Balance) ===== */
-  .table{width:100%; border-collapse:collapse; margin-top:8px; background:var(--panel-2); border-radius:12px; overflow:hidden}
-  .table th,.table td{padding:12px; border-bottom:1px solid var(--line); text-align:left}
+  .table{width:100%;border-collapse:collapse;margin-top:8px}
+  .table th,.table td{padding:10px;border-bottom:1px solid var(--line);text-align:left}
   .right{text-align:right}
-
-  /* ===== Toast ===== */
-  .toast{
-    position:fixed; bottom:calc(64px + var(--safe-bottom)); left:50%; transform:translateX(-50%);
-    background:var(--panel-2); color:var(--text); border:1px solid var(--line);
-    padding:10px 12px; border-radius:12px; display:none; box-shadow:var(--shadow); z-index:60
-  }
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:10px 12px;border-radius:12px;display:none;box-shadow:var(--shadow);max-width:90%}
   .toast.show{display:block}
-
-  /* ===== Helpers ===== */
-  .spacer{height:10px}
+  @media (max-width:420px){
+    h1{font-size:17px}
+    .tab{font-size:13px;padding:9px 10px}
+    input,select{font-size:15px}
+  }
 </style>
 </head>
 <body>
 
-<!-- Sticky top title (small, not occupying space) -->
-<div class="topbar"><h1>收支快記</h1></div>
+<div class="tabs">
+  <div class="tabbar">
+    <a class="tab" href="#home">🧾 記帳</a>
+    <a class="tab" href="#recent">🕒 最新</a>
+    <a class="tab" href="#balance">📊 餘額</a>
+    <a class="tab" href="#settings">⚙️ 設定</a>
+  </div>
+</div>
 
 <div class="container">
   <!-- 記帳 -->
   <section data-view="home">
     <div class="card">
-      <h1>新增記帳</h1>
-      <form id="form" autocomplete="off" style="margin-top:6px">
-        <div class="row">
-          <div>
-            <label>日期</label><input type="date" id="date" required>
-          </div>
-          <div>
-            <label>登記人</label>
-            <select id="owner"><option>欣宜</option><option>喬猷</option></select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>方向</label>
-            <select id="direction"><option>支出</option><option>收入</option></select>
-          </div>
-          <div>
-            <label>金額</label><input type="number" id="amount" min="0.01" step="0.01" inputmode="decimal" required>
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>分類</label>
-            <select id="category">
-              <option value="">（請選擇）</option>
-              <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
-              <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
-            </select>
-          </div>
-          <div>
-            <label>帳戶（轉出帳戶）</label>
-            <select id="account">
-              <option value="">（請選擇）</option>
-              <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
-              <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
-              <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-            </select>
-          </div>
-        </div>
-
+      <h1>收支快記</h1>
+      <form id="form" autocomplete="off" style="margin-top:8px">
+        <label>日期</label><input type="date" id="date" required>
+        <label>登記人</label>
+        <select id="owner"><option>欣宜</option><option>喬猷</option></select>
+        <label>方向</label>
+        <select id="direction"><option>支出</option><option>收入</option></select>
+        <label>金額</label><input type="number" id="amount" min="0.01" step="0.01" inputmode="decimal" required>
+        <label>分類</label>
+        <select id="category">
+          <option value="">（請選擇）</option>
+          <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
+          <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
+        </select>
+        <label>帳戶（轉出帳戶）</label>
+        <select id="account">
+          <option value="">（請選擇）</option>
+          <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
+          <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
+          <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
+        </select>
         <label>項目</label>
         <div class="inline">
           <select id="itemSelect">
@@ -198,14 +106,14 @@
           <input id="itemOther" placeholder="輸入其他項目" style="display:none">
         </div>
 
-        <label>備註</label><input id="note" placeholder="">
-
-        <!-- 互轉（同一行、滑動開關） -->
-        <div class="switch">
-          <input type="checkbox" id="isTransfer" class="toggle">
-          <label for="isTransfer" style="margin:0;font-weight:700">互轉</label>
+        <!-- 互轉切換：同一行 -->
+        <div class="inline" style="margin-top:10px;align-items:center">
+          <label style="display:flex;align-items:center;gap:8px;margin:0">
+            <input type="checkbox" id="isTransfer" style="width:20px;height:20px"> 互轉
+          </label>
         </div>
-        <div id="transferFields" style="display:none;">
+
+        <div id="transferFields" style="display:none;margin-top:8px">
           <label>轉入帳戶</label>
           <select id="accountIn">
             <option value="">（請選擇）</option>
@@ -215,14 +123,13 @@
           </select>
         </div>
 
-        <div class="rowbtns">
-          <button class="btn" type="submit">送出</button>
-        </div>
+        <label style="margin-top:10px">備註</label><input id="note" placeholder="">
+        <div class="rowbtns"><button class="btn" type="submit">送出</button></div>
       </form>
     </div>
 
     <div class="card">
-      <h1>本機發送紀錄</h1>
+      <h1>發送紀錄</h1>
       <div class="rowbtns">
         <button class="btn secondary" id="btnExport" type="button">匯出 CSV</button>
         <button class="btn secondary" id="btnClear" type="button">清除紀錄</button>
@@ -237,7 +144,7 @@
     <div class="card">
       <h1>最新 N 筆（雲端）</h1>
       <div class="inline">
-        <input type="number" id="rLimit" value="5" min="1" max="50" style="max-width:120px" />
+        <input type="number" id="rLimit" value="10" min="1" max="50" style="max-width:120px" />
         <select id="rAccount">
           <option value="">全部帳戶</option>
           <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
@@ -299,21 +206,16 @@
         <input id="importDays" type="number" min="1" max="90" value="10" placeholder="最近 N 天（預設 10）">
         <button class="btn secondary" id="btnImport" type="button">抓取外送帳單</button>
       </div>
-      <p class="muted">解析 Gmail（foodpanda / Uber Eats），不重複寫入《明細》（以 messageId 去重；刪除後可重抓）。</p>
+      <div class="inline" style="margin-top:8px;align-items:center">
+        <label style="display:flex;align-items:center;gap:8px;margin:0">
+          <input type="checkbox" id="resetWindow" style="width:18px;height:18px"> 允許重新匯入本視窗
+        </label>
+      </div>
+      <p class="muted">只抓 foodpanda / Uber Eats 訂單（排除發票、退款），不重複寫入《明細》；勾選「允許重新匯入」會清除此視窗的已處理清單。</p>
       <p class="muted mono" id="importHint">—</p>
     </div>
   </section>
 </div>
-
-<!-- Bottom tabs -->
-<nav class="tabs" role="tablist" aria-label="頁籤">
-  <div class="tabbar">
-    <a class="tab" href="#home"><span class="ico">🧾</span>記帳</a>
-    <a class="tab" href="#recent"><span class="ico">🕒</span>最新</a>
-    <a class="tab" href="#balance"><span class="ico">📊</span>餘額</a>
-    <a class="tab" href="#settings"><span class="ico">⚙️</span>設定</a>
-  </div>
-</nav>
 
 <div id="toast" class="toast"></div>
 
@@ -348,21 +250,16 @@ const OWNERS = ['欣宜','喬猷'];
 const itemSelect = $('itemSelect'), itemOther = $('itemOther');
 itemSelect.onchange = ()=>{ if(itemSelect.value==='其他'){ itemOther.style.display='block'; itemOther.focus(); } else { itemOther.style.display='none'; itemOther.value=''; } };
 
-/* 記帳：互轉切換（滑動開關，邏輯不變） */
+/* 記帳：互轉切換 */
 $('isTransfer').onchange = ()=>{
   const on = $('isTransfer').checked;
   $('transferFields').style.display = on ? 'block' : 'none';
-  if (on){
-    $('category').value='平衡'; $('category').disabled=true;
-    itemSelect.value='其他'; itemOther.style.display='block'; itemOther.value='內控互轉';
-  } else {
-    $('category').disabled=false;
-    if(itemSelect.value==='其他' && itemOther.value==='內控互轉'){ itemOther.value=''; itemOther.style.display='none'; }
-  }
+  if (on){ $('category').value='平衡'; $('category').disabled=true; itemSelect.value='其他'; itemOther.style.display='block'; itemOther.value='內控互轉'; }
+  else { $('category').disabled=false; if($('category').value==='平衡') $('category').value=''; if(itemSelect.value==='其他' && itemOther.value==='內控互轉'){ itemOther.value=''; itemOther.style.display='none'; itemSelect.value=''; } }
 };
 
 /* 本機發送紀錄 */
-const SENT_KEY='spend.sent.v18';
+const SENT_KEY='spend.sent.v20';
 function loadSent(){ try{return JSON.parse(localStorage.getItem(SENT_KEY)||'[]');}catch{return[];} }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
 function addSent(rec){ const list=loadSent(); list.push(rec); saveSent(list); }
@@ -373,7 +270,7 @@ function renderLog(){
   for(const r of list){
     const isOut=r.direction==='支出'; const amt=Math.abs(Number(r.amount||0));
     html+=`<tr><td class="muted">${r.ts||''}</td><td class="${isOut?'neg':'pos'}">${r.direction} ${isOut?'-':''}${amt.toFixed(2)}</td>
-      <td>${r.category||''}｜${r.account||''}</td><td>${r.item||''}｜${r.note||''}</td><td>${r.owner||''}</td></tr>`;
+      <td>${r.category}｜${r.account}</td><td>${r.item||''}｜${r.note||''}</td><td>${r.owner||''}</td></tr>`;
   }
   html+='</tbody></table>'; $('log').innerHTML=html;
 }
@@ -405,8 +302,8 @@ $('form').onsubmit=(e)=>{
   const note=$('note').value.trim();
   const accountIn=$('accountIn').value;
   if(!date||!amount||Number(amount)<=0){ toast('請輸入日期與金額'); return; }
-  if(!category){ toast('請選擇分類'); return; }
-  if(!account){ toast('請選擇帳戶'); return; }
+  if(!category && !isXfer){ toast('請選擇分類'); return; }
+  if(!account && !isXfer){ toast('請選擇帳戶'); return; }
   if(!item){ toast('請選擇或輸入項目'); return; }
   if(isXfer&&!accountIn){ toast('請選擇轉入帳戶'); return; }
 
@@ -430,10 +327,13 @@ $('form').onsubmit=(e)=>{
   backgroundSend(endpoint,payload);
 };
 
-/* 最新：查詢與渲染（允許刪改：所有來源） */
+/* 最新：查詢與渲染（含快照索引） */
+let RECENT_CACHE = [];                   // 記憶體快取（卡片顯示 + fallback）
+const RECENT_INDEX = new Map();          // key -> index
+
 $('btnRecent').onclick=async()=>{
   const endpoint=$('endpoint').value.trim(); if(!endpoint){ toast('請先設定 Endpoint'); return; }
-  const limit=Math.max(1,Math.min(50,Number($('rLimit').value)||5));
+  const limit=Math.max(1,Math.min(50,Number($('rLimit').value)||10));
   const params=new URLSearchParams({recent:String(limit)});
   const acc=$('rAccount').value.trim(), cat=$('rCategory').value.trim(), own=$('rOwner').value.trim();
   if(acc)params.set('account',acc); if(cat)params.set('category',cat); if(own)params.set('owner',own);
@@ -441,7 +341,11 @@ $('btnRecent').onclick=async()=>{
   try{
     const res=await fetch(`${endpoint}?${params.toString()}`); if(!res.ok) throw 0;
     const data=await res.json(); if(!data.ok||!Array.isArray(data.records)) throw 0;
-    renderRecent(data.records); $('recentHint').textContent=`顯示最近 ${Math.min(data.records.length,limit)} 筆`; $('recentList').style.display='';
+    RECENT_CACHE = data.records.slice();
+    RECENT_INDEX.clear();
+    RECENT_CACHE.forEach((r,i)=>{ const k=r.createdAt? r.createdAt : `${r.date}|${r.amount}|${r.direction}|${r.owner}|${r.item}|${r.account}|${r.category}|${r.note}`; RECENT_INDEX.set(k,i); });
+    renderRecent(RECENT_CACHE);
+    $('recentHint').textContent=`顯示最近 ${Math.min(data.records.length,limit)} 筆`; $('recentList').style.display='';
   }catch{ $('recentHint').textContent='查詢失敗，請檢查 Endpoint/權限'; }
 };
 
@@ -455,24 +359,23 @@ function renderRecent(records){
   const listEl=$('recentList');
   listEl.innerHTML=records.map((r)=>{
     const amtRaw=Number(r.amount||0), isOut=(r.direction==='支出'); const amt=Math.abs(amtRaw);
-    const cls=isOut?'neg':'pos';
-    const meta=`<span class="chip">${r.category||'未分類'}</span><span class="chip">${r.account||'未指定帳戶'}</span><span class="chip">${r.owner||''}</span><span class="chip">${r.source||''}</span>`;
+    const cls=isOut?'neg':'pos'; const meta=`${r.category||''}・${r.account||''}・${r.owner||''}`;
     const text=`${r.item||''}${r.note?`｜${r.note}`:''}`;
-    const rawKey = r.createdAt || r.date || '';  // 原始 createdAt（給後端）
+    const rawKey = r.createdAt ? r.createdAt : `${r.date}|${r.amount}|${r.direction}|${r.owner}|${r.item}|${r.account}|${r.category}|${r.note}`;
     const escKey = cssEscape(rawKey);
     const isTransferRow=(r.category==='平衡' && r.item==='內控互轉');
     const itemInList=ITEM_OPTIONS.includes(r.item||'');
     const itemSelValue=itemInList?(r.item||''):'其他';
     const itemOtherValue=itemInList?'':(r.item||'');
 
-    return `<div class="list-item" data-key="${rawKey}">
+    return `<div class="list-item" id="row-${escKey}" data-key="${rawKey}">
       <div class="list-head">
-        <div class="list-amt ${cls}">${isOut?'-':''}${amt.toFixed(2)}</div>
-        <div class="list-meta">${rawKey}</div>
+        <div id="amtShow-${escKey}" class="list-amt ${cls}">${isOut?'-':''}${amt.toFixed(2)}</div>
+        <div class="list-meta"><span>${r.createdAt || r.date || ''}</span></div>
       </div>
-      <div class="list-meta" style="margin-bottom:4px">${meta}</div>
-      <div class="list-body clamp2">${text}</div>
-      <div class="rowbtns" style="margin-top:10px">
+      <div class="list-meta"><span>${meta}</span></div>
+      <div class="list-body clamp2" id="text-${escKey}">${text}</div>
+      <div class="rowbtns" style="margin-top:8px">
         <button class="btn secondary" type="button" onclick="toggleEdit('${rawKey}')">✏️ 編輯</button>
         <button class="btn secondary" type="button" onclick="askDelete('${rawKey}')">🗑 刪除</button>
       </div>
@@ -515,6 +418,9 @@ function editItemChanged(rawKey){
 
 async function submitEdit(rawKey, isTransfer, dir){
   const escKey = cssEscape(rawKey);
+  const idx = RECENT_INDEX.get(rawKey);
+  const snap = (idx!=null)? RECENT_CACHE[idx] : null;
+
   const amt=Number(($('amt-'+escKey)?.value)||'0'); if(!(amt>0)){ toast('金額必填'); return; }
   const note=$('note-'+escKey)?.value ?? '';
   const account=$('acc-'+escKey)?.value ?? '';
@@ -523,26 +429,88 @@ async function submitEdit(rawKey, isTransfer, dir){
   const itemSel=$('itemSel-'+escKey)?.value ?? '';
   const itemOther=$('itemOther-'+escKey)?.value?.trim() ?? '';
   const item=(itemSel==='其他')?itemOther:itemSel;
-  const apiKey=$('apiKey').value.trim();
 
-  const payload={ action:'update', createdAt:rawKey, amount:String(amt), note, account, category, owner, item:item||'', apiKey };
+  const apiKey=$('apiKey').value.trim();
+  const payload={ action:'update', amount:String(amt), note, account, category, owner, item:item||'', apiKey };
+  // 僅在「真的有 createdAt」時才傳（避免把組合鍵當 createdAt）
+  if(snap?.createdAt){ payload.createdAt = snap.createdAt; }
   if(isTransfer){ const ain=$('accIn-'+escKey)?.value ?? ''; payload.isTransfer='true'; if(ain) payload.accountIn=ain; }
-  else { payload.direction=dir; }
+  else { payload.direction = (snap?.direction) || dir || '支出'; }
+
+  // fallback（供後端寬鬆比對）
+  if (snap){
+    payload['fallback-date']      = snap.date || '';
+    payload['fallback-category']  = snap.category || '';
+    payload['fallback-account']   = snap.account || '';
+    payload['fallback-item']      = snap.item || '';
+    payload['fallback-note']      = snap.note ?? '';
+    payload['fallback-direction'] = snap.direction || '';
+    payload['fallback-owner']     = snap.owner || '';
+    payload['fallback-amount']    = String(Number(snap.amount||0));
+  }
 
   try{
-    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:new URLSearchParams(payload).toString() });
+    const res=await fetch($('endpoint').value.trim(), {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:new URLSearchParams(payload).toString()
+    });
     const data=await res.json(); if(!data.ok) throw new Error(data.error||'更新失敗');
-    toast('已更新'); $('btnRecent').click();
+
+    // 就地更新
+    if(idx!=null){
+      const rec = RECENT_CACHE[idx];
+      const finalDir = (payload.direction||rec.direction);
+      rec.amount = finalDir==='支出' ? -Math.abs(amt) : Math.abs(amt);
+      if(note!=='' && note!=null) rec.note = note;
+      if(account) rec.account = account;
+      if(category) rec.category = category;
+      if(owner) rec.owner = owner;
+      if(item) rec.item = item;
+
+      const showAmt = Math.abs(Number(rec.amount||0)).toFixed(2);
+      const isOut = finalDir === '支出';
+      const amtEl = $('amtShow-'+escKey);
+      if(amtEl){ amtEl.textContent = (isOut?'-':'') + showAmt; amtEl.className = 'list-amt ' + (isOut?'neg':'pos'); }
+      const textEl = $('text-'+escKey);
+      if(textEl){ textEl.textContent = `${rec.item||''}${rec.note?`｜${rec.note}`:''}`; }
+    }
+    toast('已更新'); toggleEdit(rawKey);
   }catch(e){ toast('更新失敗：'+e.message); }
 }
 
 async function askDelete(rawKey){
   if(!confirm('確定刪除此筆（互轉會自動刪兩列）？')) return;
+  const idx = RECENT_INDEX.get(rawKey);
+  const snap = (idx!=null)? RECENT_CACHE[idx] : null;
+
   const apiKey=$('apiKey').value.trim();
+  const payload = { action:'delete', apiKey };
+  if(snap?.createdAt){ payload.createdAt = snap.createdAt; }
+
+  if (snap){
+    payload['fallback-date']      = snap.date || '';
+    payload['fallback-category']  = snap.category || '';
+    payload['fallback-account']   = snap.account || '';
+    payload['fallback-item']      = snap.item || '';
+    payload['fallback-note']      = snap.note ?? '';
+    payload['fallback-direction'] = snap.direction || '';
+    payload['fallback-owner']     = snap.owner || '';
+    payload['fallback-amount']    = String(Number(snap.amount||0));
+  }
+
   try{
-    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:new URLSearchParams({action:'delete', createdAt:rawKey, apiKey}).toString() });
+    const res=await fetch($('endpoint').value.trim(), {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+      body:new URLSearchParams(payload).toString()
+    });
     const data=await res.json(); if(!data.ok) throw new Error(data.error||'刪除失敗');
-    toast('已刪除'); $('btnRecent').click();
+
+    const card = document.getElementById('row-'+cssEscape(rawKey));
+    if(card) card.remove();
+    if(idx!=null){ RECENT_CACHE.splice(idx,1); RECENT_INDEX.delete(rawKey); }
+    toast('已刪除');
   }catch(e){ toast('刪除失敗：'+e.message); }
 }
 
@@ -571,13 +539,15 @@ function loadCfg(){ $('cfgHint').textContent = $('endpoint').value ? '已設定 
 $('btnTest').onclick=async()=>{ try{ const r=await fetch($('endpoint').value.trim()+'?ping=1'); toast(r.ok?'連線正常':'連線失敗'); }catch{ toast('連線失敗'); } };
 $('btnSaveCfg').onclick=()=>{ loadCfg(); toast('設定已儲存'); };
 
-/* 手動匯入 Gmail 外送帳單（預設 10 天） */
+/* 手動匯入 Gmail 外送帳單 */
 $('btnImport').onclick=async()=>{
   const endpoint=$('endpoint').value.trim(); if(!endpoint){ toast('請先在「設定」填入 Endpoint'); return; }
-  const days=Math.max(1,Math.min(90,Number($('importDays').value)||10)); $('importHint').textContent='處理中…';
+  const days=Math.max(1,Math.min(90,Number($('importDays').value)||10));
+  const reset=$('resetWindow').checked ? 'true' : 'false';
+  $('importHint').textContent='處理中…';
   try{
     const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-      body:new URLSearchParams({action:'ingest_gmail',days:String(days),apiKey:$('apiKey').value.trim()}).toString()});
+      body:new URLSearchParams({action:'ingest_gmail',days:String(days),resetWindow:reset,apiKey:$('apiKey').value.trim()}).toString()});
     const data=await res.json(); if(!data.ok) throw new Error(data.error||'匯入失敗');
     toast(`完成：新增 ${data.added||0} 筆`); $('importHint').textContent=`完成：新增 ${data.added||0} 筆（耗時 ${data.elapsedMs||0} ms）`;
     if(location.hash==='#recent'){ $('btnRecent').click(); }
