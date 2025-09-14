@@ -15,7 +15,7 @@
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--text)}
   .container{max-width:720px;margin:auto;padding:12px 12px 80px}
   .tabs{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line)}
-  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+  .tabbar{display:grid;grid-template-columns:repeat(4,1fr)}
   .tab{display:flex;gap:6px;align-items:center;justify-content:center;padding:12px 8px;text-decoration:none;color:#334155;border-bottom:2px solid transparent}
   .tab.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:700}
   section[hidden]{display:none}
@@ -49,7 +49,6 @@
   .right{text-align:right}
   .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;border:1px solid #111827;padding:10px 12px;border-radius:10px;display:none;box-shadow:var(--shadow);max-width:90%;font-size:14px}
   .toast.show{display:block}
-  /* 互轉：checkbox 與文字同列，括弧說明移除 */
   .switchline{display:flex;align-items:center;gap:10px;margin-top:6px}
   .switchline input[type="checkbox"]{width:20px;height:20px}
 </style>
@@ -196,9 +195,20 @@
       <h1>外送帳單匯入</h1>
       <div class="inline">
         <input id="importDays" type="number" min="1" max="90" value="10" placeholder="最近 N 天（預設 10）">
+        <select id="importPlatform">
+          <option value="">Foodpanda + Uber</option>
+          <option value="foodpanda">只抓 Foodpanda</option>
+          <option value="uber">只抓 Uber Eats</option>
+        </select>
+      </div>
+      <div class="switchline">
+        <input type="checkbox" id="importForce">
+        <label for="importForce" style="margin:0">重新匯入（忽略已處理）</label>
+      </div>
+      <div class="rowbtns" style="margin-top:8px">
         <button class="btn secondary" id="btnImport" type="button">抓取外送帳單</button>
       </div>
-      <p class="muted">只抓 Foodpanda / Uber Eats 訂單；排除退款與發票；不重複寫入（點此按鈕會帶 force 允許刪除後重匯）。</p>
+      <p class="muted">只抓 Foodpanda / Uber Eats 訂單；排除退款與發票。勾選「重新匯入」可把同區間重灌回表。</p>
       <p class="muted mono" id="importHint">—</p>
     </div>
   </section>
@@ -237,7 +247,7 @@ const OWNERS = ['欣宜','喬猷'];
 const itemSelect = $('itemSelect'), itemOther = $('itemOther');
 itemSelect.onchange = ()=>{ if(itemSelect.value==='其他'){ itemOther.style.display='block'; itemOther.focus(); } else { itemOther.style.display='none'; itemOther.value=''; } };
 
-/* 記帳：互轉切換（同列） */
+/* 記帳：互轉切換 */
 $('isTransfer').onchange = ()=>{
   const on = $('isTransfer').checked;
   $('transferFields').style.display = on ? 'block' : 'none';
@@ -314,7 +324,7 @@ $('form').onsubmit=(e)=>{
   backgroundSend(endpoint,payload);
 };
 
-/* 最新：查詢與渲染（全面可編輯/刪除） */
+/* 最新：查詢與渲染 */
 $('btnRecent').onclick=async()=>{
   const endpoint=$('endpoint').value.trim(); if(!endpoint){ toast('請先設定 Endpoint'); return; }
   const limit=Math.max(1,Math.min(50,Number($('rLimit').value)||10));
@@ -337,7 +347,6 @@ function makeOptions(list, selected, includeEmpty=true, emptyLabel='（不更改
 
 function renderRecent(records){
   const listEl=$('recentList');
-  // 使用 DocumentFragment 提升渲染速度
   const frag = document.createDocumentFragment();
   listEl.innerHTML='';
   records.forEach((r)=>{
@@ -460,13 +469,15 @@ function loadCfg(){ $('cfgHint').textContent = $('endpoint').value ? '已設定 
 $('btnTest').onclick=async()=>{ try{ const r=await fetch($('endpoint').value.trim()+'?ping=1'); toast(r.ok?'連線正常':'連線失敗'); }catch{ toast('連線失敗'); } };
 $('btnSaveCfg').onclick=()=>{ loadCfg(); toast('設定已儲存'); };
 
-/* 手動匯入 Gmail 外送帳單（預設帶 force=true，便於刪除後重匯） */
+/* 手動匯入 Gmail 外送帳單（可勾選「重新匯入」） */
 $('btnImport').onclick=async()=>{
   const endpoint=$('endpoint').value.trim(); if(!endpoint){ toast('請先在「設定」填入 Endpoint'); return; }
-  const days=Math.max(1,Math.min(90,Number($('importDays').value)||10)); $('importHint').textContent='處理中…';
+  const days=Math.max(1,Math.min(90,Number($('importDays').value)||10));
+  const force = $('importForce').checked ? 'true' : 'false';
+  $('importHint').textContent='處理中…';
   try{
     const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-      body:new URLSearchParams({action:'ingest_gmail',days:String(days),force:'true',apiKey:$('apiKey').value.trim()}).toString()});
+      body:new URLSearchParams({action:'ingest_gmail',days:String(days),force,apiKey:$('apiKey').value.trim()}).toString()});
     const data=await res.json(); if(!data.ok) throw new Error(data.error||'匯入失敗');
     toast(`完成：新增 ${data.added||0} 筆`); $('importHint').textContent=`完成：新增 ${data.added||0} 筆（耗時 ${data.elapsedMs||0} ms）`;
     if(location.hash==='#recent'){ $('btnRecent').click(); }
