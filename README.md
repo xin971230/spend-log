@@ -1,4 +1,3 @@
-[Uploading index.html…]()
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -30,7 +29,6 @@
 <body>
   <div class="wrap">
 
-    <!-- 表單 -->
     <div class="card">
       <h1>收支快記</h1>
       <form id="form" autocomplete="off">
@@ -95,7 +93,6 @@
       </form>
     </div>
 
-    <!-- 設定 -->
     <div class="card" id="settings">
       <h1>設定</h1>
       <label>Endpoint URL</label>
@@ -109,7 +106,6 @@
       <p class="muted mono" id="cfgHint"></p>
     </div>
 
-    <!-- 發送紀錄 -->
     <div class="card">
       <h1>發送紀錄</h1>
       <div class="rowbtns">
@@ -120,7 +116,6 @@
       <div class="log" id="log"></div>
     </div>
 
-    <!-- 餘額查詢（按月份/登記人，顯示「各帳戶餘額」＋總計） -->
     <div class="card">
       <h1>餘額查詢</h1>
       <label>月份（yyyy-MM，可留空）</label>
@@ -151,6 +146,8 @@
   <script>
     const $ = id => document.getElementById(id);
     const toast = (msg) => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+    
+    let isSubmitting = false; // <-- ⭐ 修改：新增提交旗標，防止重複提交
 
     // 統一帳戶清單（也用於餘額表順序）
     const ACCOUNTS = ['合作金庫','刷卡','國泰世華','華南銀行','黃中信','黃現金','黃郵局','黃LINE','彰化銀行','蕭現金','蕭郵局','蕭LINE'];
@@ -230,6 +227,9 @@
     $('form').onsubmit = (e)=>{
       e.preventDefault();
 
+      if (isSubmitting) return; // <-- ⭐ 修改：如果正在提交，直接跳出
+      isSubmitting = true;     // <-- ⭐ 修改：標記為正在提交
+
       const date = $('date').value;
       const owner = $('owner').value;
       const direction = $('direction').value;
@@ -241,8 +241,16 @@
       const note = $('note').value.trim();
       const accountIn = $('accountIn').value;
 
-      if (!date || !amount || Number(amount) <= 0 || !category || !account || !item) { toast('請完整填寫資料'); return; }
-      if (isXfer && !accountIn){ toast('請填入「轉入帳戶」'); return; }
+      if (!date || !amount || Number(amount) <= 0 || !category || !account || !item) {
+        toast('請完整填寫資料');
+        isSubmitting = false; // <-- ⭐ 修改：驗證失敗，重置旗標
+        return;
+      }
+      if (isXfer && !accountIn){
+        toast('請填入「轉入帳戶」');
+        isSubmitting = false; // <-- ⭐ 修改：驗證失敗，重置旗標
+        return;
+      }
 
       const endpoint = $('endpoint').value.trim();
       const apiKey = $('apiKey').value.trim();
@@ -275,6 +283,9 @@
       if (isXfer){ payload.isTransfer='true'; payload.accountIn=norm(accountIn); }
       else { payload.direction = direction; }
       backgroundSend(endpoint, payload);
+
+      // <-- ⭐ 修改：1秒後才允許下次提交，防止網路延遲或雙擊造成的重複記帳
+      setTimeout(() => { isSubmitting = false; }, 1000); 
     };
 
     // 餘額查詢（各帳戶）
