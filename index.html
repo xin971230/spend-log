@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>收支快記｜SPA</title>
 <style>
   *,*::before,*::after{box-sizing:border-box}
@@ -26,10 +26,12 @@
   .muted{color:var(--muted);font-size:12px}
   .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
   input,select{display:block;width:100%;max-width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:16px}
+  input:disabled, select:disabled { background: var(--line); color: var(--muted); opacity: 0.8; }
   .inline{display:flex;gap:10px;align-items:center}
   .inline > *{flex:1}
   .rowbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
   .btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:12px 14px;border:none;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;font-size:16px;cursor:pointer}
+  .btn:disabled { background: var(--muted); opacity: 0.7; cursor: not-allowed; }
   .btn.secondary{background:#64748b}
   .btn.ghost{background:#fff;border:1px solid var(--line);color:#111827}
   .log{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px}
@@ -51,6 +53,12 @@
   .toast.show{display:block}
   .switchline{display:flex;align-items:center;gap:10px;margin-top:6px}
   .switchline input[type="checkbox"]{width:20px;height:20px}
+  
+  #splitList { margin-top: 12px; }
+  #splitList table { width: 100%; font-size: 14px; border-collapse: collapse; }
+  #splitList th, #splitList td { padding: 6px; text-align: left; border-bottom: 1px solid var(--line); }
+  #splitList .del-btn { color: var(--bad); cursor: pointer; padding-left: 8px; }
+  #splitList tfoot td { border: none; font-weight: 600; text-align: right; padding-top: 8px; color: var(--brand); }
 </style>
 </head>
 <body>
@@ -65,7 +73,6 @@
 </div>
 
 <div class="container">
-  <!-- 記帳 -->
   <section data-view="home">
     <div class="card">
       <h1>收支快記</h1>
@@ -113,7 +120,12 @@
           </select>
         </div>
         <label>備註</label><input id="note" placeholder="">
-        <div class="rowbtns"><button class="btn" type="submit">送出</button></div>
+
+        <hr style="border:0; border-top: 1px dashed var(--line); margin: 16px 0;">
+        <div id="splitList"></div>
+        <button class="btn secondary" type="button" id="btnAddSplit" style="width:100%">➕ 新增分項 (暫存)</button>
+        
+        <div class="rowbtns" style="margin-top:12px"><button class="btn" type="submit" id="btnSubmit" style="width:100%">送出</button></div>
       </form>
     </div>
 
@@ -128,7 +140,6 @@
     </div>
   </section>
 
-  <!-- 最新 -->
   <section data-view="recent" hidden>
     <div class="card">
       <h1>最新 N 筆（雲端）</h1>
@@ -156,8 +167,6 @@
       <div class="list" id="recentList" style="display:none"></div>
     </div>
   </section>
-
-  <!-- 餘額 -->
   <section data-view="balance" hidden>
     <div class="card">
       <h1>餘額查詢</h1>
@@ -176,8 +185,6 @@
       </div>
     </div>
   </section>
-
-  <!-- 設定 -->
   <section data-view="settings" hidden>
     <div class="card">
       <h1>設定</h1>
@@ -190,7 +197,6 @@
       </div>
       <p class="muted mono" id="cfgHint"></p>
     </div>
-
     <div class="card">
       <h1>外送帳單匯入</h1>
       <div class="inline">
@@ -230,6 +236,10 @@ const $ = id => document.getElementById(id);
 const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
 function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
 
+/* 旗標與暫存 */
+let isSubmitting = false; 
+let currentSplits = []; 
+
 /* 常量 */
 const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
 const CATEGORIES = ['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
@@ -251,11 +261,95 @@ itemSelect.onchange = ()=>{ if(itemSelect.value==='其他'){ itemOther.style.dis
 $('isTransfer').onchange = ()=>{
   const on = $('isTransfer').checked;
   $('transferFields').style.display = on ? 'block' : 'none';
-  if (on){ $('category').value='平衡'; $('category').disabled=true; itemSelect.value='其他'; itemOther.style.display='block'; itemOther.value='內控互轉'; }
+  if (on){ 
+    $('category').value='平衡'; $('category').disabled=true; itemSelect.value='其他'; itemOther.style.display='block'; itemOther.value='內控互轉'; 
+    if (currentSplits.length > 0) {
+      toast('清除分帳暫存以啟用互轉');
+      currentSplits = [];
+      renderSplits();
+    }
+  }
   else { $('category').disabled=false; if(itemOther.value==='內控互轉'){ itemOther.value=''; itemSelect.value=''; itemOther.style.display='none'; } }
 };
 
-/* 本機發送紀錄 */
+/* 分帳相關函式 */
+function setSharedFieldsDisabled(disabled) {
+  $('date').disabled = disabled;
+  $('owner').disabled = disabled;
+  $('account').disabled = disabled;
+}
+
+function renderSplits() {
+  const btnSubmit = $('btnSubmit');
+  if (currentSplits.length === 0) {
+    $('splitList').innerHTML = '';
+    btnSubmit.textContent = '送出'; 
+    setSharedFieldsDisabled(false); // 解鎖
+    return;
+  }
+  
+  let html = '<table><thead><tr><th>金額</th><th>分類/項目</th><th>備註</th><th></th></tr></thead><tbody>';
+  let totalSplit = 0;
+  currentSplits.forEach((s, i) => {
+    const signedAmt = s.direction === '支出' ? s.amount : -s.amount;
+    totalSplit += signedAmt; 
+    const isOut = s.direction === '支出';
+    html += `<tr>
+      <td class="right ${isOut?'neg':'pos'}">${isOut?'-':''}${s.amount.toFixed(2)}</td>
+      <td>${s.category}｜${s.item}</td>
+      <td>${s.note}</td>
+      <td><span class="del-btn" data-idx="${i}">✕</span></td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr><td colspan="4">暫存總計 (淨支出)：${totalSplit.toFixed(2)}</td></tr></tfoot>`;
+  $('splitList').innerHTML = html;
+  
+  btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`;
+  setSharedFieldsDisabled(true); // 鎖定
+}
+
+$('btnAddSplit').onclick = () => {
+  if (currentSplits.length === 0) {
+    if (!$('date').value) { toast('請先填寫日期'); $('date').focus(); return; }
+    if (!$('account').value) { toast('請先選擇轉出帳戶'); $('account').focus(); return; }
+  }
+
+  const amount = Number($('amount').value || 0);
+  const category = $('category').value;
+  const item = ($('itemSelect').value==='其他') ? $('itemOther').value.trim() : $('itemSelect').value;
+  const note = $('note').value.trim();
+  const direction = $('direction').value;
+
+  if ($('isTransfer').checked) {
+    toast('互轉模式下無法新增分項');
+    return;
+  }
+  if (!amount || amount <= 0 || !category || !item) {
+    toast('分項的金額(>0)、分類、項目 均須填寫');
+    return;
+  }
+  
+  currentSplits.push({ amount, category, item, note, direction });
+  renderSplits(); 
+  
+  $('amount').value = '';
+  $('itemSelect').value = '';
+  $('itemOther').value = '';
+  $('itemOther').style.display = 'none';
+  $('note').value = '';
+  $('amount').focus(); 
+};
+
+$('splitList').onclick = (e) => {
+  if (e.target.classList.contains('del-btn')) {
+    const idx = Number(e.target.dataset.idx);
+    currentSplits.splice(idx, 1);
+    renderSplits(); 
+  }
+};
+
+
+/* 本機發送紀錄 (功能不變) */
 const SENT_KEY='spend.sent.v19';
 function loadSent(){ try{return JSON.parse(localStorage.getItem(SENT_KEY)||'[]');}catch{return[];} }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
@@ -281,7 +375,7 @@ $('btnExport').onclick=()=>{
 };
 $('btnClear').onclick=()=>{ if(confirm('清除本機發送紀錄？')){ localStorage.removeItem(SENT_KEY); renderLog(); } };
 
-/* 背景送出 */
+/* 背景送出 (功能不變) */
 function backgroundSend(url, payloadObj){
   const body=new URLSearchParams(payloadObj).toString();
   const mime='application/x-www-form-urlencoded;charset=UTF-8';
@@ -289,40 +383,99 @@ function backgroundSend(url, payloadObj){
   else{ fetch(url,{method:'POST',headers:{'Content-Type':mime},body,keepalive:true}).catch(()=>{}); }
 }
 
-/* 新增送出 */
+/* ⭐ 整合：新增送出 (已修復錯誤) */
 $('form').onsubmit=(e)=>{
   e.preventDefault();
-  const date=$('date').value, owner=$('owner').value, direction=$('direction').value, amount=$('amount').value, isXfer=$('isTransfer').checked;
-  const category=isXfer?'平衡':$('category').value;
-  const account=$('account').value;
-  const item=isXfer?'內控互轉':((itemSelect.value==='其他')?$('itemOther').value.trim():itemSelect.value);
-  const note=$('note').value.trim();
-  const accountIn=$('accountIn').value;
-  if(!date||!amount||Number(amount)<=0){ toast('請輸入日期與金額'); return; }
-  if(!isXfer && !category){ toast('請選擇分類'); return; }
-  if(!isXfer && !account){ toast('請選擇帳戶'); return; }
-  if(!item){ toast('請選擇或輸入項目'); return; }
-  if(isXfer&&!accountIn){ toast('請選擇轉入帳戶'); return; }
+  
+  if (isSubmitting) return; 
+  isSubmitting = true;     
+  const btnSubmit = $('btnSubmit');
+  btnSubmit.disabled = true; 
 
   const endpoint=$('endpoint').value.trim(); const apiKey=$('apiKey').value.trim();
-  const d=new Date(); const pad=n=>String(n).padStart(2,'0'); const ts=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const date=$('date').value, owner=$('owner').value, account=$('account').value;
   const norm=s=>s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
 
-  if(isXfer){
-    addSent({ts,date,owner,direction:'支出',amount:Number(amount),category,account:norm(account),item,note});
-    addSent({ts,date,owner,direction:'收入',amount:Number(amount),category,account:norm(accountIn),item,note});
-  }else{
-    addSent({ts,date,owner,direction,amount:Number(amount),category,account:norm(account),item,note});
-  }
-  renderLog();
-  $('amount').value=''; $('itemOther').value=''; $('note').value='';
-  if(isXfer){ $('isTransfer').checked=false; $('transferFields').style.display='none'; $('category').disabled=false; }
-  toast(isXfer?'已送出（背景處理：互轉×2）':'已送出（背景處理）');
+  // 共用欄位驗證 (無論單筆或分帳都需要)
+  if (!date) { toast('請輸入日期'); isSubmitting = false; btnSubmit.disabled = false; return; }
+  if (!account) { toast('請選擇帳戶'); isSubmitting = false; btnSubmit.disabled = false; return; }
 
-  const payload={ date, owner, amount, category, account:norm(account), item, note, apiKey };
-  if(isXfer){ payload.isTransfer='true'; payload.accountIn=norm(accountIn); } else { payload.direction=direction; }
+  const d=new Date(); const pad=n=>String(n).padStart(2,'0'); const ts=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  
+  let payload={ date, owner, account:norm(account), apiKey };
+  let localLogs = []; 
+
+  if (currentSplits.length > 0) {
+    // --- (A) 分帳模式 ---
+    
+    // ⭐ 修復：移除錯誤的檢查 `if (Number($('amount').value || 0) > 0)`
+    // 現在它會直接提交暫存列表
+
+    payload.action = 'split_add'; 
+    payload.splits_json = JSON.stringify(currentSplits);
+    
+    currentSplits.forEach(s => {
+      localLogs.push({ ts, date, owner, direction: s.direction, amount: s.amount, category: s.category, account: norm(account), item: s.item, note: s.note });
+    });
+    
+    toast(`已送出 (背景處理：分帳 ×${currentSplits.length})`);
+    
+    currentSplits = [];
+    renderSplits(); // 清空列表、還原按鈕、解鎖欄位
+
+    // ⭐ 新增：同時清空可能殘留的表單資料
+    $('amount').value=''; 
+    $('itemSelect').value = '';
+    $('itemOther').value = '';
+    $('itemOther').style.display = 'none';
+    $('note').value='';
+
+  } else {
+    // --- (B) 單筆模式 ---
+    const direction=$('direction').value, amount=$('amount').value, isXfer=$('isTransfer').checked;
+    const category=isXfer?'平衡':$('category').value;
+    const item=isXfer?'內控互轉':((itemSelect.value==='其他')?$('itemOther').value.trim():itemSelect.value);
+    const note=$('note').value.trim();
+    const accountIn=$('accountIn').value;
+
+    if(!amount||Number(amount)<=0){ toast('請輸入金額'); isSubmitting = false; btnSubmit.disabled = false; return; }
+    if(!isXfer && !category){ toast('請選擇分類'); isSubmitting = false; btnSubmit.disabled = false; return; }
+    if(!item){ toast('請選擇或輸入項目'); isSubmitting = false; btnSubmit.disabled = false; return; }
+    if(isXfer&&!accountIn){ toast('請選擇轉入帳戶'); isSubmitting = false; btnSubmit.disabled = false; return; }
+    
+    if(isXfer){
+      addSent({ts,date,owner,direction:'支出',amount:Number(amount),category,account:norm(account),item,note});
+      addSent({ts,date,owner,direction:'收入',amount:Number(amount),category,account:norm(accountIn),item,note});
+    }else{
+      addSent({ts,date,owner,direction,amount:Number(amount),category,account:norm(account),item,note});
+    }
+    
+    Object.assign(payload, { amount, category, item, note });
+    if(isXfer){ payload.isTransfer='true'; payload.accountIn=norm(accountIn); } else { payload.direction=direction; }
+    
+    toast(isXfer?'已送出（背景處理：互轉×2）':'已送出（背景處理）');
+    
+    $('amount').value=''; $('itemOther').value=''; $('note').value='';
+    if($('itemSelect').value !== '其他') $('itemSelect').value = '';
+    if(isXfer){ $('isTransfer').checked=false; $('transferFields').style.display='none'; $('category').disabled=false; }
+  }
+
+  // --- (C) 共用：執行送出與寫入 Log ---
+  localLogs.forEach(log => addSent(log));
+  renderLog();
   backgroundSend(endpoint,payload);
+  
+  setTimeout(() => { 
+    isSubmitting = false; 
+    btnSubmit.disabled = false; 
+    if (currentSplits.length === 0) {
+      btnSubmit.textContent = '送出'; 
+    }
+  }, 1000); 
 };
+
+
+/* (以下為 "最新" "餘額" "設定" "匯入" 等功能，均完整保留，無需修改) */
 
 /* 最新：查詢與渲染 */
 $('btnRecent').onclick=async()=>{
@@ -465,9 +618,18 @@ $('btnBalance').onclick=async()=>{
 };
 
 /* 設定 */
-function loadCfg(){ $('cfgHint').textContent = $('endpoint').value ? '已設定 Endpoint' : '尚未設定 Endpoint'; }
+function loadCfg(){ 
+  $('endpoint').value = localStorage.getItem('spend.endpoint') || $('endpoint').value;
+  $('apiKey').value = localStorage.getItem('spend.apiKey') || '';
+  $('cfgHint').textContent = $('endpoint').value ? '已設定 Endpoint' : '尚未設定 Endpoint'; 
+}
 $('btnTest').onclick=async()=>{ try{ const r=await fetch($('endpoint').value.trim()+'?ping=1'); toast(r.ok?'連線正常':'連線失敗'); }catch{ toast('連線失敗'); } };
-$('btnSaveCfg').onclick=()=>{ loadCfg(); toast('設定已儲存'); };
+$('btnSaveCfg').onclick=()=>{ 
+  localStorage.setItem('spend.endpoint', $('endpoint').value.trim());
+  localStorage.setItem('spend.apiKey', $('apiKey').value.trim());
+  loadCfg(); 
+  toast('設定已儲存'); 
+};
 
 /* 手動匯入 Gmail 外送帳單（可勾選「重新匯入」） */
 $('btnImport').onclick=async()=>{
