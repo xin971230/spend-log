@@ -7,22 +7,14 @@
   <style>
     /* --- 1. 護眼配色 (Eye Comfort Palette) --- */
     :root {
-      /* 背景：柔和的暖灰，避免刺眼純白 */
       --bg: #F5F7F9; 
       --card: #FFFFFF;
-      
-      /* 文字：使用深灰藍代替純黑，閱讀更舒適 */
       --text: #334155; 
       --text-light: #64748B;
-      
-      /* 主色：莫蘭迪藍 (低飽和度) */
       --primary: #5D7B9D; 
       --primary-light: #E2E8F0;
-      
-      /* 功能色：柔和紅與柔和綠 */
       --danger: #EF4444; 
       --success: #059669;
-      
       --radius: 16px;
       --border: #E2E8F0;
       --shadow: 0 2px 12px rgba(0,0,0,0.03);
@@ -37,7 +29,7 @@
       padding-bottom: 90px; /* 底部導航留白 */
     }
 
-    /* --- 3. 懸浮導航 (Glassmorphism) --- */
+    /* --- 3. 懸浮導航 --- */
     .nav {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
@@ -67,14 +59,12 @@
     }
     
     /* --- 5. 記帳核心區 --- */
-    /* 收支切換 (柔和版) */
     .seg-control { display: flex; background: var(--bg); border-radius: 12px; padding: 4px; margin: 0 16px 20px; }
     .seg-item { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; border-radius: 10px; color: var(--text-light); cursor: pointer; transition: 0.3s; }
     .seg-item.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); color: var(--text); }
     .seg-item[data-val="支出"].active { color: var(--danger); }
     .seg-item[data-val="收入"].active { color: var(--success); }
     
-    /* 金額輸入 */
     .big-input-wrapper { display: flex; justify-content: center; padding: 0 0 24px; }
     .currency-symbol { font-size: 24px; font-weight: 500; color: var(--text-light); margin-top: 12px; margin-right: 6px; }
     .big-input {
@@ -84,7 +74,6 @@
     }
     .big-input::placeholder { color: #E2E8F0; }
 
-    /* 表單列 */
     .input-row {
       display: flex; align-items: center; padding: 14px 20px;
       border-bottom: 1px solid var(--border); min-height: 54px;
@@ -108,7 +97,6 @@
     }
     .btn-main:active { transform: scale(0.98); box-shadow: 0 4px 10px rgba(93,123,157,0.2); }
     
-    /* 開關樣式 (柔和版) */
     .switch { position: relative; display: inline-block; width: 48px; height: 28px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; transition: .4s; border-radius: 34px; }
@@ -116,7 +104,6 @@
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* 分帳 */
     .split-row {
       display: flex; justify-content: space-between; padding: 14px 20px;
       border-bottom: 1px solid var(--border); background: #fff; font-size: 14px;
@@ -124,7 +111,6 @@
     .split-del { color: var(--text-light); font-weight: bold; margin-left: 16px; cursor: pointer; opacity: 0.5; }
     .split-del:hover { color: var(--danger); opacity: 1; }
 
-    /* 列表項目 (雙日期優化) */
     .record-item { 
       padding: 16px 20px; border-bottom: 1px solid var(--border); 
       display: flex; justify-content: space-between; align-items: flex-start; 
@@ -133,16 +119,12 @@
     .rec-title { font-size: 15px; font-weight: 600; color: var(--text); }
     .rec-meta { font-size: 12px; color: var(--text-light); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
     .rec-tag { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 11px; }
-    
-    /* 雙日期顯示區 */
     .rec-dates { font-size: 11px; color: #94A3B8; margin-top: 2px; font-family: monospace; }
-    
     .rec-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
     .rec-amt { font-size: 17px; font-weight: 600; font-family: monospace; }
     .rec-amt.neg { color: var(--text); }
     .rec-amt.pos { color: var(--success); }
 
-    /* 吐司訊息 */
     .toast {
       position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-60px);
       background: rgba(51, 65, 85, 0.95); color: white; padding: 12px 24px; border-radius: 30px;
@@ -180,6 +162,11 @@
         <div class="input-row">
           <span class="row-label">日期</span>
           <input type="date" id="date" class="row-input" required>
+        </div>
+
+        <div class="input-row">
+          <span class="row-label">登記人</span>
+          <select id="owner" class="row-input"><option>欣宜</option><option>喬猷</option></select>
         </div>
         
         <div class="input-row">
@@ -219,11 +206,6 @@
           <input id="note" class="row-input" placeholder="選填">
         </div>
         
-        <div class="input-row">
-          <span class="row-label">登記人</span>
-          <select id="owner" class="row-input"><option>欣宜</option><option>喬猷</option></select>
-        </div>
-
         <div class="input-row" style="justify-content: space-between;">
           <span class="row-label">帳戶互轉</span>
           <label class="switch">
@@ -287,11 +269,8 @@
 
   <section data-view="balance" class="container" hidden>
     <div class="card" style="padding:16px;">
-       <h2 style="margin:0 0 16px; font-size:16px; color:var(--text);">資產總覽</h2>
-       <div class="input-row">
-         <input id="qMonth" class="row-input" placeholder="月份 (2025-11) 空白為全部" style="text-align:left;">
-       </div>
-       <button class="btn-main" id="btnBalance" type="button" style="margin-top:12px; padding:12px;">查詢餘額</button>
+       <h2 style="margin:0 0 16px; font-size:16px; color:var(--text);">當下資產總覽</h2>
+       <button class="btn-main" id="btnBalance" type="button" style="margin-top:0; padding:12px;">查詢所有餘額</button>
     </div>
     
     <div class="card" id="balanceArea" style="display:none; padding:20px;">
@@ -344,14 +323,11 @@
   <div id="toast" class="toast">訊息</div>
 
 <script>
-/* --- UI 互動 --- */
 function setDirection(val) {
   $('direction').value = val;
   document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val));
 }
 function routeClick(name) { location.hash = '#' + name; }
-
-/* --- 核心邏輯 --- */
 const $ = id => document.getElementById(id);
 const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
 function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
@@ -528,7 +504,6 @@ function renderLog(){
   let h='';
   for(const r of list){
     const isOut = r.direction==='支出';
-    // ✅ 修復：強制使用 Math.abs 避免雙重負號
     const amt = Math.abs(Number(r.amount)); 
     const sign = isOut ? '-' : '';
     h += `<div class="record-item">
@@ -555,7 +530,6 @@ $('btnExport').onclick=()=>{
    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='log.csv'; a.click();
 };
 
-/* ✅ 最新紀錄 (雙日期 & 雙負號修復) */
 $('btnRecent').onclick=async()=>{
   const ep=$('endpoint').value.trim(); if(!ep) return;
   $('recentList').innerHTML='<div style="text-align:center;padding:20px">載入中...</div>';
@@ -569,24 +543,21 @@ $('btnRecent').onclick=async()=>{
       let h='';
       data.records.forEach(r => {
          const isOut = r.direction==='支出';
-         // ✅ 雙重保險：強制 Math.abs
          const amt = Math.abs(Number(r.amount));
          const sign = isOut ? '-' : '';
-         
-         // 日期處理
-         const dateDay = r.date.slice(5); // MM-DD
+         // ✅ 修正：只顯示 MM-DD
+         const dateDay = String(r.date).substring(0, 10).slice(5);
          let createdStr = '';
          if (r.createdAt) {
            const cDate = new Date(r.createdAt);
            if (!isNaN(cDate)) {
-             // 簡單格式化 MM-DD HH:mm
              const cM = String(cDate.getMonth()+1).padStart(2,'0');
              const cD = String(cDate.getDate()).padStart(2,'0');
              const cH = String(cDate.getHours()).padStart(2,'0');
              const cMin = String(cDate.getMinutes()).padStart(2,'0');
              createdStr = `${cM}-${cD} ${cH}:${cMin}`;
            } else {
-             createdStr = r.createdAt.substring(5, 16).replace('T',' '); // fallback
+             createdStr = r.createdAt.substring(5, 16).replace('T',' ');
            }
          }
 
@@ -635,7 +606,6 @@ async function submitEdit(rawKey, isTransfer, dir){
   const note=$('note-'+escKey)?.value ?? '';
   const apiKey=$('apiKey').value.trim();
   const payload={ action:'update', createdAt:rawKey, amount:String(amt), note, apiKey };
-  // 簡化版編輯只更新金額備註，若需完整編輯可擴充
   if(!isTransfer) payload.direction=dir;
   try{
     const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(payload).toString() });
@@ -647,7 +617,17 @@ async function submitEdit(rawKey, isTransfer, dir){
 async function askDelete(key){
   if(!confirm('確定刪除？')) return;
   try{
-    await fetch($('endpoint').value, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`});
+    // ✅ 修復：使用 URLSearchParams 確保字元正確編碼
+    const body = new URLSearchParams({
+        action: 'delete',
+        createdAt: key,
+        apiKey: $('apiKey').value
+    });
+    await fetch($('endpoint').value, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
+        body: body.toString()
+    });
     toast('已刪除'); $('btnRecent').click();
   }catch{ toast('刪除失敗'); }
 }
@@ -660,9 +640,8 @@ $('btnBalance').onclick=async()=>{
   $('balanceArea').style.display = 'block';
   
   try {
-     const m=$('qMonth').value.trim();
+     // ✅ 修正：移除 qMonth，直接查詢全時間總額
      const p = new URLSearchParams({balance:'1', by:'account'});
-     if(m) p.set('month',m);
      const res = await fetch(ep+'?'+p);
      const data = await res.json();
      
@@ -676,7 +655,7 @@ $('btnBalance').onclick=async()=>{
        });
        $('balanceListContainer').innerHTML = h;
        $('balanceTotal').textContent = data.total.toFixed(2);
-       $('balanceResult').textContent = `統計範圍: ${m||'全部時間'}`;
+       $('balanceResult').textContent = `統計範圍: 全部時間`;
      } else {
        $('balanceListContainer').innerHTML = '<div style="text-align:center">無數據</div>';
      }
