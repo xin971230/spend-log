@@ -2,8 +2,14 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>收支快記｜Comfort</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F5F7F9">
+  <title>收支快記</title>
+  
+  <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=💰&background=5D7B9D&color=fff&size=192&font-size=0.5&rounded=true">
+
   <style>
     /* --- 1. 護眼配色 (Eye Comfort Palette) --- */
     :root {
@@ -27,6 +33,9 @@
       font-family: "PingFang TC", "Noto Sans TC", -apple-system, BlinkMacSystemFont, sans-serif;
       height: 100vh; display: flex; flex-direction: column;
       padding-bottom: 90px; /* 底部導航留白 */
+      /* 瀏海屏適配 */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
 
     /* --- 3. 懸浮導航 --- */
@@ -132,7 +141,6 @@
       z-index: 2000; pointer-events: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
   </style>
 </head>
 <body>
@@ -156,22 +164,22 @@
 
         <div class="big-input-wrapper">
           <span class="currency-symbol">$</span>
-          <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal">
+          <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal" oninput="saveDraft()">
         </div>
 
         <div class="input-row">
           <span class="row-label">日期</span>
-          <input type="date" id="date" class="row-input" required>
+          <input type="date" id="date" class="row-input" required onchange="saveDraft()">
         </div>
 
         <div class="input-row">
           <span class="row-label">登記人</span>
-          <select id="owner" class="row-input"><option>欣宜</option><option>喬猷</option></select>
+          <select id="owner" class="row-input" onchange="saveDraft()"><option>欣宜</option><option>喬猷</option></select>
         </div>
         
         <div class="input-row">
           <span class="row-label">分類</span>
-          <select id="category" class="row-input">
+          <select id="category" class="row-input" onchange="saveDraft()">
             <option value="">選擇分類</option>
             <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
             <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
@@ -180,7 +188,7 @@
 
         <div class="input-row">
           <span class="row-label">帳戶</span>
-          <select id="account" class="row-input">
+          <select id="account" class="row-input" onchange="saveDraft()">
             <option value="">選擇帳戶</option>
             <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
             <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
@@ -191,8 +199,8 @@
         <div class="input-row">
           <span class="row-label">項目</span>
           <div style="flex:1; display:flex; justify-content:flex-end; gap:8px;">
-            <input id="itemOther" class="row-input" placeholder="輸入項目" style="display:none; border-bottom:1px dashed #94A3B8;">
-            <select id="itemSelect" class="row-input">
+            <input id="itemOther" class="row-input" placeholder="輸入項目" style="display:none; border-bottom:1px dashed #94A3B8;" oninput="saveDraft()">
+            <select id="itemSelect" class="row-input" onchange="saveDraft()">
               <option value="">選擇項目</option>
               <option value="食物">食物</option><option value="公司代墊">公司代墊</option>
               <option value="玩樂">玩樂</option><option value="交通">交通</option>
@@ -203,20 +211,20 @@
 
         <div class="input-row">
           <span class="row-label">備註</span>
-          <input id="note" class="row-input" placeholder="選填">
+          <input id="note" class="row-input" placeholder="選填" oninput="saveDraft()">
         </div>
         
         <div class="input-row" style="justify-content: space-between;">
           <span class="row-label">帳戶互轉</span>
           <label class="switch">
-            <input type="checkbox" id="isTransfer">
+            <input type="checkbox" id="isTransfer" onchange="saveDraft()">
             <span class="slider"></span>
           </label>
         </div>
         
         <div id="transferFields" class="input-row" style="display:none; background:#F1F5F9;">
           <span class="row-label" style="color:var(--primary)">轉入至</span>
-          <select id="accountIn" class="row-input">
+          <select id="accountIn" class="row-input" onchange="saveDraft()">
             <option value="">選擇轉入帳戶</option>
             <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
             <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
@@ -323,10 +331,84 @@
   <div id="toast" class="toast">訊息</div>
 
 <script>
+/* --- 自動暫存機制 (Auto-Save) --- */
+const DRAFT_KEY = 'spend.draft.v1';
+
+function saveDraft() {
+  const draft = {
+    amount: $('amount').value,
+    date: $('date').value,
+    owner: $('owner').value,
+    category: $('category').value,
+    account: $('account').value,
+    itemSelect: $('itemSelect').value,
+    itemOther: $('itemOther').value,
+    note: $('note').value,
+    direction: $('direction').value,
+    isTransfer: $('isTransfer').checked,
+    accountIn: $('accountIn').value,
+    splits: currentSplits
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function restoreDraft() {
+  const saved = localStorage.getItem(DRAFT_KEY);
+  if (!saved) return;
+  try {
+    const d = JSON.parse(saved);
+    // 只有當日期是今天或空值時才還原日期，避免還原到舊日期，或者您希望永遠還原？
+    // 這裡選擇：如果草稿有值就還原
+    if (d.date) $('date').value = d.date;
+    if (d.amount) $('amount').value = d.amount;
+    if (d.owner) $('owner').value = d.owner;
+    if (d.category) $('category').value = d.category;
+    if (d.account) $('account').value = d.account;
+    if (d.note) $('note').value = d.note;
+    if (d.direction) setDirection(d.direction);
+    
+    // 項目處理
+    $('itemSelect').value = d.itemSelect || '';
+    $('itemOther').value = d.itemOther || '';
+    if ($('itemSelect').value === '其他') {
+      $('itemOther').style.display = 'block';
+    }
+
+    // 互轉處理
+    $('isTransfer').checked = !!d.isTransfer;
+    $('transferFields').style.display = d.isTransfer ? 'flex' : 'none';
+    if (d.accountIn) $('accountIn').value = d.accountIn;
+    if (d.isTransfer) {
+       $('category').disabled = true;
+    }
+
+    // 分帳處理
+    if (d.splits && Array.isArray(d.splits) && d.splits.length > 0) {
+      currentSplits = d.splits;
+      renderSplits();
+      toast('已還原未送出的草稿');
+    }
+  } catch (e) { console.log('還原草稿失敗', e); }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  // 清空 currentSplits (表單已在 submit 成功後清空)
+  currentSplits = [];
+  // 重置分帳介面
+  $('splitList').innerHTML = '';
+  $('splitSection').style.display = 'none';
+  $('btnSubmit').textContent = '確認送出';
+  $('date').disabled = false; $('owner').disabled = false; $('account').disabled = false;
+}
+
+/* --- 核心 UI 邏輯 --- */
 function setDirection(val) {
   $('direction').value = val;
   document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val));
+  saveDraft(); // 切換方向也存
 }
+
 function routeClick(name) { location.hash = '#' + name; }
 const $ = id => document.getElementById(id);
 const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
@@ -345,13 +427,22 @@ const ITEM_OPTIONS = ['食物','公司代墊','玩樂','交通','其他'];
 const OWNERS = ['欣宜','喬猷'];
 
 (function init(){
+  // 預設日期為今日
   $('date').value = new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-  loadCfg(); renderLog(); route();
+  
+  loadCfg(); 
+  restoreDraft(); // ✅ 啟動時嘗試還原
+  renderLog(); 
+  route();
+  
   const ep = $('endpoint').value.trim(); if(ep) fetch(ep + '?ping=1').catch(()=>{});
 })();
 
 const itemSelect = $('itemSelect'), itemOther = $('itemOther');
-itemSelect.onchange = ()=>{ if(itemSelect.value==='其他'){ itemOther.style.display='block'; itemOther.focus(); } else { itemOther.style.display='none'; itemOther.value=''; } };
+itemSelect.onchange = ()=>{ 
+  if(itemSelect.value==='其他'){ itemOther.style.display='block'; itemOther.focus(); } else { itemOther.style.display='none'; itemOther.value=''; } 
+  saveDraft();
+};
 
 $('isTransfer').onchange = ()=>{
   const on = $('isTransfer').checked;
@@ -359,11 +450,12 @@ $('isTransfer').onchange = ()=>{
   if (on){
     $('category').value='平衡'; $('category').disabled=true; itemSelect.value='其他'; itemOther.style.display='block'; itemOther.value='內控互轉';
     setDirection('支出');
-    if (currentSplits.length > 0) { toast('互轉模式已清除暫存'); currentSplits = []; renderSplits(); }
+    if (currentSplits.length > 0) { toast('互轉模式已清除分帳暫存'); currentSplits = []; renderSplits(); }
   } else { 
     $('category').disabled=false; 
     if(itemOther.value==='內控互轉'){ itemOther.value=''; itemSelect.value=''; itemOther.style.display='none'; } 
   }
+  saveDraft();
 };
 
 function renderSplits() {
@@ -374,6 +466,7 @@ function renderSplits() {
   if (currentSplits.length === 0) {
     section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出';
     $('date').disabled = false; $('owner').disabled = false; $('account').disabled = false;
+    saveDraft(); // 存
     return;
   }
   
@@ -395,6 +488,7 @@ function renderSplits() {
   listDiv.innerHTML = html;
   btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`;
   $('date').disabled = true; $('owner').disabled = true; $('account').disabled = true;
+  saveDraft(); // 存
 }
 
 $('btnAddSplit').onclick = () => {
@@ -463,8 +557,8 @@ $('form').onsubmit = (e) => {
       localLogs.push({ ts, date, owner, direction: s.direction, amount: s.amount, category: s.category, account: norm(account), item: s.item, note: s.note });
     });
     toast(`已送出 ${currentSplits.length} 筆`);
-    currentSplits = []; renderSplits();
-    $('amount').value=''; $('note').value='';
+    // 成功送出後，稍後會呼叫 clearDraft
+    
   } else {
     const direction = $('direction').value;
     const category = isXfer ? '平衡' : $('category').value;
@@ -481,16 +575,25 @@ $('form').onsubmit = (e) => {
       addSent({ts,date,owner,direction,amount,category,account:norm(account),item,note});
     }
     toast('記帳成功');
-    $('amount').value=''; $('note').value='';
-    if(isXfer) { $('isTransfer').checked=false; $('transferFields').style.display='none'; $('category').disabled=false; }
   }
 
   localLogs.forEach(l => addSent(l)); renderLog();
+  
   const body = new URLSearchParams(payload).toString();
+  // 使用 Beacon 或 Fetch 送出
   if(navigator.sendBeacon) navigator.sendBeacon(ep, new Blob([body],{type:'application/x-www-form-urlencoded'}));
   else fetch(ep, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body, keepalive:true}).catch(()=>{});
 
-  setTimeout(() => { isSubmitting = false; btn.disabled = false; btn.textContent = (currentSplits.length>0) ? '送出分帳' : '確認送出'; }, 1000);
+  setTimeout(() => { 
+    isSubmitting = false; 
+    btn.disabled = false; 
+    
+    // ✅ 成功後清除草稿與表單
+    clearDraft();
+    $('amount').value=''; $('note').value=''; 
+    if(isXfer) { $('isTransfer').checked=false; $('transferFields').style.display='none'; $('category').disabled=false; }
+    
+  }, 1000);
 };
 
 const SENT_KEY='spend.sent.v19';
@@ -617,7 +720,6 @@ async function submitEdit(rawKey, isTransfer, dir){
 async function askDelete(key){
   if(!confirm('確定刪除？')) return;
   try{
-    // ✅ 修復：使用 URLSearchParams 確保字元正確編碼
     const body = new URLSearchParams({
         action: 'delete',
         createdAt: key,
@@ -640,7 +742,6 @@ $('btnBalance').onclick=async()=>{
   $('balanceArea').style.display = 'block';
   
   try {
-     // ✅ 修正：移除 qMonth，直接查詢全時間總額
      const p = new URLSearchParams({balance:'1', by:'account'});
      const res = await fetch(ep+'?'+p);
      const data = await res.json();
