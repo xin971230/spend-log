@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=💰&background=5D7B9D&color=fff&size=192&font-size=0.5&rounded=true">
 
   <style>
-    /* --- 1. 護眼配色 (Eye Comfort Palette) --- */
+    /* --- 1. 護眼配色 --- */
     :root {
       --bg: #F5F7F9; 
       --card: #FFFFFF;
@@ -23,22 +23,20 @@
       --success: #059669;
       --radius: 16px;
       --border: #E2E8F0;
-      --shadow: 0 2px 12px rgba(0,0,0,0.03);
+      --shadow: 0 4px 20px rgba(0,0,0,0.05);
+      --modal-bg: rgba(0, 0, 0, 0.4);
     }
 
-    /* --- 2. 基礎重置 --- */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
     body {
       margin: 0; background: var(--bg); color: var(--text);
       font-family: "PingFang TC", "Noto Sans TC", -apple-system, BlinkMacSystemFont, sans-serif;
       height: 100vh; display: flex; flex-direction: column;
-      padding-bottom: 90px; /* 底部導航留白 */
-      /* 瀏海屏適配 */
       padding-top: env(safe-area-inset-top);
       padding-bottom: calc(90px + env(safe-area-inset-bottom));
     }
 
-    /* --- 3. 懸浮導航 --- */
+    /* --- 導航 --- */
     .nav {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
@@ -57,17 +55,13 @@
     .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(93,123,157,0.3); }
     .nav-icon { font-size: 18px; margin-bottom: 2px; }
 
-    /* --- 4. 容器與卡片 --- */
+    /* --- 通用元件 --- */
     .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; width: 100%; flex: 1; overflow-y: auto; }
     section[hidden] { display: none; }
-    
     .group-title { font-size: 13px; color: var(--text-light); margin: 24px 0 8px 4px; font-weight: 500; }
-    .card { 
-      background: var(--card); border-radius: var(--radius); overflow: hidden; 
-      box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border);
-    }
+    .card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border); }
     
-    /* --- 5. 記帳核心區 --- */
+    /* 表單元件 */
     .seg-control { display: flex; background: var(--bg); border-radius: 12px; padding: 4px; margin: 0 16px 20px; }
     .seg-item { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; border-radius: 10px; color: var(--text-light); cursor: pointer; transition: 0.3s; }
     .seg-item.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); color: var(--text); }
@@ -76,36 +70,19 @@
     
     .big-input-wrapper { display: flex; justify-content: center; padding: 0 0 24px; }
     .currency-symbol { font-size: 24px; font-weight: 500; color: var(--text-light); margin-top: 12px; margin-right: 6px; }
-    .big-input {
-      border: none; background: transparent; text-align: center;
-      font-size: 52px; font-weight: 600; color: var(--text);
-      width: 240px; padding: 0; margin: 0; font-family: monospace;
-    }
-    .big-input::placeholder { color: #E2E8F0; }
-
-    .input-row {
-      display: flex; align-items: center; padding: 14px 20px;
-      border-bottom: 1px solid var(--border); min-height: 54px;
-    }
+    .big-input { border: none; background: transparent; text-align: center; font-size: 52px; font-weight: 600; color: var(--text); width: 240px; padding: 0; margin: 0; font-family: monospace; }
+    
+    .input-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); min-height: 54px; }
     .input-row:last-child { border-bottom: none; }
     .row-label { width: 80px; font-size: 14px; color: var(--text-light); font-weight: 500; }
-    .row-input {
-      flex: 1; border: none; background: transparent;
-      font-size: 15px; color: var(--text); text-align: right;
-      appearance: none; padding: 0; margin: 0; font-weight: 500;
-    }
+    .row-input { flex: 1; border: none; background: transparent; font-size: 15px; color: var(--text); text-align: right; padding: 0; margin: 0; font-weight: 500; }
     .row-input:focus { color: var(--primary); }
     select.row-input { direction: rtl; color: var(--text); }
 
-    /* --- 6. 按鈕 --- */
-    .btn-main {
-      background: var(--primary); color: #fff; width: 100%; padding: 16px;
-      border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600;
-      margin-top: 20px; cursor: pointer; box-shadow: 0 8px 20px rgba(93,123,157,0.2);
-      transition: transform 0.1s, box-shadow 0.2s; letter-spacing: 1px;
-    }
-    .btn-main:active { transform: scale(0.98); box-shadow: 0 4px 10px rgba(93,123,157,0.2); }
-    
+    .btn-main { background: var(--primary); color: #fff; width: 100%; padding: 16px; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; margin-top: 20px; cursor: pointer; box-shadow: 0 8px 20px rgba(93,123,157,0.2); transition: transform 0.1s; }
+    .btn-main:active { transform: scale(0.98); }
+    .btn-danger { background: #FEE2E2; color: var(--danger); margin-top: 12px; box-shadow: none; }
+
     .switch { position: relative; display: inline-block; width: 48px; height: 28px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; transition: .4s; border-radius: 34px; }
@@ -113,17 +90,11 @@
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    .split-row {
-      display: flex; justify-content: space-between; padding: 14px 20px;
-      border-bottom: 1px solid var(--border); background: #fff; font-size: 14px;
-    }
+    .split-row { display: flex; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); background: #fff; font-size: 14px; }
     .split-del { color: var(--text-light); font-weight: bold; margin-left: 16px; cursor: pointer; opacity: 0.5; }
-    .split-del:hover { color: var(--danger); opacity: 1; }
 
-    .record-item { 
-      padding: 16px 20px; border-bottom: 1px solid var(--border); 
-      display: flex; justify-content: space-between; align-items: flex-start; 
-    }
+    /* 列表樣式 */
+    .record-item { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
     .rec-left { display: flex; flex-direction: column; gap: 4px; flex: 1; }
     .rec-title { font-size: 15px; font-weight: 600; color: var(--text); }
     .rec-meta { font-size: 12px; color: var(--text-light); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
@@ -134,13 +105,32 @@
     .rec-amt.neg { color: var(--text); }
     .rec-amt.pos { color: var(--success); }
 
-    .toast {
-      position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-60px);
-      background: rgba(51, 65, 85, 0.95); color: white; padding: 12px 24px; border-radius: 30px;
-      font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 2000; pointer-events: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
+    .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-60px); background: rgba(51, 65, 85, 0.95); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; pointer-events: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* --- ✅ 新增：編輯彈窗 (Modal) 樣式 --- */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--modal-bg); backdrop-filter: blur(4px);
+      display: flex; justify-content: center; align-items: flex-end; /* 從底部升起 */
+      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    
+    .modal-card {
+      background: var(--card); width: 100%; max-width: 600px;
+      border-radius: 24px 24px 0 0; /* 上方圓角 */
+      padding: 24px 20px 40px; /* 底部留白 */
+      box-shadow: 0 -4px 30px rgba(0,0,0,0.1);
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-overlay.open .modal-card { transform: translateY(0); }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 18px; font-weight: 700; color: var(--text); }
+    .modal-close { background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; color: var(--text-light); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
   </style>
 </head>
 <body>
@@ -328,37 +318,81 @@
     </div>
   </section>
 
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">編輯紀錄</div>
+        <button class="modal-close" onclick="closeEditModal()">✕</button>
+      </div>
+      
+      <input type="hidden" id="modal-key">
+      <input type="hidden" id="modal-isTransfer">
+      <input type="hidden" id="modal-direction">
+
+      <div class="big-input-wrapper">
+        <span class="currency-symbol">$</span>
+        <input type="number" id="modal-amt" class="big-input" placeholder="0" step="0.01">
+      </div>
+
+      <div class="input-row">
+        <span class="row-label">項目</span>
+        <div style="flex:1; display:flex; justify-content:flex-end; gap:8px;">
+           <input id="modal-itemOther" class="row-input" placeholder="項目" style="display:none; border-bottom:1px dashed #94A3B8;">
+           <select id="modal-itemSel" class="row-input" onchange="modalItemChange()">
+             </select>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <span class="row-label">備註</span>
+        <input id="modal-note" class="row-input" placeholder="備註">
+      </div>
+
+      <div class="input-row">
+        <span class="row-label">分類</span>
+        <select id="modal-cat" class="row-input"></select>
+      </div>
+
+      <div class="input-row">
+        <span class="row-label">帳戶</span>
+        <select id="modal-acc" class="row-input"></select>
+      </div>
+
+      <div class="input-row">
+        <span class="row-label">登記人</span>
+        <select id="modal-owner" class="row-input"></select>
+      </div>
+
+      <div id="modal-transfer-row" class="input-row" style="display:none; background:#F1F5F9;">
+        <span class="row-label" style="color:var(--primary)">轉入至</span>
+        <select id="modal-accIn" class="row-input"></select>
+      </div>
+
+      <button class="btn-main" onclick="submitModalEdit()">儲存修改</button>
+      <button class="btn-main btn-danger" style="background:#FEE2E2; color:var(--danger); box-shadow:none;" onclick="deleteFromModal()">刪除此筆</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast">訊息</div>
 
 <script>
-/* --- 自動暫存機制 (Auto-Save) --- */
+/* --- 自動暫存機制 --- */
 const DRAFT_KEY = 'spend.draft.v1';
-
 function saveDraft() {
   const draft = {
-    amount: $('amount').value,
-    date: $('date').value,
-    owner: $('owner').value,
-    category: $('category').value,
-    account: $('account').value,
-    itemSelect: $('itemSelect').value,
-    itemOther: $('itemOther').value,
-    note: $('note').value,
-    direction: $('direction').value,
-    isTransfer: $('isTransfer').checked,
-    accountIn: $('accountIn').value,
+    amount: $('amount').value, date: $('date').value, owner: $('owner').value,
+    category: $('category').value, account: $('account').value,
+    itemSelect: $('itemSelect').value, itemOther: $('itemOther').value,
+    note: $('note').value, direction: $('direction').value,
+    isTransfer: $('isTransfer').checked, accountIn: $('accountIn').value,
     splits: currentSplits
   };
   localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 }
-
 function restoreDraft() {
-  const saved = localStorage.getItem(DRAFT_KEY);
-  if (!saved) return;
+  const saved = localStorage.getItem(DRAFT_KEY); if (!saved) return;
   try {
     const d = JSON.parse(saved);
-    // 只有當日期是今天或空值時才還原日期，避免還原到舊日期，或者您希望永遠還原？
-    // 這裡選擇：如果草稿有值就還原
     if (d.date) $('date').value = d.date;
     if (d.amount) $('amount').value = d.amount;
     if (d.owner) $('owner').value = d.owner;
@@ -366,49 +400,28 @@ function restoreDraft() {
     if (d.account) $('account').value = d.account;
     if (d.note) $('note').value = d.note;
     if (d.direction) setDirection(d.direction);
-    
-    // 項目處理
-    $('itemSelect').value = d.itemSelect || '';
-    $('itemOther').value = d.itemOther || '';
-    if ($('itemSelect').value === '其他') {
-      $('itemOther').style.display = 'block';
-    }
-
-    // 互轉處理
+    $('itemSelect').value = d.itemSelect || ''; $('itemOther').value = d.itemOther || '';
+    if ($('itemSelect').value === '其他') $('itemOther').style.display = 'block';
     $('isTransfer').checked = !!d.isTransfer;
     $('transferFields').style.display = d.isTransfer ? 'flex' : 'none';
     if (d.accountIn) $('accountIn').value = d.accountIn;
-    if (d.isTransfer) {
-       $('category').disabled = true;
-    }
-
-    // 分帳處理
-    if (d.splits && Array.isArray(d.splits) && d.splits.length > 0) {
-      currentSplits = d.splits;
-      renderSplits();
-      toast('已還原未送出的草稿');
-    }
-  } catch (e) { console.log('還原草稿失敗', e); }
+    if (d.isTransfer) $('category').disabled = true;
+    if (d.splits && d.splits.length > 0) { currentSplits = d.splits; renderSplits(); toast('已還原草稿'); }
+  } catch (e) {}
 }
-
 function clearDraft() {
-  localStorage.removeItem(DRAFT_KEY);
-  // 清空 currentSplits (表單已在 submit 成功後清空)
-  currentSplits = [];
-  // 重置分帳介面
-  $('splitList').innerHTML = '';
-  $('splitSection').style.display = 'none';
+  localStorage.removeItem(DRAFT_KEY); currentSplits = [];
+  $('splitList').innerHTML = ''; $('splitSection').style.display = 'none';
   $('btnSubmit').textContent = '確認送出';
   $('date').disabled = false; $('owner').disabled = false; $('account').disabled = false;
 }
 
-/* --- 核心 UI 邏輯 --- */
+/* --- 核心 UI --- */
 function setDirection(val) {
   $('direction').value = val;
   document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val));
-  saveDraft(); // 切換方向也存
+  saveDraft();
 }
-
 function routeClick(name) { location.hash = '#' + name; }
 const $ = id => document.getElementById(id);
 const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
@@ -427,15 +440,12 @@ const ITEM_OPTIONS = ['食物','公司代墊','玩樂','交通','其他'];
 const OWNERS = ['欣宜','喬猷'];
 
 (function init(){
-  // 預設日期為今日
   $('date').value = new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-  
-  loadCfg(); 
-  restoreDraft(); // ✅ 啟動時嘗試還原
-  renderLog(); 
-  route();
-  
+  loadCfg(); restoreDraft(); renderLog(); route();
   const ep = $('endpoint').value.trim(); if(ep) fetch(ep + '?ping=1').catch(()=>{});
+  
+  // 初始化 Modal 選項
+  populateModalSelects();
 })();
 
 const itemSelect = $('itemSelect'), itemOther = $('itemOther');
@@ -459,36 +469,25 @@ $('isTransfer').onchange = ()=>{
 };
 
 function renderSplits() {
-  const btnSubmit = $('btnSubmit');
-  const listDiv = $('splitList');
-  const section = $('splitSection');
-  
+  const btnSubmit = $('btnSubmit'); const listDiv = $('splitList'); const section = $('splitSection');
   if (currentSplits.length === 0) {
     section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出';
     $('date').disabled = false; $('owner').disabled = false; $('account').disabled = false;
-    saveDraft(); // 存
-    return;
+    saveDraft(); return;
   }
-  
   section.style.display = 'block';
   let html = ''; let total = 0;
   currentSplits.forEach((s, i) => {
-    const isOut = s.direction === '支出';
-    const signed = isOut ? s.amount : -s.amount;
-    total += signed;
+    const isOut = s.direction === '支出'; const signed = isOut ? s.amount : -s.amount; total += signed;
     html += `<div class="split-row">
        <div>${s.category} - ${s.item} <span style="color:#999;font-size:12px">(${s.note||'-'})</span></div>
-       <div>
-         <span style="font-family:monospace; font-weight:600; color:${isOut?'var(--text)':'var(--success)'}">${isOut?'-':''}${s.amount}</span>
-         <span class="split-del" data-idx="${i}">✕</span>
-       </div>
+       <div><span style="font-family:monospace; font-weight:600; color:${isOut?'var(--text)':'var(--success)'}">${isOut?'-':''}${s.amount}</span><span class="split-del" data-idx="${i}">✕</span></div>
     </div>`;
   });
   html += `<div style="padding:10px; text-align:right; font-weight:600; color:var(--primary)">暫存總計: ${total.toFixed(2)}</div>`;
-  listDiv.innerHTML = html;
-  btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`;
+  listDiv.innerHTML = html; btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`;
   $('date').disabled = true; $('owner').disabled = true; $('account').disabled = true;
-  saveDraft(); // 存
+  saveDraft();
 }
 
 $('btnAddSplit').onclick = () => {
@@ -501,15 +500,12 @@ $('btnAddSplit').onclick = () => {
   const item = (itemSelect.value==='其他') ? itemOther.value.trim() : itemSelect.value;
   const note = $('note').value.trim();
   const direction = $('direction').value;
-
   if ($('isTransfer').checked) { toast('互轉無法分帳'); return; }
   if (!amount || amount <= 0) { toast('請輸金額'); return; }
   if (!category) { toast('請選分類'); return; }
   if (!item) { toast('請輸項目'); return; }
-
   currentSplits.push({ amount, category, item, note, direction });
-  renderSplits();
-  $('amount').value = ''; $('note').value = ''; $('amount').focus();
+  renderSplits(); $('amount').value = ''; $('note').value = ''; $('amount').focus();
 };
 
 $('splitList').onclick = (e) => {
@@ -520,13 +516,8 @@ $('splitList').onclick = (e) => {
 };
 
 $('form').onsubmit = (e) => {
-  e.preventDefault();
-  if (isSubmitting) return;
-  
-  const amountVal = $('amount').value;
-  const amount = Number(amountVal);
-  const isXfer = $('isTransfer').checked;
-  
+  e.preventDefault(); if (isSubmitting) return;
+  const amountVal = $('amount').value; const amount = Number(amountVal); const isXfer = $('isTransfer').checked;
   if (currentSplits.length === 0) {
     if (!amountVal || amount <= 0) { toast('請輸入金額'); return; }
     if (!isXfer && !$('category').value) { toast('請選擇分類'); return; }
@@ -534,18 +525,11 @@ $('form').onsubmit = (e) => {
     if (!it) { toast('請輸入項目'); return; }
     if (isXfer && !$('accountIn').value) { toast('請選擇轉入帳戶'); return; }
   }
-
   isSubmitting = true;
-  const btn = $('btnSubmit');
-  btn.textContent = '傳送中...'; btn.disabled = true;
-
+  const btn = $('btnSubmit'); btn.textContent = '傳送中...'; btn.disabled = true;
   const ep = $('endpoint').value.trim();
-  const date = $('date').value;
-  const owner = $('owner').value;
-  const account = $('account').value;
-  const note = $('note').value.trim();
-  const norm = s => s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
-  
+  const date = $('date').value; const owner = $('owner').value; const account = $('account').value;
+  const note = $('note').value.trim(); const norm = s => s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
   let payload = { date, owner, account: norm(account), apiKey: $('apiKey').value.trim() };
   let localLogs = [];
   const d=new Date(); const pad=n=>String(n).padStart(2,'0');
@@ -557,14 +541,11 @@ $('form').onsubmit = (e) => {
       localLogs.push({ ts, date, owner, direction: s.direction, amount: s.amount, category: s.category, account: norm(account), item: s.item, note: s.note });
     });
     toast(`已送出 ${currentSplits.length} 筆`);
-    // 成功送出後，稍後會呼叫 clearDraft
-    
   } else {
     const direction = $('direction').value;
     const category = isXfer ? '平衡' : $('category').value;
     const item = isXfer ? '內控互轉' : ((itemSelect.value==='其他')?itemOther.value.trim():itemSelect.value);
     const accountIn = $('accountIn').value;
-    
     Object.assign(payload, { amount, category, item, note });
     if (isXfer) {
       payload.isTransfer = 'true'; payload.accountIn = norm(accountIn);
@@ -576,26 +557,18 @@ $('form').onsubmit = (e) => {
     }
     toast('記帳成功');
   }
-
   localLogs.forEach(l => addSent(l)); renderLog();
-  
   const body = new URLSearchParams(payload).toString();
-  // 使用 Beacon 或 Fetch 送出
   if(navigator.sendBeacon) navigator.sendBeacon(ep, new Blob([body],{type:'application/x-www-form-urlencoded'}));
   else fetch(ep, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body, keepalive:true}).catch(()=>{});
-
   setTimeout(() => { 
-    isSubmitting = false; 
-    btn.disabled = false; 
-    
-    // ✅ 成功後清除草稿與表單
-    clearDraft();
-    $('amount').value=''; $('note').value=''; 
+    isSubmitting = false; btn.disabled = false; 
+    clearDraft(); $('amount').value=''; $('note').value=''; 
     if(isXfer) { $('isTransfer').checked=false; $('transferFields').style.display='none'; $('category').disabled=false; }
-    
   }, 1000);
 };
 
+/* Log & Export */
 const SENT_KEY='spend.sent.v19';
 function loadSent(){ try{return JSON.parse(localStorage.getItem(SENT_KEY)||'[]');}catch{return[];} }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
@@ -606,20 +579,10 @@ function renderLog(){
   if(!list.length){ el.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:#ccc">尚無紀錄</div>'; return; }
   let h='';
   for(const r of list){
-    const isOut = r.direction==='支出';
-    const amt = Math.abs(Number(r.amount)); 
-    const sign = isOut ? '-' : '';
+    const isOut = r.direction==='支出'; const amt = Math.abs(Number(r.amount)); const sign = isOut ? '-' : '';
     h += `<div class="record-item">
-       <div class="rec-left">
-         <div class="rec-title">${r.item}</div>
-         <div class="rec-meta">
-           <span class="rec-tag">${r.category}</span>
-           <span>${r.date.slice(5)}</span>
-         </div>
-       </div>
-       <div class="rec-right">
-         <span class="rec-amt ${isOut?'neg':'pos'}">${sign}${amt}</span>
-       </div>
+       <div class="rec-left"><div class="rec-title">${r.item}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span>${r.date.slice(5)}</span></div></div>
+       <div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${sign}${amt}</span></div>
     </div>`;
   }
   el.innerHTML=h;
@@ -633,6 +596,7 @@ $('btnExport').onclick=()=>{
    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='log.csv'; a.click();
 };
 
+/* Recent List with Modal Trigger */
 $('btnRecent').onclick=async()=>{
   const ep=$('endpoint').value.trim(); if(!ep) return;
   $('recentList').innerHTML='<div style="text-align:center;padding:20px">載入中...</div>';
@@ -648,7 +612,6 @@ $('btnRecent').onclick=async()=>{
          const isOut = r.direction==='支出';
          const amt = Math.abs(Number(r.amount));
          const sign = isOut ? '-' : '';
-         // ✅ 修正：只顯示 MM-DD
          const dateDay = String(r.date).substring(0, 10).slice(5);
          let createdStr = '';
          if (r.createdAt) {
@@ -659,40 +622,22 @@ $('btnRecent').onclick=async()=>{
              const cH = String(cDate.getHours()).padStart(2,'0');
              const cMin = String(cDate.getMinutes()).padStart(2,'0');
              createdStr = `${cM}-${cD} ${cH}:${cMin}`;
-           } else {
-             createdStr = r.createdAt.substring(5, 16).replace('T',' ');
-           }
+           } else { createdStr = r.createdAt.substring(5, 16).replace('T',' '); }
          }
-
-         h += `<div class="card" style="padding:0; margin-bottom:12px;">
-            <div class="record-item" style="border:none">
+         // Store full record in data attribute for modal
+         const recJson = cssEscape(JSON.stringify(r));
+         h += `<div class="card" style="padding:0; margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'>
+            <div class="record-item" style="border:none; cursor:pointer">
                <div class="rec-left">
                  <div class="rec-title">${r.item} <span style="font-weight:400;color:#94A3B8;font-size:12px">${r.note?`(${r.note})`:''}</span></div>
-                 <div class="rec-meta">
-                    <span class="rec-tag">${r.category}</span>
-                    <span class="rec-tag">${r.account}</span>
-                    <span>${r.owner}</span>
-                 </div>
-                 <div class="rec-dates">
-                    消費: ${dateDay} | 登記: ${createdStr}
-                 </div>
+                 <div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span><span>${r.owner}</span></div>
+                 <div class="rec-dates">消費: ${dateDay} | 登記: ${createdStr}</div>
                </div>
                <div class="rec-right">
                  <span class="rec-amt ${isOut?'neg':'pos'}">${sign}${amt}</span>
-                 <div style="margin-top:8px; display:flex; gap:8px;">
-                    <span style="color:var(--primary); font-size:11px; cursor:pointer" onclick="toggleEdit('${cssEscape(r.createdAt||r.date)}')">編輯</span>
-                    <span style="color:var(--danger); font-size:11px; cursor:pointer" onclick="askDelete('${r.createdAt}')">刪除</span>
-                 </div>
+                 <div style="margin-top:8px; font-size:11px; color:var(--primary);">編輯 ></div>
                </div>
             </div>
-            
-            <form class="editbox" id="edit-${cssEscape(r.createdAt||r.date)}" style="display:none; padding:12px; border-top:1px dashed var(--border); background:#F8FAFC">
-                <div style="display:flex; gap:8px; margin-bottom:8px">
-                   <input id="amt-${cssEscape(r.createdAt)}" type="number" value="${amt}" class="row-input" style="background:#fff; border:1px solid #ddd; border-radius:6px; padding:6px; text-align:center" placeholder="金額">
-                   <input id="note-${cssEscape(r.createdAt)}" value="${r.note||''}" class="row-input" style="background:#fff; border:1px solid #ddd; border-radius:6px; padding:6px; text-align:left" placeholder="備註">
-                </div>
-                <button class="btn-main" type="button" style="margin:0; padding:8px; font-size:12px;" onclick="submitEdit('${r.createdAt}', false, '${isOut?'支出':'收入'}')">儲存修改</button>
-            </form>
          </div>`;
       });
       $('recentList').innerHTML = h || '<div style="text-align:center">無資料</div>';
@@ -701,91 +646,157 @@ $('btnRecent').onclick=async()=>{
   } catch(e){ $('recentList').innerHTML='載入失敗'; }
 };
 
-function toggleEdit(k){ const el=$('edit-'+k); if(el) el.style.display = el.style.display==='none'?'block':'none'; }
-
-async function submitEdit(rawKey, isTransfer, dir){
-  const escKey = cssEscape(rawKey);
-  const amt=Number(($('amt-'+escKey)?.value)||'0'); if(!(amt>0)){ toast('金額必填'); return; }
-  const note=$('note-'+escKey)?.value ?? '';
-  const apiKey=$('apiKey').value.trim();
-  const payload={ action:'update', createdAt:rawKey, amount:String(amt), note, apiKey };
-  if(!isTransfer) payload.direction=dir;
-  try{
-    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(payload).toString() });
-    const data=await res.json(); if(!data.ok) throw new Error(data.error||'更新失敗');
-    toast('已更新'); $('btnRecent').click();
-  }catch(e){ toast('更新失敗：'+e.message); }
+/* ✅ Modal Logic */
+function populateModalSelects() {
+  const fill = (id, list) => {
+    const el = $(id); el.innerHTML = '';
+    list.forEach(v => { const op = document.createElement('option'); op.value=v; op.textContent=v; el.appendChild(op); });
+  };
+  fill('modal-cat', CATEGORIES);
+  fill('modal-acc', ACCOUNTS);
+  fill('modal-accIn', ACCOUNTS);
+  fill('modal-owner', OWNERS);
+  
+  const itemEl = $('modal-itemSel'); itemEl.innerHTML='';
+  ITEM_OPTIONS.forEach(v => { const op = document.createElement('option'); op.value=v; op.textContent=v; itemEl.appendChild(op); });
+  const opOther = document.createElement('option'); opOther.value='其他'; opOther.textContent='其他 (手動輸入)'; itemEl.appendChild(opOther);
 }
 
+function openEditModal(r) {
+  const amt = Math.abs(Number(r.amount));
+  const isOut = r.direction === '支出';
+  const isTransfer = (r.category==='平衡' && r.item==='內控互轉');
+  
+  $('modal-key').value = r.createdAt || r.date; // Use createdAt as key
+  $('modal-amt').value = amt;
+  $('modal-note').value = r.note || '';
+  $('modal-cat').value = r.category;
+  $('modal-acc').value = r.account;
+  $('modal-owner').value = r.owner;
+  $('modal-isTransfer').value = isTransfer;
+  $('modal-direction').value = r.direction;
+
+  // Item logic
+  if (ITEM_OPTIONS.includes(r.item)) {
+    $('modal-itemSel').value = r.item;
+    $('modal-itemOther').style.display = 'none';
+  } else {
+    $('modal-itemSel').value = '其他';
+    $('modal-itemOther').style.display = 'flex'; // flex for input-row layout
+    $('modal-itemOther').value = r.item;
+  }
+
+  // Transfer UI
+  if (isTransfer) {
+    $('modal-transfer-row').style.display = 'flex';
+    $('modal-cat').disabled = true;
+    // We can't easily know the "To" account from a single record, so user must re-select if they edit
+    // Or we just hide it. For now, we show it but default to empty or first.
+  } else {
+    $('modal-transfer-row').style.display = 'none';
+    $('modal-cat').disabled = false;
+  }
+
+  $('editModal').classList.add('open');
+}
+
+function closeEditModal() { $('editModal').classList.remove('open'); }
+function modalItemChange() {
+  const s = $('modal-itemSel'); const o = $('modal-itemOther');
+  if(s.value==='其他'){ o.style.display='flex'; o.focus(); } else { o.style.display='none'; o.value=''; }
+}
+
+async function submitModalEdit() {
+  const key = $('modal-key').value;
+  const amt = Number($('modal-amt').value);
+  if (!amt || amt <= 0) { toast('金額錯誤'); return; }
+  
+  const isTransfer = ($('modal-isTransfer').value === 'true');
+  const dir = $('modal-direction').value;
+  
+  const itemSel = $('modal-itemSel').value;
+  const itemOther = $('modal-itemOther').value.trim();
+  const item = (itemSel==='其他') ? itemOther : itemSel;
+  
+  const payload = {
+    action: 'update',
+    createdAt: key,
+    amount: String(amt),
+    note: $('modal-note').value,
+    account: $('modal-acc').value,
+    category: $('modal-cat').value,
+    owner: $('modal-owner').value,
+    item: item,
+    apiKey: $('apiKey').value.trim()
+  };
+
+  if (isTransfer) {
+    const accIn = $('modal-accIn').value;
+    if(accIn) { payload.isTransfer='true'; payload.accountIn = accIn; } 
+    else { payload.isTransfer='true'; /* If user didn't select new In account, backend might keep old or fail? existing logic keeps old if not provided */ }
+  } else {
+    payload.direction = dir;
+  }
+
+  closeEditModal();
+  toast('更新中...');
+  
+  try {
+    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(payload).toString() });
+    const data=await res.json(); if(!data.ok) throw new Error(data.error||'失敗');
+    toast('已更新'); $('btnRecent').click();
+  } catch(e) { toast('更新失敗'); }
+}
+
+function deleteFromModal() {
+  const key = $('modal-key').value;
+  closeEditModal();
+  askDelete(key);
+}
+
+/* Shared Delete */
 async function askDelete(key){
   if(!confirm('確定刪除？')) return;
   try{
-    const body = new URLSearchParams({
-        action: 'delete',
-        createdAt: key,
-        apiKey: $('apiKey').value
-    });
-    await fetch($('endpoint').value, {
-        method: 'POST', 
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
-        body: body.toString()
-    });
+    const body = new URLSearchParams({ action: 'delete', createdAt: key, apiKey: $('apiKey').value });
+    await fetch($('endpoint').value, { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: body.toString() });
     toast('已刪除'); $('btnRecent').click();
   }catch{ toast('刪除失敗'); }
 }
 
 $('btnBalance').onclick=async()=>{
   const ep=$('endpoint').value.trim(); if(!ep) return;
-  $('balanceResult').textContent='計算中...'; 
-  $('balanceListContainer').innerHTML='<div style="text-align:center; padding:10px">載入中...</div>';
-  $('balanceTotal').textContent='...';
+  $('balanceResult').textContent='計算中...'; $('balanceListContainer').innerHTML='<div style="text-align:center; padding:10px">載入中...</div>'; $('balanceTotal').textContent='...';
   $('balanceArea').style.display = 'block';
-  
   try {
      const p = new URLSearchParams({balance:'1', by:'account'});
-     const res = await fetch(ep+'?'+p);
-     const data = await res.json();
-     
+     const res = await fetch(ep+'?'+p); const data = await res.json();
      let h='';
      if(data.breakdown) {
        data.breakdown.forEach(b => {
          h += `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee; font-size:15px;">
-           <span style="color:var(--text)">${b.account}</span>
-           <span style="font-family:monospace; font-weight:600;">${b.balance.toFixed(2)}</span>
+           <span style="color:var(--text)">${b.account}</span><span style="font-family:monospace; font-weight:600;">${b.balance.toFixed(2)}</span>
          </div>`;
        });
-       $('balanceListContainer').innerHTML = h;
-       $('balanceTotal').textContent = data.total.toFixed(2);
-       $('balanceResult').textContent = `統計範圍: 全部時間`;
-     } else {
-       $('balanceListContainer').innerHTML = '<div style="text-align:center">無數據</div>';
-     }
-  } catch { 
-    $('balanceResult').textContent='失敗'; 
-    $('balanceListContainer').innerHTML = '';
-  }
+       $('balanceListContainer').innerHTML = h; $('balanceTotal').textContent = data.total.toFixed(2); $('balanceResult').textContent = `統計範圍: 全部時間`;
+     } else { $('balanceListContainer').innerHTML = '<div style="text-align:center">無數據</div>'; }
+  } catch { $('balanceResult').textContent='失敗'; $('balanceListContainer').innerHTML = ''; }
 };
 
 $('btnImport').onclick=async()=>{
   const ep=$('endpoint').value.trim();
-  const days=$('importDays').value;
-  const force=$('importForce').checked;
-  $('importHint').textContent='系統處理中 (約需 5-10 秒)...';
+  const days=$('importDays').value; const force=$('importForce').checked;
+  $('importHint').textContent='系統處理中...';
   try {
     const res = await fetch(ep, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`action=ingest_gmail&days=${days}&force=${force}&apiKey=${$('apiKey').value}`});
     const d = await res.json();
-    if(d.ok) { toast(`新增 ${d.added} 筆`); $('importHint').textContent=`✅ 成功新增 ${d.added} 筆`; }
-    else throw d;
+    if(d.ok) { toast(`新增 ${d.added} 筆`); $('importHint').textContent=`✅ 成功新增 ${d.added} 筆`; } else throw d;
   } catch(e) { $('importHint').textContent='❌ 失敗'; }
 };
 
-function loadCfg(){ 
-  if(localStorage.getItem('spend.endpoint')) $('endpoint').value = localStorage.getItem('spend.endpoint');
-  if(localStorage.getItem('spend.apiKey')) $('apiKey').value = localStorage.getItem('spend.apiKey');
-}
+function loadCfg(){ if(localStorage.getItem('spend.endpoint')) $('endpoint').value = localStorage.getItem('spend.endpoint'); if(localStorage.getItem('spend.apiKey')) $('apiKey').value = localStorage.getItem('spend.apiKey'); }
 $('btnSaveCfg').onclick=()=>{ localStorage.setItem('spend.endpoint',$('endpoint').value); localStorage.setItem('spend.apiKey',$('apiKey').value); toast('設定已儲存'); };
 $('btnTest').onclick=()=>{ fetch($('endpoint').value+'?ping=1').then(r=>toast(r.ok?'✅ 通行':'❌ 失敗')).catch(()=>toast('❌ 失敗')); };
-
 </script>
 </body>
 </html>
