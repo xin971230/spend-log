@@ -4,18 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#F5F7F9">
   <title>收支快記</title>
   
   <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Ledger&background=5D7B9D&color=fff&size=192&font-size=0.3&rounded=true">
 
   <style>
+    /* --- 1. 極簡護眼配色 --- */
     :root {
       --bg: #F5F7F9; --card: #FFFFFF;
       --text: #334155; --text-light: #94A3B8;
-      --primary: #5D7B9D; --danger: #EF4444; --success: #059669;
+      --primary: #5D7B9D; --primary-light: #E2E8F0;
+      --danger: #EF4444; --success: #059669;
       --radius: 12px; --border: #E2E8F0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
+
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
     body {
       margin: 0; background: var(--bg); color: var(--text);
@@ -24,55 +29,91 @@
       padding-top: env(safe-area-inset-top);
       padding-bottom: calc(100px + env(safe-area-inset-bottom));
     }
+
+    /* Icons */
     .icon { width: 20px; height: 20px; fill: currentColor; }
+    .nav-icon { width: 24px; height: 24px; margin-bottom: 4px; }
+
+    /* Nav */
     .nav {
       position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
       background: rgba(255,255,255,0.98); border: 1px solid var(--border);
       box-shadow: 0 10px 25px rgba(0,0,0,0.05);
       border-radius: 32px; padding: 6px 12px;
-      display: flex; gap: 8px; z-index: 100; width: 90%; max-width: 360px; justify-content: space-between;
+      display: flex; gap: 8px; z-index: 100;
+      width: 90%; max-width: 360px; justify-content: space-between;
     }
     .nav-item {
       flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 8px 0; color: var(--text-light); text-decoration: none;
-      font-size: 10px; font-weight: 600; border-radius: 20px; transition: all 0.2s ease;
+      font-size: 10px; font-weight: 600; border-radius: 20px;
+      transition: all 0.2s ease;
     }
     .nav-item.active { color: var(--primary); background: #F1F5F9; }
+
+    /* Layout */
     .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; width: 100%; flex: 1; overflow-y: auto; }
     section[hidden] { display: none; }
-    .card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 16px; border: 1px solid var(--border); }
+    .group-title { font-size: 12px; color: var(--text-light); margin: 24px 0 8px 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border); }
+    
+    /* Inputs */
+    .seg-control { display: flex; background: var(--bg); border-radius: 12px; padding: 4px; margin: 0 16px 20px; }
+    .seg-item { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; border-radius: 8px; color: var(--text-light); cursor: pointer; transition: 0.2s; }
+    .seg-item.active { background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text); }
+    .seg-item[data-val="支出"].active { color: var(--danger); }
+    .seg-item[data-val="收入"].active { color: var(--success); }
+    
     .big-input-wrapper { display: flex; justify-content: center; padding: 0 0 24px; position: relative; }
     .currency-symbol { font-size: 20px; font-weight: 500; color: var(--text-light); margin-top: 16px; margin-right: 4px; }
     .big-input { border: none; background: transparent; text-align: center; font-size: 48px; font-weight: 600; color: var(--text); width: 200px; padding: 0; margin: 0; font-family: monospace; }
+    .big-input::placeholder { color: #E2E8F0; }
+
     .input-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); min-height: 52px; }
+    .input-row:last-child { border-bottom: none; }
     .row-label { width: 70px; font-size: 14px; color: var(--text-light); font-weight: 500; }
-    .row-input { flex: 1; border: none; background: transparent; font-size: 15px; color: var(--text); text-align: right; }
-    select.row-input { direction: rtl; }
+    .row-input { flex: 1; border: none; background: transparent; font-size: 15px; color: var(--text); text-align: right; padding: 0; margin: 0; font-weight: 500; }
+    select.row-input { direction: rtl; color: var(--text); }
+
+    /* Button */
     .btn-main { background: var(--primary); color: #fff; width: 100%; padding: 14px; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; margin-top: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(93,123,157,0.2); transition: 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-main:disabled { opacity: 0.7; }
+    .btn-main:active { transform: scale(0.98); }
     .btn-ghost { background: transparent; color: var(--text-light); border: 1px solid var(--border); }
+
+    /* Switch */
     .switch { position: relative; display: inline-block; width: 44px; height: 26px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; transition: .3s; border-radius: 34px; }
     .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(18px); }
-    .seg-control { display: flex; background: var(--bg); border-radius: 12px; padding: 4px; margin: 0 16px 20px; }
-    .seg-item { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; border-radius: 8px; color: var(--text-light); cursor: pointer; transition: 0.2s; }
-    .seg-item.active { background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text); }
-    .seg-item[data-val="支出"].active { color: var(--danger); }
-    .seg-item[data-val="收入"].active { color: var(--success); }
+
+    /* List */
     .record-item { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .rec-left { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .rec-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .rec-meta { font-size: 12px; color: var(--text-light); display: flex; gap: 8px; align-items: center;}
+    .rec-tag { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
     .rec-amt { font-size: 16px; font-weight: 600; font-family: monospace; }
-    .rec-amt.neg { color: var(--text); } .rec-amt.pos { color: var(--success); }
-    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-50px); background: #334155; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: 0.4s; pointer-events: none; z-index: 2000; }
+    .rec-amt.neg { color: var(--text); }
+    .rec-amt.pos { color: var(--success); }
+
+    /* Footer */
+    .footer { text-align: center; margin-top: 40px; padding-bottom: 20px; color: var(--text-light); }
+    .ver-badge { font-size: 10px; background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    .ver-desc { font-size: 11px; margin-top: 6px; line-height: 1.4; opacity: 0.8; }
+
+    /* Toast */
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-50px); background: #334155; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 500; opacity: 0; transition: 0.4s; z-index: 2000; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Modal */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(2px); z-index: 999; display: none; justify-content: center; align-items: flex-end; }
     .modal-overlay.open { display: flex; }
     .modal-card { background: #fff; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 24px; animation: slideUp 0.3s ease; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     
-    /* Version Log */
+    /* Logs */
     #verLog { font-size:12px; background:#f1f5f9; padding:16px; border-radius:12px; line-height:1.6; max-height:200px; overflow-y:auto; margin-top:12px; display:none; text-align:left; border:1px solid var(--border); }
     #verLog ul { padding-left:16px; margin:0; }
     #verLog li { margin-bottom:4px; color:var(--text); }
@@ -81,15 +122,24 @@
 <body>
 
   <nav class="nav">
-    <a href="#home" class="nav-item active" onclick="routeClick('home')"><svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>記帳</a>
-    <a href="#recent" class="nav-item" onclick="routeClick('recent')"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>明細</a>
-    <a href="#balance" class="nav-item" onclick="routeClick('balance')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 10h12v2H4zm0-4h12v2H4zm0 8h8v2H4zm10 0v6l5.5-3-5.5-3z"/></svg>資產</a>
-    <a href="#settings" class="nav-item" onclick="routeClick('settings')"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>設定</a>
+    <a href="#home" class="nav-item active" onclick="routeClick('home')">
+      <svg class="nav-icon icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>記帳
+    </a>
+    <a href="#recent" class="nav-item" onclick="routeClick('recent')">
+      <svg class="nav-icon icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>明細
+    </a>
+    <a href="#balance" class="nav-item" onclick="routeClick('balance')">
+      <svg class="nav-icon icon" viewBox="0 0 24 24"><path d="M4 10h12v2H4zm0-4h12v2H4zm0 8h8v2H4zm10 0v6l5.5-3-5.5-3z"/></svg>資產
+    </a>
+    <a href="#settings" class="nav-item" onclick="routeClick('settings')">
+      <svg class="nav-icon icon" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>設定
+    </a>
   </nav>
 
   <section data-view="home" class="container">
     <form id="form" autocomplete="off">
       <select id="direction" style="display:none"><option>支出</option><option>收入</option></select>
+      
       <div class="card" style="padding-top: 24px;">
         <div class="seg-control">
           <div class="seg-item active" data-val="支出" onclick="setDirection('支出')">支出</div>
@@ -107,12 +157,15 @@
         <div class="input-row" style="justify-content:space-between;"><span class="row-label">帳戶互轉</span><label class="switch"><input type="checkbox" id="isTransfer" onchange="saveDraft()"><span class="slider"></span></label></div>
         <div id="transferFields" class="input-row" style="display:none;background:#F1F5F9;"><span class="row-label" style="color:var(--primary)">轉入至</span><select id="accountIn" class="row-input" onchange="saveDraft()"><option value="">選擇轉入帳戶</option><option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option></select></div>
       </div>
-      <div id="splitSection" style="display:none"><div style="font-size:12px;color:#94A3B8;margin-left:8px;font-weight:600;">分帳預覽</div><div class="card"><div id="splitList"></div></div></div>
+
+      <div id="splitSection" style="display:none"><div class="group-title">分帳預覽</div><div class="card"><div id="splitList"></div></div></div>
+
       <div style="display:flex;gap:12px;">
         <button class="btn-main btn-ghost" type="button" id="btnAddSplit"><svg class="icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>分帳</button>
         <button class="btn-main" type="submit" id="btnSubmit"><svg class="icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>確認</button>
       </div>
-      <div style="font-size:12px;color:#94A3B8;margin:24px 0 8px 8px;font-weight:600;">最近紀錄 (本機)</div>
+      
+      <div class="group-title">最近本機紀錄</div>
       <div class="card">
         <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
@@ -140,13 +193,13 @@
   </section>
 
   <section data-view="settings" class="container" hidden>
-    <div style="font-size:12px;color:#94A3B8;margin:24px 0 8px 8px;font-weight:600;">連線設定</div>
+    <div class="group-title">連線設定</div>
     <div class="card">
       <div class="input-row"><span class="row-label">API URL</span><input id="endpoint" class="row-input" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec"></div>
       <div class="input-row"><span class="row-label">API Key</span><input id="apiKey" class="row-input" placeholder="選填"></div>
       <div style="display:flex;padding:16px;gap:12px;"><button id="btnTest" style="flex:1;padding:12px;background:var(--bg);border:none;border-radius:10px;color:var(--text);">測試</button><button id="btnSaveCfg" style="flex:1;padding:12px;background:var(--text);color:#fff;border:none;border-radius:10px;">儲存</button></div>
     </div>
-    <div style="font-size:12px;color:#94A3B8;margin:24px 0 8px 8px;font-weight:600;">Gmail 匯入</div>
+    <div class="group-title">Gmail 匯入</div>
     <div class="card" style="padding:16px;">
       <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;"><input id="importDays" type="number" value="10" class="row-input" style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;width:80px;" placeholder="天數"><div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span style="font-size:13px;color:var(--text);">強制重抓</span><label class="switch" style="transform:scale(0.8);"><input type="checkbox" id="importForce"><span class="slider"></span></label></div></div>
       <button class="btn-main" id="btnImport" type="button" style="margin:0;">開始抓取帳單</button>
@@ -157,7 +210,8 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
-          <li><strong>v2.5 (Fix):</strong> 修復餘額查詢，移除登記人，裝置改寫入 M 欄</li>
+          <li><strong>v2.6:</strong> 強化防呆檢查，確保必填欄位 (分類/帳戶/項目)</li>
+          <li><strong>v2.5:</strong> 修復餘額查詢，移除登記人，裝置改寫入 M 欄</li>
           <li><strong>v2.3:</strong> 裝置指紋識別 (iOS/Android)</li>
           <li><strong>v2.2:</strong> 介面去表情符號化</li>
           <li><strong>v2.0:</strong> 新增分帳功能與 Gmail 自動匯入</li>
@@ -170,18 +224,25 @@
   <div id="toast" class="toast">訊息</div>
 
 <script>
-let isSubmitting=false; let currentSplits=[];
-const ACCOUNTS=['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
-const CATEGORIES=['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
-const ITEM_OPTIONS=['食物','公司代墊','玩樂','交通','其他'];
-const DRAFT_KEY='spend.draft.v4'; const SENT_KEY='spend.sent.v19'; 
+/* Global Vars */
+let isSubmitting = false; let currentSplits = [];
+const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
+const CATEGORIES = ['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
+const ITEM_OPTIONS = ['食物','公司代墊','玩樂','交通','其他'];
+// 已移除 OWNERS
+
+/* Init */
+const DRAFT_KEY = 'spend.draft.v3';
+const SENT_KEY = 'spend.sent.v19'; 
 
 window.addEventListener('DOMContentLoaded', () => {
-  $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  $('date').value = new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
   loadCfg(); restoreDraft(); renderLog(); route();
+  const ep = $('endpoint').value.trim(); if(ep) fetch(ep + '?ping=1').catch(()=>{});
   populateModalSelects();
 });
 
+/* Helpers */
 const $ = id => document.getElementById(id);
 const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
 function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
@@ -190,59 +251,109 @@ function getDeviceType() {
   if(!id) { id = Math.random().toString(36).substring(2,6).toUpperCase(); localStorage.setItem('spend.deviceId', id); }
   const ua = navigator.userAgent;
   let os = 'Web';
-  if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS'; else if (/Android/i.test(ua)) os = 'Android'; else if (/Macintosh/i.test(ua)) os = 'Mac'; else if (/Windows/i.test(ua)) os = 'PC';
+  if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+  else if (/Android/i.test(ua)) os = 'Android';
+  else if (/Macintosh/i.test(ua)) os = 'Mac';
+  else if (/Windows/i.test(ua)) os = 'PC';
   return `${os} #${id}`;
 }
 function routeClick(name) { location.hash = '#' + name; }
-function showView(name){ document.querySelectorAll('section[data-view]').forEach(sec=>sec.hidden = sec.dataset.view !== name); document.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + name)); }
+function showView(name){
+  document.querySelectorAll('section[data-view]').forEach(sec=>sec.hidden = sec.dataset.view !== name);
+  document.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + name));
+}
 function route(){ const name=(location.hash||'#home').slice(1); showView(['home','recent','balance','settings'].includes(name)?name:'home'); }
 window.addEventListener('hashchange', route);
 function toggleLog(){ const l=$('verLog'); l.style.display = l.style.display==='block'?'none':'block'; }
 
+/* Draft & Reset */
 function saveDraft() {
-  const draft = { amount:$('amount').value, date:$('date').value, category:$('category').value, account:$('account').value, itemSelect:$('itemSelect').value, itemOther:$('itemOther').value, note:$('note').value, direction:$('direction').value, isTransfer:$('isTransfer').checked, accountIn:$('accountIn').value, splits:currentSplits };
+  const draft = {
+    amount: $('amount').value, date: $('date').value, 
+    category: $('category').value, account: $('account').value,
+    itemSelect: $('itemSelect').value, itemOther: $('itemOther').value,
+    note: $('note').value, direction: $('direction').value,
+    isTransfer: $('isTransfer').checked, accountIn: $('accountIn').value,
+    splits: currentSplits
+  };
   localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 }
 function restoreDraft() {
   const saved = localStorage.getItem(DRAFT_KEY); if (!saved) return;
   try {
     const d = JSON.parse(saved);
-    if(d.date) $('date').value = d.date; if(d.amount) $('amount').value = d.amount; if(d.category) $('category').value = d.category; if(d.account) $('account').value = d.account; if(d.note) $('note').value = d.note; if(d.direction) setDirection(d.direction);
+    if(d.date) $('date').value = d.date;
+    if(d.amount) $('amount').value = d.amount;
+    if(d.category) $('category').value = d.category;
+    if(d.account) $('account').value = d.account;
+    if(d.note) $('note').value = d.note;
+    if(d.direction) setDirection(d.direction);
     $('itemSelect').value = d.itemSelect||''; $('itemOther').value = d.itemOther||'';
     if($('itemSelect').value==='其他') $('itemOther').style.display='block';
-    $('isTransfer').checked = !!d.isTransfer; $('transferFields').style.display = d.isTransfer ? 'flex' : 'none';
+    $('isTransfer').checked = !!d.isTransfer;
+    $('transferFields').style.display = d.isTransfer ? 'flex' : 'none';
     if(d.accountIn) $('accountIn').value = d.accountIn;
     if(d.isTransfer) $('category').disabled = true;
     if(d.splits && d.splits.length > 0) { currentSplits=d.splits; renderSplits(); }
   } catch(e){}
 }
+/* ✅ 修正：送出後將 分類、帳戶、項目 歸零 */
 function resetForm() {
   localStorage.removeItem(DRAFT_KEY); currentSplits = [];
   $('splitList').innerHTML = ''; $('splitSection').style.display = 'none'; $('btnSubmit').textContent = '確認送出';
   $('date').disabled = false; $('account').disabled = false;
-  $('amount').value = ''; $('category').value = ''; $('account').value = ''; $('note').value = ''; 
-  $('itemSelect').value = ''; $('itemOther').value = ''; $('itemOther').style.display = 'none';
+  $('amount').value = ''; 
+  $('category').value = ''; 
+  $('account').value = ''; // 歸零帳戶
+  $('note').value = ''; 
+  $('itemSelect').value = ''; 
+  $('itemOther').value = ''; $('itemOther').style.display = 'none';
   if($('isTransfer').checked) { $('isTransfer').checked = false; $('transferFields').style.display='none'; $('category').disabled = false; }
 }
 
-function setDirection(val) { $('direction').value = val; document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val)); saveDraft(); }
-$('itemSelect').onchange = ()=>{ const v = $('itemSelect').value; $('itemOther').style.display = v==='其他' ? 'block' : 'none'; if(v!=='其他') $('itemOther').value=''; saveDraft(); };
+/* Interaction */
+function setDirection(val) {
+  $('direction').value = val;
+  document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val));
+  saveDraft();
+}
+$('itemSelect').onchange = ()=>{ 
+  const v = $('itemSelect').value; 
+  $('itemOther').style.display = v==='其他' ? 'block' : 'none';
+  if(v!=='其他') $('itemOther').value='';
+  saveDraft();
+};
 $('isTransfer').onchange = ()=>{
-  const on = $('isTransfer').checked; $('transferFields').style.display = on ? 'flex' : 'none';
-  if (on){ $('category').value='平衡'; $('category').disabled=true; $('itemSelect').value='其他'; $('itemOther').style.display='block'; $('itemOther').value='內控互轉'; $('direction').value='支出'; if(currentSplits.length>0){toast('互轉已清除分帳');currentSplits=[];renderSplits();} } 
-  else { $('category').disabled=false; if($('itemOther').value==='內控互轉'){ $('itemOther').value=''; $('itemSelect').value=''; $('itemOther').style.display='none'; } }
+  const on = $('isTransfer').checked;
+  $('transferFields').style.display = on ? 'flex' : 'none';
+  if (on){
+    $('category').value='平衡'; $('category').disabled=true; $('itemSelect').value='其他'; $('itemOther').style.display='block'; $('itemOther').value='內控互轉'; $('direction').value='支出';
+    if (currentSplits.length > 0) { toast('互轉已清除分帳'); currentSplits = []; renderSplits(); }
+  } else { 
+    $('category').disabled=false; 
+    if($('itemOther').value==='內控互轉'){ $('itemOther').value=''; $('itemSelect').value=''; $('itemOther').style.display='none'; } 
+  }
   saveDraft();
 };
 function renderSplits() {
   const btnSubmit = $('btnSubmit'); const listDiv = $('splitList'); const section = $('splitSection');
-  if (currentSplits.length === 0) { section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出'; $('date').disabled = false; $('account').disabled = false; saveDraft(); return; }
-  section.style.display = 'block'; let html = ''; let total = 0;
-  currentSplits.forEach((s, i) => { const isOut = s.direction === '支出'; const signed = isOut ? s.amount : -s.amount; total += signed; html += `<div class="record-item"><div class="rec-left"><div class="rec-title">${s.category} - ${s.item}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${s.amount}</span><span style="color:var(--danger);font-size:18px;margin-left:10px;cursor:pointer" onclick="delSplit(${i})">✕</span></div></div>`; });
+  if (currentSplits.length === 0) {
+    section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出';
+    $('date').disabled = false; $('account').disabled = false;
+    saveDraft(); return;
+  }
+  section.style.display = 'block';
+  let html = ''; let total = 0;
+  currentSplits.forEach((s, i) => {
+    const isOut = s.direction === '支出'; const signed = isOut ? s.amount : -s.amount; total += signed;
+    html += `<div class="split-row"><div>${s.category} - ${s.item} <span style="color:#999;font-size:12px">(${s.note||'-'})</span></div><div><span style="font-family:monospace;font-weight:600;color:${isOut?'var(--text)':'var(--success)'}">${isOut?'-':''}${s.amount}</span><span class="split-del" data-idx="${i}" style="color:var(--danger);font-weight:bold;margin-left:12px;cursor:pointer;">✕</span></div></div>`;
+  });
   html += `<div style="padding:10px;text-align:right;font-weight:600;color:var(--primary)">暫存總計: ${total.toFixed(2)}</div>`;
   listDiv.innerHTML = html; btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`;
-  $('date').disabled = true; $('account').disabled = true; saveDraft();
+  $('date').disabled = true; $('account').disabled = true;
+  saveDraft();
 }
-window.delSplit = (i) => { currentSplits.splice(i, 1); renderSplits(); };
+$('splitList').onclick = (e) => { if (e.target.dataset.idx) { currentSplits.splice(Number(e.target.dataset.idx), 1); renderSplits(); } };
 $('btnAddSplit').onclick = () => {
   if (currentSplits.length === 0) { if (!$('date').value) return toast('請填日期'); if (!$('account').value) return toast('請選帳戶'); }
   const amt = Number($('amount').value || 0); const cat = $('category').value; 
@@ -253,20 +364,32 @@ $('btnAddSplit').onclick = () => {
   renderSplits(); $('amount').value = ''; $('note').value = ''; $('amount').focus();
 };
 
+/* Submit */
 $('form').onsubmit = (e) => {
   e.preventDefault(); if (isSubmitting) return;
   const amt = Number($('amount').value); const isXfer = $('isTransfer').checked;
+  
+  // ✅ 修正 4：強制檢查必填欄位 (分類、帳戶、項目)
+  // 不論是單筆還是分帳，帳戶都是必填
+  if (!$('account').value) return toast('請選擇帳戶');
+
   if (currentSplits.length === 0) {
     if (!amt || amt <= 0) return toast('請輸入金額');
-    if (!isXfer && !$('category').value) return toast('請選擇分類');
-    const it = ($('itemSelect').value==='其他') ? $('itemOther').value.trim() : $('itemSelect').value;
-    if (!it) return toast('請輸入項目');
+    if (!isXfer) {
+        if (!$('category').value) return toast('請選擇分類');
+        const it = ($('itemSelect').value==='其他') ? $('itemOther').value.trim() : $('itemSelect').value;
+        if (!it) return toast('請輸入項目');
+    }
     if (isXfer && !$('accountIn').value) return toast('請選擇轉入帳戶');
   }
   isSubmitting = true; const btn = $('btnSubmit'); btn.textContent = '傳送中...'; btn.disabled = true;
   
   const norm = s => s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
-  const payload = { date: $('date').value, account: norm($('account').value), apiKey: $('apiKey').value.trim(), device: getDeviceType() };
+  const payload = { 
+    date: $('date').value, account: norm($('account').value), 
+    apiKey: $('apiKey').value.trim(), device: getDeviceType() 
+  };
+  
   const ts = new Date().toLocaleString('sv').replace(' ','T');
   const addLog = (o) => addSent({ts, date:payload.date, account:payload.account, ...o});
 
@@ -309,23 +432,26 @@ function renderLog(){
 }
 $('btnClear').onclick=()=>{ if(confirm('清除?')) { localStorage.removeItem(SENT_KEY); renderLog(); }};
 
+/* ✅ 資產查詢修復 */
 $('btnBalance').onclick=async()=>{
   const ep=$('endpoint').value.trim(); if(!ep) return;
-  const btn = $('btnBalance'); btn.textContent = '計算中...'; btn.disabled = true;
-  $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
+  $('balanceResult').textContent='計算中...'; $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
   try {
      const p = new URLSearchParams({balance:'1', by:'account'});
-     const res = await fetch(ep+'?'+p); const data = await res.json();
-     if(!data.ok) throw new Error(data.error || 'Err');
+     const res = await fetch(ep+'?'+p); 
+     const data = await res.json();
+     if(!data.ok) throw new Error(data.error || 'Unknown Error');
+     
      let h='';
      if(data.breakdown) {
        data.breakdown.forEach(b => {
          h += `<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;font-size:15px;"><span style="color:var(--text)">${b.account}</span><span style="font-family:monospace;font-weight:600;">${b.balance.toFixed(2)}</span></div>`;
        });
-       $('balanceListContainer').innerHTML = h; $('balanceTotal').textContent = data.total.toFixed(2);
-     } else { $('balanceListContainer').innerHTML = '<div style="text-align:center;padding:20px">無資料</div>'; }
-  } catch(e) { $('balanceListContainer').innerHTML=`<div style="color:red;text-align:center">${e.message}</div>`; }
-  btn.textContent = '查詢所有餘額'; btn.disabled = false;
+       $('balanceListContainer').innerHTML = h; $('balanceTotal').textContent = data.total.toFixed(2); $('balanceResult').textContent = `統計範圍: 全部時間`;
+     } else {
+       $('balanceListContainer').innerHTML = '<div style="text-align:center;padding:20px">無資料</div>';
+     }
+  } catch(e) { $('balanceResult').textContent='失敗: '+e.message; }
 };
 
 $('btnRecent').onclick=async()=>{
