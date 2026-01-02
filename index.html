@@ -4,791 +4,385 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#F5F7F9">
   <title>收支快記</title>
   
-  <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=💰&background=5D7B9D&color=fff&size=192&font-size=0.5&rounded=true">
+  <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Ledger&background=5D7B9D&color=fff&size=192&font-size=0.3&rounded=true">
 
   <style>
-    /* --- 1. 護眼配色 --- */
     :root {
-      --bg: #F5F7F9; 
-      --card: #FFFFFF;
-      --text: #334155; 
-      --text-light: #64748B;
-      --primary: #5D7B9D; 
-      --primary-light: #E2E8F0;
-      --danger: #EF4444; 
-      --success: #059669;
-      --radius: 16px;
-      --border: #E2E8F0;
-      --shadow: 0 4px 20px rgba(0,0,0,0.05);
-      --modal-bg: rgba(0, 0, 0, 0.4);
+      --bg: #F5F7F9; --card: #FFFFFF;
+      --text: #334155; --text-light: #94A3B8;
+      --primary: #5D7B9D; --danger: #EF4444; --success: #059669;
+      --radius: 12px; --border: #E2E8F0;
     }
-
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
     body {
       margin: 0; background: var(--bg); color: var(--text);
-      font-family: "PingFang TC", "Noto Sans TC", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       height: 100vh; display: flex; flex-direction: column;
       padding-top: env(safe-area-inset-top);
-      padding-bottom: calc(90px + env(safe-area-inset-bottom));
+      padding-bottom: calc(100px + env(safe-area-inset-bottom));
     }
-
-    /* --- 導航 --- */
+    .icon { width: 20px; height: 20px; fill: currentColor; }
     .nav {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-      border: 1px solid rgba(255,255,255,0.5);
-      border-radius: 30px; padding: 6px;
-      display: flex; gap: 8px; z-index: 100;
-      width: 90%; max-width: 380px;
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.98); border: 1px solid var(--border);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      border-radius: 32px; padding: 6px 12px;
+      display: flex; gap: 8px; z-index: 100; width: 90%; max-width: 360px; justify-content: space-between;
     }
     .nav-item {
       flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 10px 0; color: var(--text-light); text-decoration: none;
-      font-size: 11px; font-weight: 500; border-radius: 24px;
-      transition: all 0.3s ease;
+      padding: 8px 0; color: var(--text-light); text-decoration: none;
+      font-size: 10px; font-weight: 600; border-radius: 20px; transition: all 0.2s ease;
     }
-    .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(93,123,157,0.3); }
-    .nav-icon { font-size: 18px; margin-bottom: 2px; }
-
-    /* --- 通用元件 --- */
+    .nav-item.active { color: var(--primary); background: #F1F5F9; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; width: 100%; flex: 1; overflow-y: auto; }
     section[hidden] { display: none; }
-    .group-title { font-size: 13px; color: var(--text-light); margin: 24px 0 8px 4px; font-weight: 500; }
-    .card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border); }
-    
-    /* 表單元件 */
+    .card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 16px; border: 1px solid var(--border); }
+    .big-input-wrapper { display: flex; justify-content: center; padding: 0 0 24px; position: relative; }
+    .currency-symbol { font-size: 20px; font-weight: 500; color: var(--text-light); margin-top: 16px; margin-right: 4px; }
+    .big-input { border: none; background: transparent; text-align: center; font-size: 48px; font-weight: 600; color: var(--text); width: 200px; padding: 0; margin: 0; font-family: monospace; }
+    .input-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); min-height: 52px; }
+    .row-label { width: 70px; font-size: 14px; color: var(--text-light); font-weight: 500; }
+    .row-input { flex: 1; border: none; background: transparent; font-size: 15px; color: var(--text); text-align: right; }
+    select.row-input { direction: rtl; }
+    .btn-main { background: var(--primary); color: #fff; width: 100%; padding: 14px; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; margin-top: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(93,123,157,0.2); transition: 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-main:disabled { opacity: 0.7; }
+    .btn-ghost { background: transparent; color: var(--text-light); border: 1px solid var(--border); }
+    .switch { position: relative; display: inline-block; width: 44px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; transition: .3s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(18px); }
     .seg-control { display: flex; background: var(--bg); border-radius: 12px; padding: 4px; margin: 0 16px 20px; }
-    .seg-item { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; border-radius: 10px; color: var(--text-light); cursor: pointer; transition: 0.3s; }
-    .seg-item.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); color: var(--text); }
+    .seg-item { flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; border-radius: 8px; color: var(--text-light); cursor: pointer; transition: 0.2s; }
+    .seg-item.active { background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text); }
     .seg-item[data-val="支出"].active { color: var(--danger); }
     .seg-item[data-val="收入"].active { color: var(--success); }
-    
-    .big-input-wrapper { display: flex; justify-content: center; padding: 0 0 24px; }
-    .currency-symbol { font-size: 24px; font-weight: 500; color: var(--text-light); margin-top: 12px; margin-right: 6px; }
-    .big-input { border: none; background: transparent; text-align: center; font-size: 52px; font-weight: 600; color: var(--text); width: 240px; padding: 0; margin: 0; font-family: monospace; }
-    
-    .input-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); min-height: 54px; }
-    .input-row:last-child { border-bottom: none; }
-    .row-label { width: 80px; font-size: 14px; color: var(--text-light); font-weight: 500; }
-    .row-input { flex: 1; border: none; background: transparent; font-size: 15px; color: var(--text); text-align: right; padding: 0; margin: 0; font-weight: 500; }
-    .row-input:focus { color: var(--primary); }
-    select.row-input { direction: rtl; color: var(--text); }
-
-    .btn-main { background: var(--primary); color: #fff; width: 100%; padding: 16px; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; margin-top: 20px; cursor: pointer; box-shadow: 0 8px 20px rgba(93,123,157,0.2); transition: transform 0.1s; }
-    .btn-main:active { transform: scale(0.98); }
-    .btn-danger { background: #FEE2E2; color: var(--danger); margin-top: 12px; box-shadow: none; }
-
-    .switch { position: relative; display: inline-block; width: 48px; height: 28px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; transition: .4s; border-radius: 34px; }
-    .slider:before { position: absolute; content: ""; height: 24px; width: 24px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    input:checked + .slider { background-color: var(--primary); }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    .split-row { display: flex; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); background: #fff; font-size: 14px; }
-    .split-del { color: var(--text-light); font-weight: bold; margin-left: 16px; cursor: pointer; opacity: 0.5; }
-
-    /* 列表樣式 */
-    .record-item { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
-    .rec-left { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-    .rec-title { font-size: 15px; font-weight: 600; color: var(--text); }
-    .rec-meta { font-size: 12px; color: var(--text-light); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
-    .rec-tag { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 11px; }
-    .rec-dates { font-size: 11px; color: #94A3B8; margin-top: 2px; font-family: monospace; }
-    .rec-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-    .rec-amt { font-size: 17px; font-weight: 600; font-family: monospace; }
-    .rec-amt.neg { color: var(--text); }
-    .rec-amt.pos { color: var(--success); }
-
-    .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-60px); background: rgba(51, 65, 85, 0.95); color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; pointer-events: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .record-item { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .rec-amt { font-size: 16px; font-weight: 600; font-family: monospace; }
+    .rec-amt.neg { color: var(--text); } .rec-amt.pos { color: var(--success); }
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-50px); background: #334155; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: 0.4s; pointer-events: none; z-index: 2000; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* --- ✅ 新增：編輯彈窗 (Modal) 樣式 --- */
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--modal-bg); backdrop-filter: blur(4px);
-      display: flex; justify-content: center; align-items: flex-end; /* 從底部升起 */
-      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-    }
-    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(2px); z-index: 999; display: none; justify-content: center; align-items: flex-end; }
+    .modal-overlay.open { display: flex; }
+    .modal-card { background: #fff; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 24px; animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     
-    .modal-card {
-      background: var(--card); width: 100%; max-width: 600px;
-      border-radius: 24px 24px 0 0; /* 上方圓角 */
-      padding: 24px 20px 40px; /* 底部留白 */
-      box-shadow: 0 -4px 30px rgba(0,0,0,0.1);
-      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-      max-height: 90vh; overflow-y: auto;
-    }
-    .modal-overlay.open .modal-card { transform: translateY(0); }
-
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .modal-title { font-size: 18px; font-weight: 700; color: var(--text); }
-    .modal-close { background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; color: var(--text-light); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
+    /* Version Log */
+    #verLog { font-size:12px; background:#f1f5f9; padding:16px; border-radius:12px; line-height:1.6; max-height:200px; overflow-y:auto; margin-top:12px; display:none; text-align:left; border:1px solid var(--border); }
+    #verLog ul { padding-left:16px; margin:0; }
+    #verLog li { margin-bottom:4px; color:var(--text); }
   </style>
 </head>
 <body>
 
   <nav class="nav">
-    <a href="#home" class="nav-item active" onclick="routeClick('home')"><span class="nav-icon">✏️</span>記帳</a>
-    <a href="#recent" class="nav-item" onclick="routeClick('recent')"><span class="nav-icon">📋</span>明細</a>
-    <a href="#balance" class="nav-item" onclick="routeClick('balance')"><span class="nav-icon">💎</span>資產</a>
-    <a href="#settings" class="nav-item" onclick="routeClick('settings')"><span class="nav-icon">⚙️</span>設定</a>
+    <a href="#home" class="nav-item active" onclick="routeClick('home')"><svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>記帳</a>
+    <a href="#recent" class="nav-item" onclick="routeClick('recent')"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>明細</a>
+    <a href="#balance" class="nav-item" onclick="routeClick('balance')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 10h12v2H4zm0-4h12v2H4zm0 8h8v2H4zm10 0v6l5.5-3-5.5-3z"/></svg>資產</a>
+    <a href="#settings" class="nav-item" onclick="routeClick('settings')"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>設定</a>
   </nav>
 
   <section data-view="home" class="container">
     <form id="form" autocomplete="off">
       <select id="direction" style="display:none"><option>支出</option><option>收入</option></select>
-      
       <div class="card" style="padding-top: 24px;">
         <div class="seg-control">
           <div class="seg-item active" data-val="支出" onclick="setDirection('支出')">支出</div>
           <div class="seg-item" data-val="收入" onclick="setDirection('收入')">收入</div>
         </div>
-
         <div class="big-input-wrapper">
           <span class="currency-symbol">$</span>
           <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal" oninput="saveDraft()">
         </div>
-
-        <div class="input-row">
-          <span class="row-label">日期</span>
-          <input type="date" id="date" class="row-input" required onchange="saveDraft()">
-        </div>
-
-        <div class="input-row">
-          <span class="row-label">登記人</span>
-          <select id="owner" class="row-input" onchange="saveDraft()"><option>欣宜</option><option>喬猷</option></select>
-        </div>
-        
-        <div class="input-row">
-          <span class="row-label">分類</span>
-          <select id="category" class="row-input" onchange="saveDraft()">
-            <option value="">選擇分類</option>
-            <option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option>
-            <option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option>
-          </select>
-        </div>
-
-        <div class="input-row">
-          <span class="row-label">帳戶</span>
-          <select id="account" class="row-input" onchange="saveDraft()">
-            <option value="">選擇帳戶</option>
-            <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
-            <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
-            <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-          </select>
-        </div>
-
-        <div class="input-row">
-          <span class="row-label">項目</span>
-          <div style="flex:1; display:flex; justify-content:flex-end; gap:8px;">
-            <input id="itemOther" class="row-input" placeholder="輸入項目" style="display:none; border-bottom:1px dashed #94A3B8;" oninput="saveDraft()">
-            <select id="itemSelect" class="row-input" onchange="saveDraft()">
-              <option value="">選擇項目</option>
-              <option value="食物">食物</option><option value="公司代墊">公司代墊</option>
-              <option value="玩樂">玩樂</option><option value="交通">交通</option>
-              <option value="其他">手動輸入...</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="input-row">
-          <span class="row-label">備註</span>
-          <input id="note" class="row-input" placeholder="選填" oninput="saveDraft()">
-        </div>
-        
-        <div class="input-row" style="justify-content: space-between;">
-          <span class="row-label">帳戶互轉</span>
-          <label class="switch">
-            <input type="checkbox" id="isTransfer" onchange="saveDraft()">
-            <span class="slider"></span>
-          </label>
-        </div>
-        
-        <div id="transferFields" class="input-row" style="display:none; background:#F1F5F9;">
-          <span class="row-label" style="color:var(--primary)">轉入至</span>
-          <select id="accountIn" class="row-input" onchange="saveDraft()">
-            <option value="">選擇轉入帳戶</option>
-            <option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option>
-            <option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option>
-            <option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-          </select>
-        </div>
+        <div class="input-row"><span class="row-label">日期</span><input type="date" id="date" class="row-input" required onchange="saveDraft()"></div>
+        <div class="input-row"><span class="row-label">分類</span><select id="category" class="row-input" onchange="saveDraft()"><option value="">選擇分類</option><option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option><option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option></select></div>
+        <div class="input-row"><span class="row-label">帳戶</span><select id="account" class="row-input" onchange="saveDraft()"><option value="">選擇帳戶</option><option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option></select></div>
+        <div class="input-row"><span class="row-label">項目</span><div style="flex:1;display:flex;justify-content:flex-end;gap:8px;"><input id="itemOther" class="row-input" placeholder="項目" style="display:none;border-bottom:1px dashed #94A3B8;" oninput="saveDraft()"><select id="itemSelect" class="row-input" onchange="saveDraft()"><option value="">選擇項目</option><option value="食物">食物</option><option value="公司代墊">公司代墊</option><option value="玩樂">玩樂</option><option value="交通">交通</option><option value="其他">手動輸入...</option></select></div></div>
+        <div class="input-row"><span class="row-label">備註</span><input id="note" class="row-input" placeholder="選填" oninput="saveDraft()"></div>
+        <div class="input-row" style="justify-content:space-between;"><span class="row-label">帳戶互轉</span><label class="switch"><input type="checkbox" id="isTransfer" onchange="saveDraft()"><span class="slider"></span></label></div>
+        <div id="transferFields" class="input-row" style="display:none;background:#F1F5F9;"><span class="row-label" style="color:var(--primary)">轉入至</span><select id="accountIn" class="row-input" onchange="saveDraft()"><option value="">選擇轉入帳戶</option><option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option></select></div>
       </div>
-
-      <div id="splitSection" style="display:none">
-        <div class="group-title">分帳預覽</div>
-        <div class="card">
-          <div id="splitList"></div>
-        </div>
+      <div id="splitSection" style="display:none"><div style="font-size:12px;color:#94A3B8;margin-left:8px;font-weight:600;">分帳預覽</div><div class="card"><div id="splitList"></div></div></div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn-main btn-ghost" type="button" id="btnAddSplit"><svg class="icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>分帳</button>
+        <button class="btn-main" type="submit" id="btnSubmit"><svg class="icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>確認</button>
       </div>
-
-      <div style="display:flex; gap:12px;">
-        <button class="btn-main" type="button" id="btnAddSplit" style="background:var(--bg); color:var(--text); box-shadow:none;">
-          ＋ 加入分項
-        </button>
-        <button class="btn-main" type="submit" id="btnSubmit">
-          確認送出
-        </button>
-      </div>
-      
-      <div class="group-title">最近本機紀錄</div>
+      <div style="font-size:12px;color:#94A3B8;margin:24px 0 8px 8px;font-weight:600;">最近紀錄 (本機)</div>
       <div class="card">
-        <div class="log" id="log" style="max-height:200px; overflow:auto;"></div>
-        <div style="padding:12px; text-align:center; border-top:1px solid var(--border); display:flex; justify-content:center; gap:20px;">
-           <span id="btnClear" style="color:var(--danger); font-size:12px; cursor:pointer">清除紀錄</span>
-           <span id="btnExport" style="color:var(--primary); font-size:12px; cursor:pointer">匯出 CSV</span>
-        </div>
+        <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
+        <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
-
     </form>
   </section>
 
   <section data-view="recent" class="container" hidden>
-    <div class="card" style="padding:16px; margin-bottom:16px;">
-      <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <input type="number" id="rLimit" value="10" class="row-input" style="background:var(--bg); border-radius:8px; padding:8px; text-align:center;" placeholder="筆數">
-        <select id="rCategory" class="row-input" style="background:var(--bg); border-radius:8px; padding:8px;"><option value="">全部分類</option><option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option><option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option></select>
-      </div>
-      <button class="btn-main" id="btnRecent" type="button" style="margin:0; padding:12px; font-size:14px;">⟳ 刷新列表</button>
-      <div id="recentHint" style="text-align:center; font-size:12px; color:var(--text-light); margin-top:12px;">—</div>
+    <div class="card" style="padding:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;"><input type="number" id="rLimit" value="10" class="row-input" style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;" placeholder="筆數"><select id="rCategory" class="row-input" style="background:var(--bg);border-radius:8px;padding:8px;"><option value="">全部分類</option><option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option><option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option></select></div>
+      <button class="btn-main" id="btnRecent" type="button" style="margin:0;padding:12px;">⟳ 刷新列表</button>
     </div>
-    
     <div id="recentList" style="padding-bottom:20px;"></div>
-    <div style="display:none"><select id="rAccount"><option value="">全部</option></select><select id="rOwner"><option value="">全部</option></select></div>
   </section>
 
   <section data-view="balance" class="container" hidden>
     <div class="card" style="padding:16px;">
-       <h2 style="margin:0 0 16px; font-size:16px; color:var(--text);">當下資產總覽</h2>
-       <button class="btn-main" id="btnBalance" type="button" style="margin-top:0; padding:12px;">查詢所有餘額</button>
+       <h2 style="margin:0 0 16px;font-size:16px;color:var(--text);">當下資產總覽</h2>
+       <button class="btn-main" id="btnBalance" type="button" style="margin-top:0;padding:12px;">查詢所有餘額</button>
     </div>
-    
-    <div class="card" id="balanceArea" style="display:none; padding:20px;">
-       <div style="text-align:center; margin-bottom:24px;">
-          <div style="font-size:12px; color:var(--text-light); margin-bottom:4px;">總資產</div>
-          <div id="balanceTotal" style="font-size:36px; font-weight:700; color:var(--primary);">0.00</div>
-       </div>
+    <div class="card" id="balanceArea" style="display:none;padding:20px;">
+       <div style="text-align:center;margin-bottom:24px;"><div style="font-size:12px;color:var(--text-light);margin-bottom:4px;">總資產</div><div id="balanceTotal" style="font-size:36px;font-weight:700;color:var(--primary);">0.00</div></div>
        <div id="balanceListContainer"></div>
-       <div id="balanceResult" style="font-size:10px; color:#CBD5E1; padding:8px; text-align:center; margin-top:12px;">—</div>
     </div>
-    <select id="qOwner" style="display:none"><option value="">全部</option></select>
   </section>
 
   <section data-view="settings" class="container" hidden>
-    <div class="group-title">連線設定</div>
+    <div style="font-size:12px;color:#94A3B8;margin:24px 0 8px 8px;font-weight:600;">連線設定</div>
     <div class="card">
-      <div class="input-row">
-        <span class="row-label">API URL</span>
-        <input id="endpoint" class="row-input" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec">
-      </div>
-      <div class="input-row">
-        <span class="row-label">API Key</span>
-        <input id="apiKey" class="row-input" placeholder="選填">
-      </div>
-      <div style="display:flex; padding:16px; gap:12px;">
-         <button id="btnTest" style="flex:1; padding:12px; background:var(--bg); border:none; border-radius:10px; color:var(--text);">測試</button>
-         <button id="btnSaveCfg" style="flex:1; padding:12px; background:var(--text); color:#fff; border:none; border-radius:10px;">儲存</button>
-      </div>
-      <div id="cfgHint" style="text-align:center; font-size:12px; color:var(--text-light); padding-bottom:12px;"></div>
+      <div class="input-row"><span class="row-label">API URL</span><input id="endpoint" class="row-input" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec"></div>
+      <div class="input-row"><span class="row-label">API Key</span><input id="apiKey" class="row-input" placeholder="選填"></div>
+      <div style="display:flex;padding:16px;gap:12px;"><button id="btnTest" style="flex:1;padding:12px;background:var(--bg);border:none;border-radius:10px;color:var(--text);">測試</button><button id="btnSaveCfg" style="flex:1;padding:12px;background:var(--text);color:#fff;border:none;border-radius:10px;">儲存</button></div>
     </div>
-
-    <div class="group-title">Gmail 匯入</div>
+    <div style="font-size:12px;color:#94A3B8;margin:24px 0 8px 8px;font-weight:600;">Gmail 匯入</div>
     <div class="card" style="padding:16px;">
-      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
-        <input id="importDays" type="number" value="10" class="row-input" style="background:var(--bg); border-radius:8px; padding:8px; text-align:center; width:80px;" placeholder="天數">
-        <div style="flex:1; display:flex; align-items:center; justify-content:flex-end; gap:8px;">
-           <span style="font-size:13px; color:var(--text);">強制重抓</span>
-           <label class="switch" style="transform:scale(0.8);">
-             <input type="checkbox" id="importForce">
-             <span class="slider"></span>
-           </label>
-        </div>
-      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;"><input id="importDays" type="number" value="10" class="row-input" style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;width:80px;" placeholder="天數"><div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span style="font-size:13px;color:var(--text);">強制重抓</span><label class="switch" style="transform:scale(0.8);"><input type="checkbox" id="importForce"><span class="slider"></span></label></div></div>
       <button class="btn-main" id="btnImport" type="button" style="margin:0;">開始抓取帳單</button>
-      <div id="importHint" style="text-align:center; font-size:12px; color:var(--text-light); margin-top:12px;">—</div>
-      <select id="importPlatform" style="display:none"><option value="">All</option></select>
+      <div id="importHint" style="text-align:center;font-size:12px;color:var(--text-light);margin-top:12px;">—</div>
+    </div>
+    
+    <div style="text-align:center; margin-top:30px;">
+      <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
+      <div id="verLog">
+        <ul>
+          <li><strong>v2.5 (Fix):</strong> 修復餘額查詢，移除登記人，裝置改寫入 M 欄</li>
+          <li><strong>v2.3:</strong> 裝置指紋識別 (iOS/Android)</li>
+          <li><strong>v2.2:</strong> 介面去表情符號化</li>
+          <li><strong>v2.0:</strong> 新增分帳功能與 Gmail 自動匯入</li>
+        </ul>
+      </div>
     </div>
   </section>
 
-  <div id="editModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">編輯紀錄</div>
-        <button class="modal-close" onclick="closeEditModal()">✕</button>
-      </div>
-      
-      <input type="hidden" id="modal-key">
-      <input type="hidden" id="modal-isTransfer">
-      <input type="hidden" id="modal-direction">
-
-      <div class="big-input-wrapper">
-        <span class="currency-symbol">$</span>
-        <input type="number" id="modal-amt" class="big-input" placeholder="0" step="0.01">
-      </div>
-
-      <div class="input-row">
-        <span class="row-label">項目</span>
-        <div style="flex:1; display:flex; justify-content:flex-end; gap:8px;">
-           <input id="modal-itemOther" class="row-input" placeholder="項目" style="display:none; border-bottom:1px dashed #94A3B8;">
-           <select id="modal-itemSel" class="row-input" onchange="modalItemChange()">
-             </select>
-        </div>
-      </div>
-
-      <div class="input-row">
-        <span class="row-label">備註</span>
-        <input id="modal-note" class="row-input" placeholder="備註">
-      </div>
-
-      <div class="input-row">
-        <span class="row-label">分類</span>
-        <select id="modal-cat" class="row-input"></select>
-      </div>
-
-      <div class="input-row">
-        <span class="row-label">帳戶</span>
-        <select id="modal-acc" class="row-input"></select>
-      </div>
-
-      <div class="input-row">
-        <span class="row-label">登記人</span>
-        <select id="modal-owner" class="row-input"></select>
-      </div>
-
-      <div id="modal-transfer-row" class="input-row" style="display:none; background:#F1F5F9;">
-        <span class="row-label" style="color:var(--primary)">轉入至</span>
-        <select id="modal-accIn" class="row-input"></select>
-      </div>
-
-      <button class="btn-main" onclick="submitModalEdit()">儲存修改</button>
-      <button class="btn-main btn-danger" style="background:#FEE2E2; color:var(--danger); box-shadow:none;" onclick="deleteFromModal()">刪除此筆</button>
-    </div>
-  </div>
-
+  <div id="editModal" class="modal-overlay"><div class="modal-card"><div style="display:flex;justify-content:space-between;margin-bottom:20px;"><h3 style="margin:0;">編輯紀錄</h3><span onclick="closeEditModal()" style="font-size:24px;cursor:pointer;">&times;</span></div><div id="modalContent"></div></div></div>
   <div id="toast" class="toast">訊息</div>
 
 <script>
-/* --- 自動暫存機制 --- */
-const DRAFT_KEY = 'spend.draft.v1';
+let isSubmitting=false; let currentSplits=[];
+const ACCOUNTS=['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
+const CATEGORIES=['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
+const ITEM_OPTIONS=['食物','公司代墊','玩樂','交通','其他'];
+const DRAFT_KEY='spend.draft.v4'; const SENT_KEY='spend.sent.v19'; 
+
+window.addEventListener('DOMContentLoaded', () => {
+  $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  loadCfg(); restoreDraft(); renderLog(); route();
+  populateModalSelects();
+});
+
+const $ = id => document.getElementById(id);
+const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
+function getDeviceType() {
+  let id = localStorage.getItem('spend.deviceId');
+  if(!id) { id = Math.random().toString(36).substring(2,6).toUpperCase(); localStorage.setItem('spend.deviceId', id); }
+  const ua = navigator.userAgent;
+  let os = 'Web';
+  if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS'; else if (/Android/i.test(ua)) os = 'Android'; else if (/Macintosh/i.test(ua)) os = 'Mac'; else if (/Windows/i.test(ua)) os = 'PC';
+  return `${os} #${id}`;
+}
+function routeClick(name) { location.hash = '#' + name; }
+function showView(name){ document.querySelectorAll('section[data-view]').forEach(sec=>sec.hidden = sec.dataset.view !== name); document.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + name)); }
+function route(){ const name=(location.hash||'#home').slice(1); showView(['home','recent','balance','settings'].includes(name)?name:'home'); }
+window.addEventListener('hashchange', route);
+function toggleLog(){ const l=$('verLog'); l.style.display = l.style.display==='block'?'none':'block'; }
+
 function saveDraft() {
-  const draft = {
-    amount: $('amount').value, date: $('date').value, owner: $('owner').value,
-    category: $('category').value, account: $('account').value,
-    itemSelect: $('itemSelect').value, itemOther: $('itemOther').value,
-    note: $('note').value, direction: $('direction').value,
-    isTransfer: $('isTransfer').checked, accountIn: $('accountIn').value,
-    splits: currentSplits
-  };
+  const draft = { amount:$('amount').value, date:$('date').value, category:$('category').value, account:$('account').value, itemSelect:$('itemSelect').value, itemOther:$('itemOther').value, note:$('note').value, direction:$('direction').value, isTransfer:$('isTransfer').checked, accountIn:$('accountIn').value, splits:currentSplits };
   localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 }
 function restoreDraft() {
   const saved = localStorage.getItem(DRAFT_KEY); if (!saved) return;
   try {
     const d = JSON.parse(saved);
-    if (d.date) $('date').value = d.date;
-    if (d.amount) $('amount').value = d.amount;
-    if (d.owner) $('owner').value = d.owner;
-    if (d.category) $('category').value = d.category;
-    if (d.account) $('account').value = d.account;
-    if (d.note) $('note').value = d.note;
-    if (d.direction) setDirection(d.direction);
-    $('itemSelect').value = d.itemSelect || ''; $('itemOther').value = d.itemOther || '';
-    if ($('itemSelect').value === '其他') $('itemOther').style.display = 'block';
-    $('isTransfer').checked = !!d.isTransfer;
-    $('transferFields').style.display = d.isTransfer ? 'flex' : 'none';
-    if (d.accountIn) $('accountIn').value = d.accountIn;
-    if (d.isTransfer) $('category').disabled = true;
-    if (d.splits && d.splits.length > 0) { currentSplits = d.splits; renderSplits(); toast('已還原草稿'); }
-  } catch (e) {}
+    if(d.date) $('date').value = d.date; if(d.amount) $('amount').value = d.amount; if(d.category) $('category').value = d.category; if(d.account) $('account').value = d.account; if(d.note) $('note').value = d.note; if(d.direction) setDirection(d.direction);
+    $('itemSelect').value = d.itemSelect||''; $('itemOther').value = d.itemOther||'';
+    if($('itemSelect').value==='其他') $('itemOther').style.display='block';
+    $('isTransfer').checked = !!d.isTransfer; $('transferFields').style.display = d.isTransfer ? 'flex' : 'none';
+    if(d.accountIn) $('accountIn').value = d.accountIn;
+    if(d.isTransfer) $('category').disabled = true;
+    if(d.splits && d.splits.length > 0) { currentSplits=d.splits; renderSplits(); }
+  } catch(e){}
 }
-function clearDraft() {
+function resetForm() {
   localStorage.removeItem(DRAFT_KEY); currentSplits = [];
-  $('splitList').innerHTML = ''; $('splitSection').style.display = 'none';
-  $('btnSubmit').textContent = '確認送出';
-  $('date').disabled = false; $('owner').disabled = false; $('account').disabled = false;
+  $('splitList').innerHTML = ''; $('splitSection').style.display = 'none'; $('btnSubmit').textContent = '確認送出';
+  $('date').disabled = false; $('account').disabled = false;
+  $('amount').value = ''; $('category').value = ''; $('account').value = ''; $('note').value = ''; 
+  $('itemSelect').value = ''; $('itemOther').value = ''; $('itemOther').style.display = 'none';
+  if($('isTransfer').checked) { $('isTransfer').checked = false; $('transferFields').style.display='none'; $('category').disabled = false; }
 }
 
-/* --- 核心 UI --- */
-function setDirection(val) {
-  $('direction').value = val;
-  document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val));
-  saveDraft();
-}
-function routeClick(name) { location.hash = '#' + name; }
-const $ = id => document.getElementById(id);
-const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
-function cssEscape(s){ return String(s).replace(/[^a-zA-Z0-9_\-:.]/g,'_'); }
-function showView(name){
-  document.querySelectorAll('section[data-view]').forEach(sec=>sec.hidden = sec.dataset.view !== name);
-  document.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + name));
-}
-function route(){ const name=(location.hash||'#home').slice(1); showView(['home','recent','balance','settings'].includes(name)?name:'home'); }
-window.addEventListener('hashchange', route);
-
-let isSubmitting = false; let currentSplits = [];
-const ACCOUNTS = ['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
-const CATEGORIES = ['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
-const ITEM_OPTIONS = ['食物','公司代墊','玩樂','交通','其他'];
-const OWNERS = ['欣宜','喬猷'];
-
-(function init(){
-  $('date').value = new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-  loadCfg(); restoreDraft(); renderLog(); route();
-  const ep = $('endpoint').value.trim(); if(ep) fetch(ep + '?ping=1').catch(()=>{});
-  
-  // 初始化 Modal 選項
-  populateModalSelects();
-})();
-
-const itemSelect = $('itemSelect'), itemOther = $('itemOther');
-itemSelect.onchange = ()=>{ 
-  if(itemSelect.value==='其他'){ itemOther.style.display='block'; itemOther.focus(); } else { itemOther.style.display='none'; itemOther.value=''; } 
-  saveDraft();
-};
-
+function setDirection(val) { $('direction').value = val; document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val)); saveDraft(); }
+$('itemSelect').onchange = ()=>{ const v = $('itemSelect').value; $('itemOther').style.display = v==='其他' ? 'block' : 'none'; if(v!=='其他') $('itemOther').value=''; saveDraft(); };
 $('isTransfer').onchange = ()=>{
-  const on = $('isTransfer').checked;
-  $('transferFields').style.display = on ? 'flex' : 'none';
-  if (on){
-    $('category').value='平衡'; $('category').disabled=true; itemSelect.value='其他'; itemOther.style.display='block'; itemOther.value='內控互轉';
-    setDirection('支出');
-    if (currentSplits.length > 0) { toast('互轉模式已清除分帳暫存'); currentSplits = []; renderSplits(); }
-  } else { 
-    $('category').disabled=false; 
-    if(itemOther.value==='內控互轉'){ itemOther.value=''; itemSelect.value=''; itemOther.style.display='none'; } 
-  }
+  const on = $('isTransfer').checked; $('transferFields').style.display = on ? 'flex' : 'none';
+  if (on){ $('category').value='平衡'; $('category').disabled=true; $('itemSelect').value='其他'; $('itemOther').style.display='block'; $('itemOther').value='內控互轉'; $('direction').value='支出'; if(currentSplits.length>0){toast('互轉已清除分帳');currentSplits=[];renderSplits();} } 
+  else { $('category').disabled=false; if($('itemOther').value==='內控互轉'){ $('itemOther').value=''; $('itemSelect').value=''; $('itemOther').style.display='none'; } }
   saveDraft();
 };
-
 function renderSplits() {
   const btnSubmit = $('btnSubmit'); const listDiv = $('splitList'); const section = $('splitSection');
-  if (currentSplits.length === 0) {
-    section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出';
-    $('date').disabled = false; $('owner').disabled = false; $('account').disabled = false;
-    saveDraft(); return;
-  }
-  section.style.display = 'block';
-  let html = ''; let total = 0;
-  currentSplits.forEach((s, i) => {
-    const isOut = s.direction === '支出'; const signed = isOut ? s.amount : -s.amount; total += signed;
-    html += `<div class="split-row">
-       <div>${s.category} - ${s.item} <span style="color:#999;font-size:12px">(${s.note||'-'})</span></div>
-       <div><span style="font-family:monospace; font-weight:600; color:${isOut?'var(--text)':'var(--success)'}">${isOut?'-':''}${s.amount}</span><span class="split-del" data-idx="${i}">✕</span></div>
-    </div>`;
-  });
-  html += `<div style="padding:10px; text-align:right; font-weight:600; color:var(--primary)">暫存總計: ${total.toFixed(2)}</div>`;
+  if (currentSplits.length === 0) { section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出'; $('date').disabled = false; $('account').disabled = false; saveDraft(); return; }
+  section.style.display = 'block'; let html = ''; let total = 0;
+  currentSplits.forEach((s, i) => { const isOut = s.direction === '支出'; const signed = isOut ? s.amount : -s.amount; total += signed; html += `<div class="record-item"><div class="rec-left"><div class="rec-title">${s.category} - ${s.item}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${s.amount}</span><span style="color:var(--danger);font-size:18px;margin-left:10px;cursor:pointer" onclick="delSplit(${i})">✕</span></div></div>`; });
+  html += `<div style="padding:10px;text-align:right;font-weight:600;color:var(--primary)">暫存總計: ${total.toFixed(2)}</div>`;
   listDiv.innerHTML = html; btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`;
-  $('date').disabled = true; $('owner').disabled = true; $('account').disabled = true;
-  saveDraft();
+  $('date').disabled = true; $('account').disabled = true; saveDraft();
 }
-
+window.delSplit = (i) => { currentSplits.splice(i, 1); renderSplits(); };
 $('btnAddSplit').onclick = () => {
-  if (currentSplits.length === 0) {
-    if (!$('date').value) { toast('請填日期'); $('date').focus(); return; }
-    if (!$('account').value) { toast('請選帳戶'); $('account').focus(); return; }
-  }
-  const amount = Number($('amount').value || 0);
-  const category = $('category').value;
-  const item = (itemSelect.value==='其他') ? itemOther.value.trim() : itemSelect.value;
-  const note = $('note').value.trim();
-  const direction = $('direction').value;
-  if ($('isTransfer').checked) { toast('互轉無法分帳'); return; }
-  if (!amount || amount <= 0) { toast('請輸金額'); return; }
-  if (!category) { toast('請選分類'); return; }
-  if (!item) { toast('請輸項目'); return; }
-  currentSplits.push({ amount, category, item, note, direction });
+  if (currentSplits.length === 0) { if (!$('date').value) return toast('請填日期'); if (!$('account').value) return toast('請選帳戶'); }
+  const amt = Number($('amount').value || 0); const cat = $('category').value; 
+  const item = ($('itemSelect').value==='其他') ? $('itemOther').value.trim() : $('itemSelect').value;
+  if ($('isTransfer').checked) return toast('互轉無法分帳');
+  if (!amt || amt <= 0) return toast('請輸金額'); if (!cat) return toast('請選分類'); if (!item) return toast('請輸項目');
+  currentSplits.push({ amount: amt, category: cat, item: item, note: $('note').value.trim(), direction: $('direction').value });
   renderSplits(); $('amount').value = ''; $('note').value = ''; $('amount').focus();
-};
-
-$('splitList').onclick = (e) => {
-  if (e.target.classList.contains('split-del')) {
-    const idx = Number(e.target.dataset.idx);
-    currentSplits.splice(idx, 1); renderSplits();
-  }
 };
 
 $('form').onsubmit = (e) => {
   e.preventDefault(); if (isSubmitting) return;
-  const amountVal = $('amount').value; const amount = Number(amountVal); const isXfer = $('isTransfer').checked;
+  const amt = Number($('amount').value); const isXfer = $('isTransfer').checked;
   if (currentSplits.length === 0) {
-    if (!amountVal || amount <= 0) { toast('請輸入金額'); return; }
-    if (!isXfer && !$('category').value) { toast('請選擇分類'); return; }
-    const it = (itemSelect.value==='其他') ? itemOther.value.trim() : itemSelect.value;
-    if (!it) { toast('請輸入項目'); return; }
-    if (isXfer && !$('accountIn').value) { toast('請選擇轉入帳戶'); return; }
+    if (!amt || amt <= 0) return toast('請輸入金額');
+    if (!isXfer && !$('category').value) return toast('請選擇分類');
+    const it = ($('itemSelect').value==='其他') ? $('itemOther').value.trim() : $('itemSelect').value;
+    if (!it) return toast('請輸入項目');
+    if (isXfer && !$('accountIn').value) return toast('請選擇轉入帳戶');
   }
-  isSubmitting = true;
-  const btn = $('btnSubmit'); btn.textContent = '傳送中...'; btn.disabled = true;
-  const ep = $('endpoint').value.trim();
-  const date = $('date').value; const owner = $('owner').value; const account = $('account').value;
-  const note = $('note').value.trim(); const norm = s => s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
-  let payload = { date, owner, account: norm(account), apiKey: $('apiKey').value.trim() };
-  let localLogs = [];
-  const d=new Date(); const pad=n=>String(n).padStart(2,'0');
-  const ts=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  isSubmitting = true; const btn = $('btnSubmit'); btn.textContent = '傳送中...'; btn.disabled = true;
+  
+  const norm = s => s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
+  const payload = { date: $('date').value, account: norm($('account').value), apiKey: $('apiKey').value.trim(), device: getDeviceType() };
+  const ts = new Date().toLocaleString('sv').replace(' ','T');
+  const addLog = (o) => addSent({ts, date:payload.date, account:payload.account, ...o});
 
   if (currentSplits.length > 0) {
     payload.action = 'split_add'; payload.splits_json = JSON.stringify(currentSplits);
-    currentSplits.forEach(s => {
-      localLogs.push({ ts, date, owner, direction: s.direction, amount: s.amount, category: s.category, account: norm(account), item: s.item, note: s.note });
-    });
-    toast(`已送出 ${currentSplits.length} 筆`);
+    currentSplits.forEach(s => addLog({direction:s.direction, amount:s.amount, category:s.category, item:s.item, note:s.note}));
+    toast(`送出 ${currentSplits.length} 筆`);
   } else {
-    const direction = $('direction').value;
-    const category = isXfer ? '平衡' : $('category').value;
-    const item = isXfer ? '內控互轉' : ((itemSelect.value==='其他')?itemOther.value.trim():itemSelect.value);
-    const accountIn = $('accountIn').value;
-    Object.assign(payload, { amount, category, item, note });
+    Object.assign(payload, { amount: amt, category: isXfer?'平衡':$('category').value, item: isXfer?'內控互轉':(($('itemSelect').value==='其他')?$('itemOther').value:$('itemSelect').value), note: $('note').value });
     if (isXfer) {
-      payload.isTransfer = 'true'; payload.accountIn = norm(accountIn);
-      addSent({ts,date,owner,direction:'支出',amount,category,account:norm(account),item,note});
-      addSent({ts,date,owner,direction:'收入',amount,category,account:norm(accountIn),item,note});
+      payload.isTransfer = 'true'; payload.accountIn = norm($('accountIn').value);
+      addLog({direction:'支出', amount:amt, category:payload.category, item:payload.item, note:payload.note});
+      addLog({direction:'收入', amount:amt, category:payload.category, account:payload.accountIn, item:payload.item, note:payload.note});
     } else {
-      payload.direction = direction;
-      addSent({ts,date,owner,direction,amount,category,account:norm(account),item,note});
+      payload.direction = $('direction').value;
+      addLog({direction:payload.direction, amount:amt, category:payload.category, item:payload.item, note:payload.note});
     }
     toast('記帳成功');
   }
-  localLogs.forEach(l => addSent(l)); renderLog();
-  const body = new URLSearchParams(payload).toString();
-  if(navigator.sendBeacon) navigator.sendBeacon(ep, new Blob([body],{type:'application/x-www-form-urlencoded'}));
-  else fetch(ep, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body, keepalive:true}).catch(()=>{});
-  setTimeout(() => { 
-    isSubmitting = false; btn.disabled = false; 
-    clearDraft(); $('amount').value=''; $('note').value=''; 
-    if(isXfer) { $('isTransfer').checked=false; $('transferFields').style.display='none'; $('category').disabled=false; }
-  }, 1000);
+  renderLog();
+  
+  if(navigator.sendBeacon) navigator.sendBeacon($('endpoint').value, new Blob([new URLSearchParams(payload).toString()],{type:'application/x-www-form-urlencoded'}));
+  else fetch($('endpoint').value, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(payload).toString(), keepalive:true}).catch(()=>{});
+  
+  setTimeout(() => { isSubmitting = false; btn.disabled = false; resetForm(); }, 1000);
 };
 
-/* Log & Export */
-const SENT_KEY='spend.sent.v19';
 function loadSent(){ try{return JSON.parse(localStorage.getItem(SENT_KEY)||'[]');}catch{return[];} }
 function saveSent(list){ localStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); }
 function addSent(rec){ const list=loadSent(); list.push(rec); saveSent(list); }
 function renderLog(){
-  const list=loadSent().slice().reverse();
-  const el=$('log');
+  const list=loadSent().slice().reverse(); const el=$('log');
   if(!list.length){ el.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:#ccc">尚無紀錄</div>'; return; }
   let h='';
   for(const r of list){
     const isOut = r.direction==='支出'; const amt = Math.abs(Number(r.amount)); const sign = isOut ? '-' : '';
-    h += `<div class="record-item">
-       <div class="rec-left"><div class="rec-title">${r.item}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span>${r.date.slice(5)}</span></div></div>
-       <div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${sign}${amt}</span></div>
-    </div>`;
+    h += `<div class="record-item"><div class="rec-left"><div class="rec-title">${r.item}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span>${r.date.slice(5)}</span></div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${sign}${amt}</span></div></div>`;
   }
   el.innerHTML=h;
 }
 $('btnClear').onclick=()=>{ if(confirm('清除?')) { localStorage.removeItem(SENT_KEY); renderLog(); }};
-$('btnExport').onclick=()=>{
-   const list=loadSent(); if(!list.length) return;
-   const rows=[['日期','時間','方向','金額','分類','帳戶','項目','備註'].join(',')];
-   list.forEach(r=>rows.push([r.date,r.ts,r.direction,r.amount,r.category,r.account,r.item,r.note].map(s=>`"${s||''}"`).join(',')));
-   const blob=new Blob([rows.join('\n')],{type:'text/csv'});
-   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='log.csv'; a.click();
+
+$('btnBalance').onclick=async()=>{
+  const ep=$('endpoint').value.trim(); if(!ep) return;
+  const btn = $('btnBalance'); btn.textContent = '計算中...'; btn.disabled = true;
+  $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
+  try {
+     const p = new URLSearchParams({balance:'1', by:'account'});
+     const res = await fetch(ep+'?'+p); const data = await res.json();
+     if(!data.ok) throw new Error(data.error || 'Err');
+     let h='';
+     if(data.breakdown) {
+       data.breakdown.forEach(b => {
+         h += `<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;font-size:15px;"><span style="color:var(--text)">${b.account}</span><span style="font-family:monospace;font-weight:600;">${b.balance.toFixed(2)}</span></div>`;
+       });
+       $('balanceListContainer').innerHTML = h; $('balanceTotal').textContent = data.total.toFixed(2);
+     } else { $('balanceListContainer').innerHTML = '<div style="text-align:center;padding:20px">無資料</div>'; }
+  } catch(e) { $('balanceListContainer').innerHTML=`<div style="color:red;text-align:center">${e.message}</div>`; }
+  btn.textContent = '查詢所有餘額'; btn.disabled = false;
 };
 
-/* Recent List with Modal Trigger */
 $('btnRecent').onclick=async()=>{
   const ep=$('endpoint').value.trim(); if(!ep) return;
   $('recentList').innerHTML='<div style="text-align:center;padding:20px">載入中...</div>';
   try {
-    const limit=$('rLimit').value; const cat=$('rCategory').value;
-    const p = new URLSearchParams({recent:limit});
-    if(cat) p.set('category',cat);
-    const res = await fetch(ep+'?'+p);
-    const data = await res.json();
+    const p = new URLSearchParams({recent:$('rLimit').value});
+    if($('rCategory').value) p.set('category',$('rCategory').value);
+    const res = await fetch(ep+'?'+p); const data = await res.json();
     if(data.records) {
       let h='';
       data.records.forEach(r => {
-         const isOut = r.direction==='支出';
-         const amt = Math.abs(Number(r.amount));
-         const sign = isOut ? '-' : '';
+         const isOut = r.direction==='支出'; const amt = Math.abs(Number(r.amount));
          const dateDay = String(r.date).substring(0, 10).slice(5);
-         let createdStr = '';
-         if (r.createdAt) {
-           const cDate = new Date(r.createdAt);
-           if (!isNaN(cDate)) {
-             const cM = String(cDate.getMonth()+1).padStart(2,'0');
-             const cD = String(cDate.getDate()).padStart(2,'0');
-             const cH = String(cDate.getHours()).padStart(2,'0');
-             const cMin = String(cDate.getMinutes()).padStart(2,'0');
-             createdStr = `${cM}-${cD} ${cH}:${cMin}`;
-           } else { createdStr = r.createdAt.substring(5, 16).replace('T',' '); }
-         }
-         // Store full record in data attribute for modal
-         const recJson = cssEscape(JSON.stringify(r));
-         h += `<div class="card" style="padding:0; margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'>
-            <div class="record-item" style="border:none; cursor:pointer">
-               <div class="rec-left">
-                 <div class="rec-title">${r.item} <span style="font-weight:400;color:#94A3B8;font-size:12px">${r.note?`(${r.note})`:''}</span></div>
-                 <div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span><span>${r.owner}</span></div>
-                 <div class="rec-dates">消費: ${dateDay} | 登記: ${createdStr}</div>
-               </div>
-               <div class="rec-right">
-                 <span class="rec-amt ${isOut?'neg':'pos'}">${sign}${amt}</span>
-                 <div style="margin-top:8px; font-size:11px; color:var(--primary);">編輯 ></div>
-               </div>
-            </div>
-         </div>`;
+         // 顯示 device (M欄)
+         const dev = r.device ? `<span style="font-size:10px;background:#eee;padding:1px 4px;border-radius:3px">${r.device.split('#')[0]}</span>` : '';
+         h += `<div class="card" style="padding:0;margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'><div class="record-item" style="border:none;cursor:pointer"><div class="rec-left"><div class="rec-title">${r.item} <span style="font-weight:400;color:#94A3B8;font-size:12px">${r.note?`(${r.note})`:''}</span></div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span>${dev}</div><div class="rec-dates">消費: ${dateDay}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${amt}</span></div></div></div>`;
       });
       $('recentList').innerHTML = h || '<div style="text-align:center">無資料</div>';
-      $('recentHint').textContent = `顯示 ${data.records.length} 筆`;
     }
   } catch(e){ $('recentList').innerHTML='載入失敗'; }
 };
 
-/* ✅ Modal Logic */
 function populateModalSelects() {
-  const fill = (id, list) => {
-    const el = $(id); el.innerHTML = '';
-    list.forEach(v => { const op = document.createElement('option'); op.value=v; op.textContent=v; el.appendChild(op); });
-  };
-  fill('modal-cat', CATEGORIES);
-  fill('modal-acc', ACCOUNTS);
-  fill('modal-accIn', ACCOUNTS);
-  fill('modal-owner', OWNERS);
-  
-  const itemEl = $('modal-itemSel'); itemEl.innerHTML='';
-  ITEM_OPTIONS.forEach(v => { const op = document.createElement('option'); op.value=v; op.textContent=v; itemEl.appendChild(op); });
-  const opOther = document.createElement('option'); opOther.value='其他'; opOther.textContent='其他 (手動輸入)'; itemEl.appendChild(opOther);
+  const fill = (id, list) => { const el=$(id); if(!el)return; el.innerHTML=''; list.forEach(v=>{const op=document.createElement('option');op.value=v;op.textContent=v;el.appendChild(op)}); };
+  fill('modal-cat', CATEGORIES); fill('modal-acc', ACCOUNTS); fill('modal-accIn', ACCOUNTS); 
+  const itemEl=$('modal-itemSel'); if(itemEl){ itemEl.innerHTML=''; ITEM_OPTIONS.forEach(v=>{const op=document.createElement('option');op.value=v;op.textContent=v;itemEl.appendChild(op)}); const op=document.createElement('option');op.value='其他';op.textContent='其他';itemEl.appendChild(op); }
 }
-
 function openEditModal(r) {
-  const amt = Math.abs(Number(r.amount));
-  const isOut = r.direction === '支出';
-  const isTransfer = (r.category==='平衡' && r.item==='內控互轉');
-  
-  $('modal-key').value = r.createdAt || r.date; // Use createdAt as key
-  $('modal-amt').value = amt;
-  $('modal-note').value = r.note || '';
-  $('modal-cat').value = r.category;
-  $('modal-acc').value = r.account;
-  $('modal-owner').value = r.owner;
-  $('modal-isTransfer').value = isTransfer;
-  $('modal-direction').value = r.direction;
-
-  // Item logic
-  if (ITEM_OPTIONS.includes(r.item)) {
-    $('modal-itemSel').value = r.item;
-    $('modal-itemOther').style.display = 'none';
-  } else {
-    $('modal-itemSel').value = '其他';
-    $('modal-itemOther').style.display = 'flex'; // flex for input-row layout
-    $('modal-itemOther').value = r.item;
-  }
-
-  // Transfer UI
-  if (isTransfer) {
-    $('modal-transfer-row').style.display = 'flex';
-    $('modal-cat').disabled = true;
-    // We can't easily know the "To" account from a single record, so user must re-select if they edit
-    // Or we just hide it. For now, we show it but default to empty or first.
-  } else {
-    $('modal-transfer-row').style.display = 'none';
-    $('modal-cat').disabled = false;
-  }
-
-  $('editModal').classList.add('open');
+  const amt = Math.abs(Number(r.amount)); const isOut = r.direction === '支出'; const isTransfer = (r.category==='平衡' && r.item==='內控互轉');
+  let html = `<div class="big-input-wrapper"><span class="currency-symbol">$</span><input id="m-amt" type="number" class="big-input" value="${amt}"></div>
+    <div class="input-row"><span class="row-label">項目</span><div style="flex:1"><input id="m-item" class="row-input" value="${r.item}"></div></div>
+    <div class="input-row"><span class="row-label">備註</span><input id="m-note" class="row-input" value="${r.note||''}"></div>
+    <div class="input-row"><span class="row-label">分類</span><select id="m-cat" class="row-input">${makeOpts(CATEGORIES,r.category)}</select></div>
+    <div class="input-row"><span class="row-label">帳戶</span><select id="m-acc" class="row-input">${makeOpts(ACCOUNTS,r.account)}</select></div>
+    <div style="display:flex;gap:12px;margin-top:20px;"><button class="btn-main" onclick="saveModal('${r.createdAt}', ${isTransfer}, '${isOut?'支出':'收入'}')">儲存</button><button class="btn-main" style="background:#FEE2E2;color:var(--danger);box-shadow:none" onclick="delModal('${r.createdAt}')">刪除</button></div>`;
+  $('modalContent').innerHTML = html; $('editModal').classList.add('open');
 }
-
-function closeEditModal() { $('editModal').classList.remove('open'); }
-function modalItemChange() {
-  const s = $('modal-itemSel'); const o = $('modal-itemOther');
-  if(s.value==='其他'){ o.style.display='flex'; o.focus(); } else { o.style.display='none'; o.value=''; }
+function closeEditModal(){ $('editModal').classList.remove('open'); }
+function makeOpts(l,s){ return l.map(v=>`<option value="${v}" ${v===s?'selected':''}>${v}</option>`).join(''); }
+async function saveModal(key, isTransfer, dir){
+  const amt=$('m-amt').value; if(!amt) return toast('請輸金額');
+  const payload = { action:'update', createdAt:key, amount:amt, note:$('m-note').value, account:$('m-acc').value, category:$('m-cat').value, item:$('m-item').value, apiKey:$('apiKey').value.trim() };
+  if(!isTransfer) payload.direction = dir;
+  closeEditModal(); toast('更新中...');
+  try { await fetch($('endpoint').value.trim(), {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(payload).toString()}); toast('已更新'); $('btnRecent').click(); } catch(e) { toast('更新失敗'); }
 }
-
-async function submitModalEdit() {
-  const key = $('modal-key').value;
-  const amt = Number($('modal-amt').value);
-  if (!amt || amt <= 0) { toast('金額錯誤'); return; }
-  
-  const isTransfer = ($('modal-isTransfer').value === 'true');
-  const dir = $('modal-direction').value;
-  
-  const itemSel = $('modal-itemSel').value;
-  const itemOther = $('modal-itemOther').value.trim();
-  const item = (itemSel==='其他') ? itemOther : itemSel;
-  
-  const payload = {
-    action: 'update',
-    createdAt: key,
-    amount: String(amt),
-    note: $('modal-note').value,
-    account: $('modal-acc').value,
-    category: $('modal-cat').value,
-    owner: $('modal-owner').value,
-    item: item,
-    apiKey: $('apiKey').value.trim()
-  };
-
-  if (isTransfer) {
-    const accIn = $('modal-accIn').value;
-    if(accIn) { payload.isTransfer='true'; payload.accountIn = accIn; } 
-    else { payload.isTransfer='true'; /* If user didn't select new In account, backend might keep old or fail? existing logic keeps old if not provided */ }
-  } else {
-    payload.direction = dir;
-  }
-
-  closeEditModal();
-  toast('更新中...');
-  
-  try {
-    const res=await fetch($('endpoint').value.trim(), { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(payload).toString() });
-    const data=await res.json(); if(!data.ok) throw new Error(data.error||'失敗');
-    toast('已更新'); $('btnRecent').click();
-  } catch(e) { toast('更新失敗'); }
-}
-
-function deleteFromModal() {
-  const key = $('modal-key').value;
-  closeEditModal();
-  askDelete(key);
-}
-
-/* Shared Delete */
-async function askDelete(key){
-  if(!confirm('確定刪除？')) return;
-  try{
-    const body = new URLSearchParams({ action: 'delete', createdAt: key, apiKey: $('apiKey').value });
-    await fetch($('endpoint').value, { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: body.toString() });
-    toast('已刪除'); $('btnRecent').click();
-  }catch{ toast('刪除失敗'); }
-}
-
-$('btnBalance').onclick=async()=>{
-  const ep=$('endpoint').value.trim(); if(!ep) return;
-  $('balanceResult').textContent='計算中...'; $('balanceListContainer').innerHTML='<div style="text-align:center; padding:10px">載入中...</div>'; $('balanceTotal').textContent='...';
-  $('balanceArea').style.display = 'block';
-  try {
-     const p = new URLSearchParams({balance:'1', by:'account'});
-     const res = await fetch(ep+'?'+p); const data = await res.json();
-     let h='';
-     if(data.breakdown) {
-       data.breakdown.forEach(b => {
-         h += `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #eee; font-size:15px;">
-           <span style="color:var(--text)">${b.account}</span><span style="font-family:monospace; font-weight:600;">${b.balance.toFixed(2)}</span>
-         </div>`;
-       });
-       $('balanceListContainer').innerHTML = h; $('balanceTotal').textContent = data.total.toFixed(2); $('balanceResult').textContent = `統計範圍: 全部時間`;
-     } else { $('balanceListContainer').innerHTML = '<div style="text-align:center">無數據</div>'; }
-  } catch { $('balanceResult').textContent='失敗'; $('balanceListContainer').innerHTML = ''; }
-};
+function delModal(key){ if(confirm('刪除?')) { closeEditModal(); 
+  fetch($('endpoint').value, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`})
+  .then(()=>{ toast('已刪除'); $('btnRecent').click(); });
+}}
 
 $('btnImport').onclick=async()=>{
   const ep=$('endpoint').value.trim();
-  const days=$('importDays').value; const force=$('importForce').checked;
   $('importHint').textContent='系統處理中...';
   try {
-    const res = await fetch(ep, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`action=ingest_gmail&days=${days}&force=${force}&apiKey=${$('apiKey').value}`});
+    const res = await fetch(ep, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`action=ingest_gmail&days=${$('importDays').value}&force=${$('importForce').checked}&apiKey=${$('apiKey').value}`});
     const d = await res.json();
     if(d.ok) { toast(`新增 ${d.added} 筆`); $('importHint').textContent=`✅ 成功新增 ${d.added} 筆`; } else throw d;
   } catch(e) { $('importHint').textContent='❌ 失敗'; }
