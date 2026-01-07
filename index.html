@@ -75,7 +75,7 @@
     #verLog { font-size:12px; background:#f1f5f9; padding:16px; border-radius:12px; line-height:1.6; max-height:200px; overflow-y:auto; margin-top:12px; display:none; text-align:left; border:1px solid var(--border); }
     #verLog ul { padding-left:16px; margin:0; }
     #verLog li { margin-bottom:6px; color:var(--text); }
-    .ver-date { font-size:10px; color:var(--text-light); margin-right:4px; display:inline-block; min-width:60px; }
+    .ver-date { font-size:10px; color:var(--text-light); margin-right:6px; background:#e2e8f0; padding:2px 4px; border-radius:4px; font-family:monospace; }
   </style>
 </head>
 <body>
@@ -157,7 +157,8 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
-          <li><span class="ver-date">2026-01-06</span><strong>v3.2:</strong> 修復明細修改功能，版本紀錄新增日期</li>
+          <li><span class="ver-date">2026-01-07</span><strong>v3.3:</strong> 修復明細更新失效 (強制轉型比對)</li>
+          <li><span class="ver-date">2026-01-07</span><strong>v3.2:</strong> 版本紀錄新增日期</li>
           <li><span class="ver-date">2026-01-06</span><strong>v3.1:</strong> 強力修復資產查詢，校正欄位位移</li>
           <li><span class="ver-date">2026-01-05</span><strong>v3.0:</strong> 移除 D 欄 (完成)，欄位結構優化</li>
           <li><span class="ver-date">2026-01-05</span><strong>v2.5:</strong> 移除登記人介面，裝置碼改入 M 欄</li>
