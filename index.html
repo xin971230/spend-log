@@ -76,6 +76,11 @@
     #verLog ul { padding-left:16px; margin:0; }
     #verLog li { margin-bottom:6px; color:var(--text); }
     .ver-date { font-size:10px; color:var(--text-light); margin-right:6px; background:#e2e8f0; padding:2px 4px; border-radius:4px; font-family:monospace; }
+    
+    /* Footer & Version */
+    .footer { text-align: center; margin-top: 40px; padding-bottom: 20px; color: var(--text-light); }
+    .ver-badge { font-size: 10px; background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    .ver-desc { font-size: 11px; margin-top: 6px; line-height: 1.4; opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -101,11 +106,29 @@
         </div>
         <div class="input-row"><span class="row-label">日期</span><input type="date" id="date" class="row-input" required onchange="saveDraft()"></div>
         <div class="input-row"><span class="row-label">分類</span><select id="category" class="row-input" onchange="saveDraft()"><option value="">選擇分類</option><option>共用</option><option>黃支出</option><option>蕭支出</option><option>洋支出</option><option>信用卡</option><option>收入</option><option>負債</option><option>平衡</option><option>公司代墊</option><option>其他</option></select></div>
-        <div class="input-row"><span class="row-label">帳戶</span><select id="account" class="row-input" onchange="saveDraft()"><option value="">選擇帳戶</option><option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option></select></div>
+        <div class="input-row"><span class="row-label">帳戶</span>
+          <select id="account" class="row-input" onchange="saveDraft()">
+            <option value="">選擇帳戶</option>
+            <option>黃現金</option><option>蕭現金</option>
+            <option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option>
+            <option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option>
+            <option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
+            <option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
+          </select>
+        </div>
         <div class="input-row"><span class="row-label">項目</span><div style="flex:1;display:flex;justify-content:flex-end;gap:8px;"><input id="itemOther" class="row-input" placeholder="項目" style="display:none;border-bottom:1px dashed #94A3B8;" oninput="saveDraft()"><select id="itemSelect" class="row-input" onchange="saveDraft()"><option value="">選擇項目</option><option value="食物">食物</option><option value="公司代墊">公司代墊</option><option value="玩樂">玩樂</option><option value="交通">交通</option><option value="其他">手動輸入...</option></select></div></div>
         <div class="input-row"><span class="row-label">備註</span><input id="note" class="row-input" placeholder="選填" oninput="saveDraft()"></div>
         <div class="input-row" style="justify-content:space-between;"><span class="row-label">帳戶互轉</span><label class="switch"><input type="checkbox" id="isTransfer" onchange="saveDraft()"><span class="slider"></span></label></div>
-        <div id="transferFields" class="input-row" style="display:none;background:#F1F5F9;"><span class="row-label" style="color:var(--primary)">轉入至</span><select id="accountIn" class="row-input" onchange="saveDraft()"><option value="">選擇轉入帳戶</option><option>黃現金</option><option>刷卡</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option></select></div>
+        <div id="transferFields" class="input-row" style="display:none;background:#F1F5F9;"><span class="row-label" style="color:var(--primary)">轉入至</span>
+          <select id="accountIn" class="row-input" onchange="saveDraft()">
+            <option value="">選擇轉入帳戶</option>
+            <option>黃現金</option><option>蕭現金</option>
+            <option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option>
+            <option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option>
+            <option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
+            <option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
+          </select>
+        </div>
       </div>
       <div id="splitSection" style="display:none"><div style="font-size:12px;color:#94A3B8;margin-left:8px;font-weight:600;">分帳預覽</div><div class="card"><div id="splitList"></div></div></div>
       <div style="display:flex;gap:12px;">
@@ -117,6 +140,8 @@
         <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
+
+      <div class="footer"><span class="ver-badge">v3.3</span><div class="ver-desc">修復明細更新・紀錄強制轉型・日期日誌</div></div>
     </form>
   </section>
 
@@ -157,7 +182,7 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
-          <li><span class="ver-date">2026-01-07</span><strong>v3.3:</strong> 修復明細更新失效 (強制轉型比對)</li>
+          <li><span class="ver-date">2026-01-13</span><strong>v3.3:</strong> 修復明細更新失效 (強制轉型比對)</li>
           <li><span class="ver-date">2026-01-07</span><strong>v3.2:</strong> 版本紀錄新增日期</li>
           <li><span class="ver-date">2026-01-06</span><strong>v3.1:</strong> 強力修復資產查詢，校正欄位位移</li>
           <li><span class="ver-date">2026-01-05</span><strong>v3.0:</strong> 移除 D 欄 (完成)，欄位結構優化</li>
@@ -172,7 +197,8 @@
 
 <script>
 let isSubmitting=false; let currentSplits=[];
-const ACCOUNTS=['黃現金','刷卡','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華'];
+// ✅ 帳戶列表
+const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
 const CATEGORIES=['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
 const ITEM_OPTIONS=['食物','公司代墊','玩樂','交通','其他'];
 const DRAFT_KEY='spend.draft.v4'; const SENT_KEY='spend.sent.v19'; 
