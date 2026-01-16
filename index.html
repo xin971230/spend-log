@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#F5F7F9">
   <title>收支快記</title>
   
@@ -75,6 +76,7 @@
     #verLog ul { padding-left:16px; margin:0; }
     #verLog li { margin-bottom:6px; color:var(--text); }
     .ver-date { font-size:10px; color:var(--text-light); margin-right:6px; background:#e2e8f0; padding:2px 4px; border-radius:4px; font-family:monospace; }
+    
     .footer { text-align: center; margin-top: 40px; padding-bottom: 20px; color: var(--text-light); }
     .ver-badge { font-size: 10px; background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
     .ver-desc { font-size: 11px; margin-top: 6px; line-height: 1.4; opacity: 0.8; }
@@ -111,7 +113,7 @@
           <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal" oninput="saveDraft()">
           <label class="cam-btn">
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
-            <input type="file" id="imgInput" accept="image/*" multiple capture="environment" style="display:none">
+            <input type="file" id="imgInput" accept="image/*" multiple style="display:none">
           </label>
         </div>
 
@@ -157,7 +159,7 @@
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v4.0</span><div class="ver-desc">新增照片上傳・自動超連結・新版帳戶</div></div>
+      <div class="footer"><span class="ver-badge">v4.2</span><div class="ver-desc">開放相簿選圖・自動超連結・多張上傳</div></div>
     </form>
   </section>
 
@@ -198,10 +200,10 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
+          <li><span class="ver-date">2026-01-16</span><strong>v4.2:</strong> 開放相簿選圖 (支援手機圖庫)</li>
           <li><span class="ver-date">2026-01-16</span><strong>v4.0:</strong> 新增照片上傳功能，支援多選與超連結</li>
           <li><span class="ver-date">2026-01-16</span><strong>v3.4:</strong> 更新帳戶列表 (移除刷卡/新增華南/國泰/聯邦)</li>
           <li><span class="ver-date">2026-01-13</span><strong>v3.3:</strong> 修復明細更新失效</li>
-          <li><span class="ver-date">2026-01-07</span><strong>v3.2:</strong> 版本紀錄新增日期</li>
         </ul>
       </div>
     </div>
