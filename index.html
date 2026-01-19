@@ -76,7 +76,6 @@
     #verLog ul { padding-left:16px; margin:0; }
     #verLog li { margin-bottom:6px; color:var(--text); }
     .ver-date { font-size:10px; color:var(--text-light); margin-right:6px; background:#e2e8f0; padding:2px 4px; border-radius:4px; font-family:monospace; }
-    
     .footer { text-align: center; margin-top: 40px; padding-bottom: 20px; color: var(--text-light); }
     .ver-badge { font-size: 10px; background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
     .ver-desc { font-size: 11px; margin-top: 6px; line-height: 1.4; opacity: 0.8; }
@@ -87,6 +86,9 @@
     .img-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid #eee; flex-shrink: 0; }
     .img-thumb-wrap { position: relative; }
     .img-del { position: absolute; top: -5px; right: -5px; background: red; color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    /* Split list cam */
+    .split-cam { font-size:16px; color:#94A3B8; cursor:pointer; margin-left:10px; padding:4px; }
+    .split-cam.has-img { color:var(--primary); }
   </style>
 </head>
 <body>
@@ -159,9 +161,11 @@
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v4.2</span><div class="ver-desc">開放相簿選圖・自動超連結・多張上傳</div></div>
+      <div class="footer"><span class="ver-badge">v4.3</span><div class="ver-desc">分帳獨立照片・上傳速度優化</div></div>
     </form>
   </section>
+
+  <input type="file" id="splitImgInput" accept="image/*" multiple style="display:none">
 
   <section data-view="recent" class="container" hidden>
     <div class="card" style="padding:16px;">
@@ -200,10 +204,9 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
-          <li><span class="ver-date">2026-01-16</span><strong>v4.2:</strong> 開放相簿選圖 (支援手機圖庫)</li>
-          <li><span class="ver-date">2026-01-16</span><strong>v4.0:</strong> 新增照片上傳功能，支援多選與超連結</li>
-          <li><span class="ver-date">2026-01-16</span><strong>v3.4:</strong> 更新帳戶列表 (移除刷卡/新增華南/國泰/聯邦)</li>
-          <li><span class="ver-date">2026-01-13</span><strong>v3.3:</strong> 修復明細更新失效</li>
+          <li><span class="ver-date">2026-01-19</span><strong>v4.3:</strong> 分帳項目支援獨立拍照，優化上傳速度</li>
+          <li><span class="ver-date">2026-01-16</span><strong>v4.2:</strong> 開放相簿選圖</li>
+          <li><span class="ver-date">2026-01-16</span><strong>v4.0:</strong> 新增照片上傳功能</li>
         </ul>
       </div>
     </div>
@@ -213,8 +216,7 @@
   <div id="toast" class="toast">訊息</div>
 
 <script>
-let isSubmitting=false; let currentSplits=[]; let selectedImages=[];
-// ✅ 更新帳戶列表
+let isSubmitting=false; let currentSplits=[]; let selectedImages=[]; let activeSplitIdx = -1;
 const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
 const CATEGORIES=['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
 const ITEM_OPTIONS=['食物','公司代墊','玩樂','交通','其他'];
@@ -243,32 +245,39 @@ function route(){ const name=(location.hash||'#home').slice(1); showView(['home'
 window.addEventListener('hashchange', route);
 function toggleLog(){ const l=$('verLog'); l.style.display = l.style.display==='block'?'none':'block'; }
 
-/* Image Handling */
+/* Image Handling (Main) */
 $('imgInput').onchange = async function(e) {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
-  
+  const files = e.target.files; if (!files || files.length === 0) return;
   for (let i = 0; i < files.length; i++) {
     const b64 = await compressImage(files[i]);
     selectedImages.push(b64);
   }
-  renderImgPreview();
-  this.value = ''; // Reset input
+  renderImgPreview(); this.value = '';
 };
-
 function renderImgPreview() {
   const div = $('imgPreview');
   if (selectedImages.length === 0) { div.style.display='none'; return; }
   div.style.display = 'flex';
-  div.innerHTML = selectedImages.map((src, i) => 
-    `<div class="img-thumb-wrap">
-       <img src="${src}" class="img-thumb">
-       <div class="img-del" onclick="removeImg(${i})">×</div>
-     </div>`
-  ).join('');
+  div.innerHTML = selectedImages.map((src, i) => `<div class="img-thumb-wrap"><img src="${src}" class="img-thumb"><div class="img-del" onclick="removeImg(${i})">×</div></div>`).join('');
 }
 window.removeImg = (i) => { selectedImages.splice(i, 1); renderImgPreview(); };
 
+/* Image Handling (Splits) */
+window.attachSplitImg = (idx) => { activeSplitIdx = idx; $('splitImgInput').click(); };
+$('splitImgInput').onchange = async function(e) {
+  if (activeSplitIdx < 0 || !currentSplits[activeSplitIdx]) return;
+  const files = e.target.files; if (!files || files.length === 0) return;
+  
+  if (!currentSplits[activeSplitIdx].images) currentSplits[activeSplitIdx].images = [];
+  for (let i = 0; i < files.length; i++) {
+    const b64 = await compressImage(files[i]);
+    currentSplits[activeSplitIdx].images.push(b64);
+  }
+  renderSplits();
+  this.value = ''; activeSplitIdx = -1;
+};
+
+/* Compression Logic (Quality lowered to 0.6 for speed) */
 function compressImage(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -278,13 +287,13 @@ function compressImage(file) {
       img.src = event.target.result;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800; // Limit width
+        const MAX_WIDTH = 800; 
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress
+        resolve(canvas.toDataURL('image/jpeg', 0.6)); // Lower quality for speed
       };
     };
   });
@@ -328,7 +337,18 @@ function renderSplits() {
   const btnSubmit = $('btnSubmit'); const listDiv = $('splitList'); const section = $('splitSection');
   if (currentSplits.length === 0) { section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出'; $('date').disabled = false; $('account').disabled = false; saveDraft(); return; }
   section.style.display = 'block'; let html = ''; let total = 0;
-  currentSplits.forEach((s, i) => { const isOut = s.direction === '支出'; const signed = isOut ? s.amount : -s.amount; total += signed; html += `<div class="record-item"><div class="rec-left"><div class="rec-title">${s.category} - ${s.item}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${s.amount}</span><span style="color:var(--danger);font-size:18px;margin-left:10px;cursor:pointer" onclick="delSplit(${i})">✕</span></div></div>`; });
+  currentSplits.forEach((s, i) => { 
+    const isOut = s.direction === '支出'; const signed = isOut ? s.amount : -s.amount; total += signed; 
+    const hasImg = s.images && s.images.length > 0;
+    html += `<div class="record-item">
+      <div class="rec-left"><div class="rec-title">${s.category} - ${s.item}</div></div>
+      <div class="rec-right">
+        <span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${s.amount}</span>
+        <span class="split-cam ${hasImg?'has-img':''}" onclick="attachSplitImg(${i})">${hasImg?'🖼️':'📷'}</span>
+        <span style="color:var(--danger);font-size:18px;margin-left:10px;cursor:pointer" onclick="delSplit(${i})">✕</span>
+      </div>
+    </div>`; 
+  });
   html += `<div style="padding:10px;text-align:right;font-weight:600;color:var(--primary)">暫存總計: ${total.toFixed(2)}</div>`;
   listDiv.innerHTML = html; btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`;
   $('date').disabled = true; $('account').disabled = true; saveDraft();
@@ -340,17 +360,14 @@ $('btnAddSplit').onclick = () => {
   const item = ($('itemSelect').value==='其他') ? $('itemOther').value.trim() : $('itemSelect').value;
   if ($('isTransfer').checked) return toast('互轉無法分帳');
   if (!amt || amt <= 0) return toast('請輸金額'); if (!cat) return toast('請選分類'); if (!item) return toast('請輸項目');
-  currentSplits.push({ amount: amt, category: cat, item: item, note: $('note').value.trim(), direction: $('direction').value });
+  currentSplits.push({ amount: amt, category: cat, item: item, note: $('note').value.trim(), direction: $('direction').value, images: [] });
   renderSplits(); $('amount').value = ''; $('note').value = ''; $('amount').focus();
 };
 
-/* Submit using JSON Payload */
 $('form').onsubmit = (e) => {
   e.preventDefault(); if (isSubmitting) return;
   const amt = Number($('amount').value); const isXfer = $('isTransfer').checked;
-  
   if (!$('account').value) return toast('請選擇帳戶');
-
   if (currentSplits.length === 0) {
     if (!amt || amt <= 0) return toast('請輸入金額');
     if (!isXfer) {
@@ -362,18 +379,13 @@ $('form').onsubmit = (e) => {
   }
   
   isSubmitting = true; 
-  const btn = $('btnSubmit'); 
-  const originalText = btn.textContent;
-  btn.textContent = '上傳中...'; 
-  btn.disabled = true;
+  const btn = $('btnSubmit'); const originalText = btn.textContent;
+  btn.textContent = '處理中...'; btn.disabled = true;
   
   const norm = s => s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
   const payload = { 
-    date: $('date').value, 
-    account: norm($('account').value), 
-    apiKey: $('apiKey').value.trim(), 
-    device: getDeviceType(),
-    images: selectedImages // Add images
+    date: $('date').value, account: norm($('account').value), apiKey: $('apiKey').value.trim(), device: getDeviceType(),
+    images: selectedImages 
   };
   
   const ts = new Date().toLocaleString('sv').replace(' ','T');
@@ -394,27 +406,16 @@ $('form').onsubmit = (e) => {
     }
   }
   
-  // Use fetch with JSON body for large payload
-  fetch($('endpoint').value, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  })
+  fetch($('endpoint').value, { method: 'POST', body: JSON.stringify(payload) })
   .then(res => res.json())
   .then(data => {
     if(data.ok) {
-        toast(currentSplits.length > 0 ? `送出 ${currentSplits.length} 筆` : '記帳成功');
-        renderLog();
-        setTimeout(() => { resetForm(); }, 500);
-    } else {
-        toast('失敗: ' + (data.error || '未知'));
-    }
+        toast('✅ 記帳完成'); renderLog();
+        setTimeout(() => { resetForm(); }, 300);
+    } else { toast('失敗: ' + (data.error || '未知')); }
   })
   .catch(err => { toast('連線失敗'); })
-  .finally(() => {
-    isSubmitting = false; 
-    btn.disabled = false; 
-    btn.textContent = originalText;
-  });
+  .finally(() => { isSubmitting = false; btn.disabled = false; btn.textContent = originalText; });
 };
 
 function loadSent(){ try{return JSON.parse(localStorage.getItem(SENT_KEY)||'[]');}catch{return[];} }
@@ -464,7 +465,6 @@ $('btnRecent').onclick=async()=>{
          const isOut = r.direction==='支出'; const amt = Math.abs(Number(r.amount));
          const dateDay = String(r.date).substring(0, 10).slice(5);
          const dev = r.device ? `<span style="font-size:10px;background:#eee;padding:1px 4px;border-radius:3px">${r.device.split('#')[0]}</span>` : '';
-         // Show photo icon if exists
          const photoIcon = r.photos ? `<a href="${r.photos.split('\n')[0]}" target="_blank" style="text-decoration:none;margin-left:4px">📸</a>` : '';
          h += `<div class="card" style="padding:0;margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'><div class="record-item" style="border:none;cursor:pointer"><div class="rec-left"><div class="rec-title">${r.item} ${photoIcon} <span style="font-weight:400;color:#94A3B8;font-size:12px">${r.note?`(${r.note})`:''}</span></div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span>${dev}</div><div class="rec-dates">消費: ${dateDay}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${amt}</span></div></div></div>`;
       });
