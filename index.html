@@ -54,8 +54,6 @@
     .ver-date { font-size:10px; color:var(--text-light); margin-right:6px; background:#e2e8f0; padding:2px 4px; border-radius:4px; font-family:monospace; }
     .footer { text-align:center; margin-top:40px; padding-bottom:20px; color:var(--text-light); font-size:11px; }
     .ver-badge { background:#E2E8F0; padding:2px 6px; border-radius:4px; }
-    
-    /* Photo */
     .cam-btn { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:50%; background:#F1F5F9; color:var(--primary); cursor:pointer; margin-left:8px; border:1px solid var(--border); }
     .img-preview-area { display:flex; gap:8px; overflow-x:auto; padding:8px 16px; background:#fff; border-bottom:1px solid var(--border); }
     .img-thumb { width:50px; height:50px; border-radius:8px; object-fit:cover; border:1px solid #eee; flex-shrink:0; }
@@ -136,7 +134,7 @@
         <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
-      <div class="footer"><span class="ver-badge">v5.8</span><div class="ver-desc">強制清空欄位・修正更新失效</div></div>
+      <div class="footer"><span class="ver-badge">v6.0</span><div class="ver-desc">系統升級・查詢修復・安全更新</div></div>
     </form>
   </section>
 
@@ -166,10 +164,9 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
+          <li><span class="ver-date">2026-01-26</span><strong>v6.0:</strong> 全面修復欄位錯位導致的查詢失效。</li>
           <li><span class="ver-date">2026-01-26</span><strong>v5.8:</strong> 進入網頁時強制清空所有欄位。</li>
-          <li><span class="ver-date">2026-01-26</span><strong>v5.7:</strong> 修正欄位錯位導致的查詢失效。</li>
-          <li><span class="ver-date">2026-01-26</span><strong>v5.6:</strong> 全系統修復：更新/查詢/刪除功能恢復正常。</li>
-          <li><span class="ver-date">2026-01-26</span><strong>v5.3:</strong> 修正「需轉入帳戶」錯誤。</li>
+          <li><span class="ver-date">2026-01-26</span><strong>v5.5:</strong> 修復信箱導入筆數顯示問題。</li>
         </ul>
       </div>
     </div>
@@ -205,24 +202,12 @@ const MENU_DATA = {
 };
 
 let isSubmitting=false; let currentSplits=[]; let selectedImages=[]; let activeSplitIdx = -1;
-// 修改 Key 強制清除舊快取
 const DRAFT_KEY='spend.draft.v5.8'; const SENT_KEY='spend.sent.v19'; 
 
 window.addEventListener('DOMContentLoaded', () => {
-  // ✅ 1. 確保日期為今日
-  $('date').value = new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-  // ✅ 2. 載入設定、渲染選單
-  loadCfg(); 
-  renderCategories(); 
-  // ✅ 3. 強制執行清空 (不執行 restoreDraft)
-  resetForm(); 
-  // ✅ 4. 渲染其他
-  renderLog(); 
-  route();
+  $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  loadCfg(); renderCategories(); resetForm(); renderLog(); route();
   populateModalSelects();
-  
-  // 額外清除 localStorage 以防萬一
-  localStorage.removeItem(DRAFT_KEY);
 });
 
 const $ = id => document.getElementById(id);
@@ -315,8 +300,9 @@ function resetForm() {
   $('category').value = ''; renderItems(); // Reset cascading
   $('account').value = ''; 
   $('note').value = ''; 
+  $('subSelect').value = '';
+  $('subInput').value = '';
   
-  // Clear other fields
   if($('isTransfer').checked) { $('isTransfer').checked = false; $('transferFields').style.display='none'; $('category').disabled = false; }
 }
 
@@ -395,7 +381,65 @@ $('btnImport').onclick=async()=>{
   } catch(e) { $('importHint').textContent='❌ 失敗'; }
 };
 
-/* Populate */
+/* 明細與資產 (防呆查詢) */
+$('btnBalance').onclick=async()=>{
+  const ep=$('endpoint').value.trim(); if(!ep) return;
+  const btn=$('btnBalance'); btn.textContent='計算中...'; btn.disabled=true;
+  $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
+  try {
+     const res=await fetch(ep+'?balance=1'); const d=await res.json();
+     if(!d.ok) throw new Error(d.error||'Unknown Error');
+     let h='';
+     if(d.breakdown){
+       d.breakdown.forEach(b=>{ h+=`<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;font-size:15px;"><span style="color:var(--text)">${b.account}</span><span style="font-family:monospace;font-weight:600;">${b.balance.toFixed(2)}</span></div>`; });
+       $('balanceListContainer').innerHTML=h; $('balanceTotal').textContent=d.total.toFixed(2);
+     }
+  } catch(e){ alert('查詢失敗: '+e.message); $('balanceListContainer').innerHTML='<div style="color:red;text-align:center">載入失敗</div>'; }
+  btn.textContent='查詢所有餘額'; btn.disabled=false;
+};
+
+$('btnRecent').onclick=async()=>{
+  const ep=$('endpoint').value.trim(); if(!ep) return;
+  $('recentList').innerHTML='<div style="text-align:center;padding:20px">載入中...</div>';
+  try {
+    const p=new URLSearchParams({recent:$('rLimit').value});
+    if($('rCategory').value) p.set('category',$('rCategory').value);
+    const res=await fetch(ep+'?'+p); const d=await res.json();
+    if(d.ok && d.records){
+      let h='';
+      d.records.forEach(r=>{
+         const isOut=r.direction==='支出';
+         const photo=r.photos?`<a href="${r.photos.split('\n')[0]}" target="_blank" style="text-decoration:none;margin-left:4px">📸</a>`:'';
+         h+=`<div class="card" style="padding:0;margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'><div class="record-item" style="border:none;cursor:pointer"><div class="rec-left"><div class="rec-title">${r.item} <small style="color:#999">${r.subItem||''}</small> ${photo}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span></div><div class="rec-dates">${r.date.substring(5)}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${Math.abs(r.amount)}</span></div></div></div>`;
+      });
+      $('recentList').innerHTML=h||'<div style="text-align:center">無資料</div>';
+    } else { throw new Error(d.error || 'Server Error'); }
+  } catch(e){ alert('載入失敗: '+e.message); $('recentList').innerHTML='載入失敗'; }
+};
+
+/* Edit Modal */
+function openEditModal(r){
+  const amt=Math.abs(Number(r.amount)); const isOut=r.direction==='支出'; const isTransfer=(r.category==='平衡'&&r.item==='內控互轉');
+  let html=`<div class="big-input-wrapper"><span class="currency-symbol">$</span><input id="m-amt" type="number" class="big-input" value="${amt}"></div>
+    <div class="input-row"><span class="row-label">項目</span><div style="flex:1"><input id="m-item" class="row-input" value="${r.item}"></div></div>
+    <div class="input-row"><span class="row-label">次項目</span><input id="m-subItem" class="row-input" value="${r.subItem||''}"></div>
+    <div class="input-row"><span class="row-label">備註</span><input id="m-note" class="row-input" value="${r.note||''}"></div>
+    <div class="input-row"><span class="row-label">分類</span><select id="m-cat" class="row-input">${makeOpts(Object.keys(MENU_DATA),r.category)}</select></div>
+    <div class="input-row"><span class="row-label">帳戶</span><select id="m-acc" class="row-input">${makeOpts(ACCOUNTS,r.account)}</select></div>
+    <div style="display:flex;gap:12px;margin-top:20px;"><button class="btn-main" onclick="saveModal('${r.createdAt}',${isTransfer},'${isOut?'支出':'收入'}')">儲存</button><button class="btn-main" style="background:#FEE2E2;color:var(--danger);box-shadow:none" onclick="delModal('${r.createdAt}')">刪除</button></div>`;
+  $('modalContent').innerHTML=html; $('editModal').classList.add('open');
+}
+function closeEditModal(){ $('editModal').classList.remove('open'); }
+function makeOpts(l,s){ return l.map(v=>`<option value="${v}" ${v===s?'selected':''}>${v}</option>`).join(''); }
+async function saveModal(key,isTransfer,dir){
+  const amt=$('m-amt').value; if(!amt) return toast('請輸金額');
+  const payload={action:'update',createdAt:key,amount:amt,note:$('m-note').value,account:$('m-acc').value,category:$('m-cat').value,item:$('m-item').value,subItem:$('m-subItem').value,apiKey:$('apiKey').value.trim()};
+  if(!isTransfer) payload.direction=dir;
+  closeEditModal(); toast('更新中...');
+  try{ await fetch($('endpoint').value.trim(),{method:'POST',body:new URLSearchParams(payload)}); toast('已更新'); $('btnRecent').click(); }catch(e){ toast('更新失敗'); }
+}
+function delModal(key){ if(confirm('刪除?')){ closeEditModal(); fetch($('endpoint').value,{method:'POST',body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`}).then(()=>{toast('已刪除');$('btnRecent').click();}); } }
+
 const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
 const CATEGORIES=['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
 function populateModalSelects() {
