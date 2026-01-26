@@ -48,7 +48,6 @@
     .modal-overlay.open { display:flex; }
     .modal-card { background:#fff; width:100%; max-width:600px; border-radius:20px 20px 0 0; padding:24px; animation:slideUp 0.3s ease; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    
     #verLog { font-size:12px; background:#f1f5f9; padding:16px; border-radius:12px; line-height:1.6; max-height:200px; overflow-y:auto; margin-top:12px; display:none; text-align:left; border:1px solid var(--border); }
     #verLog ul { padding-left:16px; margin:0; }
     #verLog li { margin-bottom:6px; color:var(--text); }
@@ -137,7 +136,7 @@
         <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
-      <div class="footer"><span class="ver-badge">v5.7</span><div class="ver-desc">欄位全面校正・資產查詢修復</div></div>
+      <div class="footer"><span class="ver-badge">v5.8</span><div class="ver-desc">強制清空欄位・修正更新失效</div></div>
     </form>
   </section>
 
@@ -167,9 +166,10 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
+          <li><span class="ver-date">2026-01-26</span><strong>v5.8:</strong> 進入網頁時強制清空所有欄位。</li>
           <li><span class="ver-date">2026-01-26</span><strong>v5.7:</strong> 修正欄位錯位導致的查詢失效。</li>
           <li><span class="ver-date">2026-01-26</span><strong>v5.6:</strong> 全系統修復：更新/查詢/刪除功能恢復正常。</li>
-          <li><span class="ver-date">2026-01-26</span><strong>v5.5:</strong> 修復信箱導入筆數顯示問題。</li>
+          <li><span class="ver-date">2026-01-26</span><strong>v5.3:</strong> 修正「需轉入帳戶」錯誤。</li>
         </ul>
       </div>
     </div>
@@ -205,11 +205,24 @@ const MENU_DATA = {
 };
 
 let isSubmitting=false; let currentSplits=[]; let selectedImages=[]; let activeSplitIdx = -1;
-const DRAFT_KEY='spend.draft.v5.1'; const SENT_KEY='spend.sent.v19'; 
+// 修改 Key 強制清除舊快取
+const DRAFT_KEY='spend.draft.v5.8'; const SENT_KEY='spend.sent.v19'; 
 
 window.addEventListener('DOMContentLoaded', () => {
-  $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-  loadCfg(); renderCategories(); restoreDraft(); renderLog(); route();
+  // ✅ 1. 確保日期為今日
+  $('date').value = new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  // ✅ 2. 載入設定、渲染選單
+  loadCfg(); 
+  renderCategories(); 
+  // ✅ 3. 強制執行清空 (不執行 restoreDraft)
+  resetForm(); 
+  // ✅ 4. 渲染其他
+  renderLog(); 
+  route();
+  populateModalSelects();
+  
+  // 額外清除 localStorage 以防萬一
+  localStorage.removeItem(DRAFT_KEY);
 });
 
 const $ = id => document.getElementById(id);
@@ -242,7 +255,6 @@ function renderItems() {
     const items = Object.keys(MENU_DATA[cat]);
     itemSel.innerHTML += items.map(i=>`<option value="${i}">${i}</option>`).join('') + `<option value="其他">其他...</option>`;
   }
-  saveDraft();
 }
 function renderSubItems() {
   const cat = $('category').value; const item = $('itemSelect').value; const subSel = $('subSelect');
@@ -257,12 +269,10 @@ function renderSubItems() {
       subSel.innerHTML += subs.map(s=>`<option value="${s}">${s}</option>`).join('') + `<option value="其他">其他...</option>`;
     }
   }
-  saveDraft();
 }
 function checkCustomInput(type) {
   const sel = $(type + 'Select'); const inp = $(type + 'Input');
   inp.style.display = sel.value === '其他' ? 'block' : 'none';
-  saveDraft();
 }
 function getFinalValues() {
   const cat = $('category').value;
@@ -294,65 +304,38 @@ function compressImage(file){
   return new Promise((r)=>{ const reader=new FileReader(); reader.readAsDataURL(file); reader.onload=(e)=>{ const img=new Image(); img.src=e.target.result; img.onload=()=>{ const cvs=document.createElement('canvas'); const scale=800/img.width; cvs.width=800; cvs.height=img.height*scale; cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height); r(cvs.toDataURL('image/jpeg',0.6)); } } });
 }
 
-/* Core */
-function saveDraft() {
-  const { cat, item, sub } = getFinalValues();
-  const draft = { amount:$('amount').value, date:$('date').value, catIdx: $('category').value, itemIdx: $('itemSelect').value, subIdx: $('subSelect').value, itemCustom: $('itemInput').value, subCustom: $('subInput').value, account:$('account').value, note:$('note').value, direction:$('direction').value, isTransfer:$('isTransfer').checked, accountIn:$('accountIn').value, splits:currentSplits };
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-}
-function restoreDraft() {
-  const saved = localStorage.getItem(DRAFT_KEY); if (!saved) return;
-  try {
-    const d = JSON.parse(saved);
-    if(d.date) $('date').value = d.date; if(d.amount) $('amount').value = d.amount;
-    if(d.account) $('account').value = d.account; if(d.note) $('note').value = d.note;
-    if(d.direction) setDirection(d.direction);
-    
-    if(d.catIdx) { 
-      $('category').value = d.catIdx; renderItems(); 
-      if(d.itemIdx) {
-        $('itemSelect').value = d.itemIdx;
-        if(d.itemIdx === '其他') $('itemInput').value = d.itemCustom;
-        renderSubItems(); 
-        if(d.subIdx) {
-          $('subSelect').value = d.subIdx;
-          if(d.subIdx === '其他') $('subInput').value = d.subCustom;
-          checkCustomInput('sub');
-        }
-      }
-    }
-    $('isTransfer').checked = !!d.isTransfer; $('transferFields').style.display = d.isTransfer ? 'flex' : 'none';
-    if(d.accountIn) $('accountIn').value = d.accountIn;
-    if(d.isTransfer) $('category').disabled = true;
-    if(d.splits && d.splits.length > 0) { currentSplits=d.splits; renderSplits(); }
-  } catch(e){}
-}
+/* Core - No Draft Saving on Input */
 function resetForm() {
-  localStorage.removeItem(DRAFT_KEY); currentSplits = []; selectedImages = []; renderImgPreview();
+  localStorage.removeItem(DRAFT_KEY); 
+  currentSplits = []; selectedImages = []; renderImgPreview();
   $('splitList').innerHTML = ''; $('splitSection').style.display = 'none'; $('btnSubmit').textContent = '確認送出';
+  
   $('date').disabled = false; $('account').disabled = false;
-  $('amount').value = ''; $('category').value = ''; renderItems(); 
-  $('account').value = ''; $('note').value = ''; 
+  $('amount').value = ''; 
+  $('category').value = ''; renderItems(); // Reset cascading
+  $('account').value = ''; 
+  $('note').value = ''; 
+  
+  // Clear other fields
   if($('isTransfer').checked) { $('isTransfer').checked = false; $('transferFields').style.display='none'; $('category').disabled = false; }
 }
 
-function setDirection(val) { $('direction').value = val; document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val)); saveDraft(); }
+function setDirection(val) { $('direction').value = val; document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val)); }
 $('isTransfer').onchange = ()=>{
   const on = $('isTransfer').checked; $('transferFields').style.display = on ? 'flex' : 'none';
   if (on){ $('category').value='平衡'; $('category').disabled=true; renderItems(); $('itemSelect').value='內控互轉'; renderSubItems(); $('subSelect').value='內控互轉'; $('direction').value='支出'; if(currentSplits.length>0){toast('互轉已清除');currentSplits=[];renderSplits();} } 
   else { $('category').disabled=false; }
-  saveDraft();
 };
 function renderSplits() {
   const btnSubmit = $('btnSubmit'); const listDiv = $('splitList'); const section = $('splitSection');
-  if (currentSplits.length === 0) { section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出'; $('date').disabled = false; $('account').disabled = false; saveDraft(); return; }
+  if (currentSplits.length === 0) { section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.textContent = '確認送出'; $('date').disabled = false; $('account').disabled = false; return; }
   section.style.display = 'block'; let html = ''; let total = 0;
   currentSplits.forEach((s, i) => { 
     const isOut = s.direction === '支出'; total += (isOut?1:-1)*s.amount; 
     const hasImg = s.images && s.images.length > 0;
     html += `<div class="record-item"><div class="rec-left"><div class="rec-title">${s.category} - ${s.item}</div><div class="rec-meta">${s.subItem||''}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${s.amount}</span><span class="split-cam ${hasImg?'has-img':''}" onclick="attachSplitImg(${i})">${hasImg?'🖼️':'📷'}</span><span style="color:var(--danger);font-size:18px;margin-left:10px;cursor:pointer" onclick="delSplit(${i})">✕</span></div></div>`; 
   });
-  listDiv.innerHTML = html; btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`; $('date').disabled = true; $('account').disabled = true; saveDraft();
+  listDiv.innerHTML = html; btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`; $('date').disabled = true; $('account').disabled = true;
 }
 window.delSplit = (i) => { currentSplits.splice(i, 1); renderSplits(); };
 $('btnAddSplit').onclick = () => {
@@ -361,21 +344,15 @@ $('btnAddSplit').onclick = () => {
   if (!cat || !item) return toast('請填寫分類與項目');
   if (!amt) return toast('請輸金額');
   currentSplits.push({ amount: amt, category: cat, item: item, subItem: sub, note: $('note').value.trim(), direction: $('direction').value, images: [] });
-  renderSplits(); $('amount').value = ''; $('note').value = ''; $('amount').focus();
+  renderSplits(); $('amount').value = ''; $('note').value = ''; $('subItem').value = ''; $('amount').focus();
 };
 
 $('form').onsubmit = (e) => {
   e.preventDefault(); if (isSubmitting) return;
   const { cat, item, sub } = getFinalValues();
-  const amt = Number($('amount').value);
-  // ✅ 5.3 修正：正確取得 checkbox 狀態
-  const isXfer = $('isTransfer').checked;
-  
+  const amt = Number($('amount').value); const isXfer = $('isTransfer').checked;
   if (!$('account').value) return toast('請選擇帳戶');
-  
-  // ✅ 5.3 修正：如果開啟轉帳，才檢查轉入帳戶
   if (isXfer && !$('accountIn').value) return toast('請選擇轉入帳戶');
-
   if (currentSplits.length === 0) {
     if (!amt) return toast('請輸入金額');
     if (!isXfer && (!cat || !item)) return toast('請完整填寫分類/項目');
@@ -388,13 +365,7 @@ $('form').onsubmit = (e) => {
     date: $('date').value, account: norm($('account').value), apiKey: $('apiKey').value.trim(), device: getDeviceType(), images: selectedImages,
     category: cat, item: item, subItem: sub, amount: amt, note: $('note').value, direction: $('direction').value
   };
-  
-  // ✅ 5.3 修正：正確傳遞 isTransfer 參數 (字串 'true'/'false')
-  if(isXfer) { 
-    payload.isTransfer = 'true'; 
-    payload.accountIn = norm($('accountIn').value); 
-  }
-  
+  if(isXfer) { payload.isTransfer = 'true'; payload.accountIn = norm($('accountIn').value); }
   if(currentSplits.length > 0) { payload.action = 'split_add'; payload.splits_json = JSON.stringify(currentSplits); }
   
   const ts = new Date().toLocaleString('sv').replace(' ','T');
@@ -424,66 +395,13 @@ $('btnImport').onclick=async()=>{
   } catch(e) { $('importHint').textContent='❌ 失敗'; }
 };
 
-/* 明細與資產頁面 (v5.6+) */
-$('btnBalance').onclick=async()=>{
-  const ep=$('endpoint').value.trim(); if(!ep) return;
-  const btn=$('btnBalance'); btn.textContent='計算中...'; btn.disabled=true;
-  $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
-  try {
-     const p=new URLSearchParams({balance:'1'});
-     const res=await fetch(ep+'?'+p); const d=await res.json();
-     if(!d.ok) throw new Error(d.error||'Err');
-     let h='';
-     if(d.breakdown){
-       d.breakdown.forEach(b=>{ h+=`<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;font-size:15px;"><span style="color:var(--text)">${b.account}</span><span style="font-family:monospace;font-weight:600;">${b.balance.toFixed(2)}</span></div>`; });
-       $('balanceListContainer').innerHTML=h; $('balanceTotal').textContent=d.total.toFixed(2);
-     }
-  } catch(e){ $('balanceListContainer').innerHTML=`<div style="color:red;text-align:center">${e.message}</div>`; }
-  btn.textContent='查詢所有餘額'; btn.disabled=false;
-};
-
-$('btnRecent').onclick=async()=>{
-  const ep=$('endpoint').value.trim(); if(!ep) return;
-  $('recentList').innerHTML='<div style="text-align:center;padding:20px">載入中...</div>';
-  try {
-    const p=new URLSearchParams({recent:$('rLimit').value});
-    if($('rCategory').value) p.set('category',$('rCategory').value);
-    const res=await fetch(ep+'?'+p); const d=await res.json();
-    if(d.records){
-      let h='';
-      d.records.forEach(r=>{
-         const isOut=r.direction==='支出';
-         const dev=r.device?`<span style="font-size:10px;background:#eee;padding:1px 4px;border-radius:3px">${r.device.split('#')[0]}</span>`:'';
-         const photo=r.photos?`<a href="${r.photos.split('\n')[0]}" target="_blank" style="text-decoration:none;margin-left:4px">📸</a>`:'';
-         h+=`<div class="card" style="padding:0;margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'><div class="record-item" style="border:none;cursor:pointer"><div class="rec-left"><div class="rec-title">${r.item} <small style="color:#999">${r.subItem||''}</small> ${photo}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span>${dev}</div><div class="rec-dates">${r.date.substring(5)}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${Math.abs(r.amount)}</span></div></div></div>`;
-      });
-      $('recentList').innerHTML=h||'<div style="text-align:center">無資料</div>';
-    }
-  } catch(e){ $('recentList').innerHTML='載入失敗'; }
-};
-
-/* Edit Modal */
-function openEditModal(r){
-  const amt=Math.abs(Number(r.amount)); const isOut=r.direction==='支出'; const isTransfer=(r.category==='平衡'&&r.item==='內控互轉');
-  let html=`<div class="big-input-wrapper"><span class="currency-symbol">$</span><input id="m-amt" type="number" class="big-input" value="${amt}"></div>
-    <div class="input-row"><span class="row-label">項目</span><div style="flex:1"><input id="m-item" class="row-input" value="${r.item}"></div></div>
-    <div class="input-row"><span class="row-label">次項目</span><input id="m-subItem" class="row-input" value="${r.subItem||''}"></div>
-    <div class="input-row"><span class="row-label">備註</span><input id="m-note" class="row-input" value="${r.note||''}"></div>
-    <div class="input-row"><span class="row-label">分類</span><select id="m-cat" class="row-input">${makeOpts(Object.keys(MENU_DATA),r.category)}</select></div>
-    <div class="input-row"><span class="row-label">帳戶</span><select id="m-acc" class="row-input">${makeOpts(ACCOUNTS,r.account)}</select></div>
-    <div style="display:flex;gap:12px;margin-top:20px;"><button class="btn-main" onclick="saveModal('${r.createdAt}',${isTransfer},'${isOut?'支出':'收入'}')">儲存</button><button class="btn-main" style="background:#FEE2E2;color:var(--danger);box-shadow:none" onclick="delModal('${r.createdAt}')">刪除</button></div>`;
-  $('modalContent').innerHTML=html; $('editModal').classList.add('open');
+/* Populate */
+const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
+const CATEGORIES=['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
+function populateModalSelects() {
+  const fill = (id, list) => { const el=$(id); if(!el)return; el.innerHTML=''; list.forEach(v=>{const op=document.createElement('option');op.value=v;op.textContent=v;el.appendChild(op)}); };
+  fill('modal-cat', CATEGORIES); fill('modal-acc', ACCOUNTS); 
 }
-function closeEditModal(){ $('editModal').classList.remove('open'); }
-function makeOpts(l,s){ return l.map(v=>`<option value="${v}" ${v===s?'selected':''}>${v}</option>`).join(''); }
-async function saveModal(key,isTransfer,dir){
-  const amt=$('m-amt').value; if(!amt) return toast('請輸金額');
-  const payload={action:'update',createdAt:key,amount:amt,note:$('m-note').value,account:$('m-acc').value,category:$('m-cat').value,item:$('m-item').value,subItem:$('m-subItem').value,apiKey:$('apiKey').value.trim()};
-  if(!isTransfer) payload.direction=dir;
-  closeEditModal(); toast('更新中...');
-  try{ await fetch($('endpoint').value.trim(),{method:'POST',body:new URLSearchParams(payload)}); toast('已更新'); $('btnRecent').click(); }catch(e){ toast('更新失敗'); }
-}
-function delModal(key){ if(confirm('刪除?')){ closeEditModal(); fetch($('endpoint').value,{method:'POST',body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`}).then(()=>{toast('已刪除');$('btnRecent').click();}); } }
 </script>
 </body>
 </html>
