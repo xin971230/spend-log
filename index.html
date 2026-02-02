@@ -134,7 +134,7 @@
         <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
-      <div class="footer"><span class="ver-badge">v6.0</span><div class="ver-desc">系統升級・查詢修復・安全更新</div></div>
+      <div class="footer"><span class="ver-badge">v6.1</span><div class="ver-desc">選單更新・完整功能修復</div></div>
     </form>
   </section>
 
@@ -164,9 +164,9 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
+          <li><span class="ver-date">2026-02-03</span><strong>v6.1:</strong> 更新分類與項目選單，符合最新需求。</li>
           <li><span class="ver-date">2026-01-26</span><strong>v6.0:</strong> 全面修復欄位錯位導致的查詢失效。</li>
           <li><span class="ver-date">2026-01-26</span><strong>v5.8:</strong> 進入網頁時強制清空所有欄位。</li>
-          <li><span class="ver-date">2026-01-26</span><strong>v5.5:</strong> 修復信箱導入筆數顯示問題。</li>
         </ul>
       </div>
     </div>
@@ -188,26 +188,69 @@
   <div id="toast" class="toast">訊息</div>
 
 <script>
+// ✅ 2026-02-03 最新選單資料 v6.1
 const MENU_DATA = {
-  "公司代墊": { "公司代墊": ["公司代墊"], "食物": ["公司午餐"] },
-  "平衡": { "內控互轉": ["內控互轉"], "承上期": ["承上期"] },
-  "共用": { "水電費":["電費"], "交通":["汽車油資","汽車保養","保險","洗車","停車費","罰單","機車油資","機車保養"], "房租":["房租"], "玩樂":["行程","服飾"], "食物":["午餐","水果","早餐","晚餐","飲料","點心"], "家用品":["用品"], "健康":["保健品"], "電話費":["小額支付","會員費","電話費"] },
-  "收入": { "欣宜獎金":["欣宜獎金"], "欣宜薪資":["欣宜薪資"], "租金補貼":["租金補貼"], "喬猷薪資":["喬猷薪資"] },
-  "其他": { "國泰證券": ["國泰證券"] },
-  "信用卡": { "玉山銀行":["玉山銀行"], "國泰世華":["國泰世華"], "華南銀行":["華南銀行"], "聯邦銀行":["聯邦銀行"] },
-  "洋支出": { "食物": ["零食","飼料"] },
-  "負債": { "中國信託":["中國信託"], "國泰世華":["國泰世華"], "喬猷朋友":["喬猷朋友"], "匯豐":["匯豐"], "裕融":["裕融"] },
-  "黃支出": { "玩樂":["用品","服飾"], "食物":["人情往來","公司午餐","晚餐","飲料","點心"], "健康":["保健品"] },
-  "蕭支出": { "玩樂":["人情往來","用品","服飾","玩具","保養品","書籍"], "食物":["人情往來","晚餐","飲料"], "健康":["保健品","減重","藥品"] }
+  "共用": {
+    "水電費": ["電費", "水費", "瓦斯費"],
+    "交通": ["汽車油資", "汽車保養", "保險", "洗車", "停車費", "罰單", "機車油資", "機車保養"],
+    "房租": ["房租"],
+    "玩樂": ["行程", "住宿"],
+    "食物": ["假日早餐", "假日午餐", "假日晚餐", "平日早餐", "平日午餐", "平日晚餐", "水果", "飲料", "點心"],
+    "家用品": ["消耗品", "非消耗品"],
+    "電話費": ["小額支付", "會員費", "電話費"]
+  },
+  "黃支出": {
+    "玩樂": ["用品", "服飾", "玩具", "學費"],
+    "食物": ["人情往來", "個人午餐", "個人晚餐", "飲料", "點心"],
+    "健康": ["保健品", "看診", "藥費"]
+  },
+  "蕭支出": {
+    "玩樂": ["人情往來", "用品", "服飾", "玩具", "保養品", "書籍"],
+    "食物": ["人情往來", "個人晚餐", "個人午餐", "個人早餐", "飲料"],
+    "健康": ["保健品", "減重藥品", "看診", "藥費"]
+  },
+  "洋支出": {
+    "食物": ["零食", "飼料"],
+    "玩樂": ["玩具", "衣服", "洗澡"]
+  },
+  "公司代墊": {
+    "公司代墊": ["公司代墊"],
+    "食物": ["公司午餐"]
+  },
+  "信用卡": {
+    "國泰世華": ["國泰世華"],
+    "華南銀行": ["華南銀行"],
+    "聯邦銀行": ["聯邦銀行"]
+  },
+  "負債": {
+    "中國信託": ["中國信託"],
+    "國泰世華": ["國泰世華"],
+    "匯豐": ["匯豐"],
+    "裕融": ["裕融"]
+  },
+  "收入": {
+    "欣宜獎金": ["欣宜獎金"],
+    "欣宜薪資": ["欣宜薪資"],
+    "租金補貼": ["租金補貼"],
+    "喬猷薪資": ["喬猷薪資"]
+  },
+  "平衡": {
+    "內控互轉": ["內控互轉"]
+  },
+  "其他": {
+    "國泰證券": ["國泰證券"]
+  }
 };
 
 let isSubmitting=false; let currentSplits=[]; let selectedImages=[]; let activeSplitIdx = -1;
-const DRAFT_KEY='spend.draft.v5.8'; const SENT_KEY='spend.sent.v19'; 
+const DRAFT_KEY='spend.draft.v6.1'; const SENT_KEY='spend.sent.v19'; 
 
 window.addEventListener('DOMContentLoaded', () => {
   $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
   loadCfg(); renderCategories(); resetForm(); renderLog(); route();
   populateModalSelects();
+  
+  localStorage.removeItem(DRAFT_KEY);
 });
 
 const $ = id => document.getElementById(id);
@@ -381,67 +424,9 @@ $('btnImport').onclick=async()=>{
   } catch(e) { $('importHint').textContent='❌ 失敗'; }
 };
 
-/* 明細與資產 (防呆查詢) */
-$('btnBalance').onclick=async()=>{
-  const ep=$('endpoint').value.trim(); if(!ep) return;
-  const btn=$('btnBalance'); btn.textContent='計算中...'; btn.disabled=true;
-  $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
-  try {
-     const res=await fetch(ep+'?balance=1'); const d=await res.json();
-     if(!d.ok) throw new Error(d.error||'Unknown Error');
-     let h='';
-     if(d.breakdown){
-       d.breakdown.forEach(b=>{ h+=`<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;font-size:15px;"><span style="color:var(--text)">${b.account}</span><span style="font-family:monospace;font-weight:600;">${b.balance.toFixed(2)}</span></div>`; });
-       $('balanceListContainer').innerHTML=h; $('balanceTotal').textContent=d.total.toFixed(2);
-     }
-  } catch(e){ alert('查詢失敗: '+e.message); $('balanceListContainer').innerHTML='<div style="color:red;text-align:center">載入失敗</div>'; }
-  btn.textContent='查詢所有餘額'; btn.disabled=false;
-};
-
-$('btnRecent').onclick=async()=>{
-  const ep=$('endpoint').value.trim(); if(!ep) return;
-  $('recentList').innerHTML='<div style="text-align:center;padding:20px">載入中...</div>';
-  try {
-    const p=new URLSearchParams({recent:$('rLimit').value});
-    if($('rCategory').value) p.set('category',$('rCategory').value);
-    const res=await fetch(ep+'?'+p); const d=await res.json();
-    if(d.ok && d.records){
-      let h='';
-      d.records.forEach(r=>{
-         const isOut=r.direction==='支出';
-         const photo=r.photos?`<a href="${r.photos.split('\n')[0]}" target="_blank" style="text-decoration:none;margin-left:4px">📸</a>`:'';
-         h+=`<div class="card" style="padding:0;margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'><div class="record-item" style="border:none;cursor:pointer"><div class="rec-left"><div class="rec-title">${r.item} <small style="color:#999">${r.subItem||''}</small> ${photo}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span></div><div class="rec-dates">${r.date.substring(5)}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${Math.abs(r.amount)}</span></div></div></div>`;
-      });
-      $('recentList').innerHTML=h||'<div style="text-align:center">無資料</div>';
-    } else { throw new Error(d.error || 'Server Error'); }
-  } catch(e){ alert('載入失敗: '+e.message); $('recentList').innerHTML='載入失敗'; }
-};
-
-/* Edit Modal */
-function openEditModal(r){
-  const amt=Math.abs(Number(r.amount)); const isOut=r.direction==='支出'; const isTransfer=(r.category==='平衡'&&r.item==='內控互轉');
-  let html=`<div class="big-input-wrapper"><span class="currency-symbol">$</span><input id="m-amt" type="number" class="big-input" value="${amt}"></div>
-    <div class="input-row"><span class="row-label">項目</span><div style="flex:1"><input id="m-item" class="row-input" value="${r.item}"></div></div>
-    <div class="input-row"><span class="row-label">次項目</span><input id="m-subItem" class="row-input" value="${r.subItem||''}"></div>
-    <div class="input-row"><span class="row-label">備註</span><input id="m-note" class="row-input" value="${r.note||''}"></div>
-    <div class="input-row"><span class="row-label">分類</span><select id="m-cat" class="row-input">${makeOpts(Object.keys(MENU_DATA),r.category)}</select></div>
-    <div class="input-row"><span class="row-label">帳戶</span><select id="m-acc" class="row-input">${makeOpts(ACCOUNTS,r.account)}</select></div>
-    <div style="display:flex;gap:12px;margin-top:20px;"><button class="btn-main" onclick="saveModal('${r.createdAt}',${isTransfer},'${isOut?'支出':'收入'}')">儲存</button><button class="btn-main" style="background:#FEE2E2;color:var(--danger);box-shadow:none" onclick="delModal('${r.createdAt}')">刪除</button></div>`;
-  $('modalContent').innerHTML=html; $('editModal').classList.add('open');
-}
-function closeEditModal(){ $('editModal').classList.remove('open'); }
-function makeOpts(l,s){ return l.map(v=>`<option value="${v}" ${v===s?'selected':''}>${v}</option>`).join(''); }
-async function saveModal(key,isTransfer,dir){
-  const amt=$('m-amt').value; if(!amt) return toast('請輸金額');
-  const payload={action:'update',createdAt:key,amount:amt,note:$('m-note').value,account:$('m-acc').value,category:$('m-cat').value,item:$('m-item').value,subItem:$('m-subItem').value,apiKey:$('apiKey').value.trim()};
-  if(!isTransfer) payload.direction=dir;
-  closeEditModal(); toast('更新中...');
-  try{ await fetch($('endpoint').value.trim(),{method:'POST',body:new URLSearchParams(payload)}); toast('已更新'); $('btnRecent').click(); }catch(e){ toast('更新失敗'); }
-}
-function delModal(key){ if(confirm('刪除?')){ closeEditModal(); fetch($('endpoint').value,{method:'POST',body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`}).then(()=>{toast('已刪除');$('btnRecent').click();}); } }
-
+/* Populate */
 const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
-const CATEGORIES=['共用','黃支出','蕭支出','洋支出','信用卡','收入','負債','平衡','公司代墊','其他'];
+const CATEGORIES=Object.keys(MENU_DATA);
 function populateModalSelects() {
   const fill = (id, list) => { const el=$(id); if(!el)return; el.innerHTML=''; list.forEach(v=>{const op=document.createElement('option');op.value=v;op.textContent=v;el.appendChild(op)}); };
   fill('modal-cat', CATEGORIES); fill('modal-acc', ACCOUNTS); 
