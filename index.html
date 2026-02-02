@@ -4,10 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#F5F7F9">
-  <title>收支快記</title>
-  <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=Ledger&background=5D7B9D&color=fff&size=192&font-size=0.3&rounded=true">
+  <title>收支快記 v6.1</title>
   <style>
     :root { --bg:#F5F7F9; --card:#FFFFFF; --text:#334155; --text-light:#94A3B8; --primary:#5D7B9D; --danger:#EF4444; --success:#059669; --radius:12px; --border:#E2E8F0; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
@@ -46,7 +44,7 @@
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
     .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); backdrop-filter:blur(2px); z-index:999; display:none; justify-content:center; align-items:flex-end; }
     .modal-overlay.open { display:flex; }
-    .modal-card { background:#fff; width:100%; max-width:600px; border-radius:20px 20px 0 0; padding:24px; animation:slideUp 0.3s ease; }
+    .modal-card { background:#fff; width:100%; max-width:600px; border-radius:20px 20px 0 0; padding:24px; animation:slideUp 0.3s ease; max-height:85vh; overflow-y:auto; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     #verLog { font-size:12px; background:#f1f5f9; padding:16px; border-radius:12px; line-height:1.6; max-height:200px; overflow-y:auto; margin-top:12px; display:none; text-align:left; border:1px solid var(--border); }
     #verLog ul { padding-left:16px; margin:0; }
@@ -134,11 +132,12 @@
         <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
-      <div class="footer"><span class="ver-badge">v6.1</span><div class="ver-desc">選單更新・完整功能修復</div></div>
+      <div class="footer"><span class="ver-badge">v6.1</span><div class="ver-desc">編輯支援照片・下拉選單・日期優化</div></div>
     </form>
   </section>
 
   <input type="file" id="splitImgInput" accept="image/*" multiple style="display:none">
+  <input type="file" id="modalImgInput" accept="image/*" multiple style="display:none">
 
   <section data-view="recent" class="container" hidden>
     <div class="card" style="padding:16px;">
@@ -164,9 +163,8 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
-          <li><span class="ver-date">2026-02-03</span><strong>v6.1:</strong> 更新分類與項目選單，符合最新需求。</li>
-          <li><span class="ver-date">2026-01-26</span><strong>v6.0:</strong> 全面修復欄位錯位導致的查詢失效。</li>
-          <li><span class="ver-date">2026-01-26</span><strong>v5.8:</strong> 進入網頁時強制清空所有欄位。</li>
+          <li><span class="ver-date">2026-02-02</span><strong>v6.1:</strong> 編輯視窗支援下拉選單與照片上傳，明細日期顯示優化。</li>
+          <li><span class="ver-date">2026-02-02</span><strong>v6.0:</strong> 更新分類結構、防呆機制優化。</li>
         </ul>
       </div>
     </div>
@@ -188,69 +186,65 @@
   <div id="toast" class="toast">訊息</div>
 
 <script>
-// ✅ 2026-02-03 最新選單資料 v6.1
 const MENU_DATA = {
-  "共用": {
-    "水電費": ["電費", "水費", "瓦斯費"],
-    "交通": ["汽車油資", "汽車保養", "保險", "洗車", "停車費", "罰單", "機車油資", "機車保養"],
-    "房租": ["房租"],
-    "玩樂": ["行程", "住宿"],
-    "食物": ["假日早餐", "假日午餐", "假日晚餐", "平日早餐", "平日午餐", "平日晚餐", "水果", "飲料", "點心"],
-    "家用品": ["消耗品", "非消耗品"],
-    "電話費": ["小額支付", "會員費", "電話費"]
+  "共用": { 
+    "水電費": ["電費","水費","瓦斯費"], 
+    "交通": ["汽車油資","汽車保養","保險","洗車","停車費","罰單","機車油資","機車保養"], 
+    "房租": ["房租"], 
+    "玩樂": ["行程","住宿"], 
+    "食物": ["假日早餐","假日午餐","假日晚餐","平日早餐","平日午餐","平日晚餐","水果","飲料","點心"], 
+    "家用品": ["消耗品","非消耗品"], 
+    "電話費": ["小額支付","會員費","電話費"] 
   },
-  "黃支出": {
-    "玩樂": ["用品", "服飾", "玩具", "學費"],
-    "食物": ["人情往來", "個人午餐", "個人晚餐", "飲料", "點心"],
-    "健康": ["保健品", "看診", "藥費"]
+  "黃支出": { 
+    "玩樂": ["用品","服飾","玩具","學費"], 
+    "食物": ["人情往來","個人午餐","個人晚餐","飲料","點心"], 
+    "健康": ["保健品","看診","藥費"] 
   },
-  "蕭支出": {
-    "玩樂": ["人情往來", "用品", "服飾", "玩具", "保養品", "書籍"],
-    "食物": ["人情往來", "個人晚餐", "個人午餐", "個人早餐", "飲料"],
-    "健康": ["保健品", "減重藥品", "看診", "藥費"]
+  "蕭支出": { 
+    "玩樂": ["人情往來","用品","服飾","玩具","保養品","書籍"], 
+    "食物": ["人情往來","個人晚餐","個人午餐","個人早餐","飲料"], 
+    "健康": ["保健品","減重藥品","看診","藥費"] 
   },
-  "洋支出": {
-    "食物": ["零食", "飼料"],
-    "玩樂": ["玩具", "衣服", "洗澡"]
+  "洋支出": { 
+    "食物": ["零食","飼料"],
+    "玩樂": ["玩具","衣服","洗澡"]
   },
-  "公司代墊": {
-    "公司代墊": ["公司代墊"],
-    "食物": ["公司午餐"]
+  "公司代墊": { 
+    "公司代墊": ["公司代墊"], 
+    "食物": ["公司午餐"] 
   },
-  "信用卡": {
-    "國泰世華": ["國泰世華"],
-    "華南銀行": ["華南銀行"],
-    "聯邦銀行": ["聯邦銀行"]
+  "信用卡": { 
+    "國泰世華": ["國泰世華"], 
+    "華南銀行": ["華南銀行"], 
+    "聯邦銀行": ["聯邦銀行"] 
   },
-  "負債": {
-    "中國信託": ["中國信託"],
-    "國泰世華": ["國泰世華"],
-    "匯豐": ["匯豐"],
-    "裕融": ["裕融"]
+  "負債": { 
+    "中國信託": ["中國信託"], 
+    "國泰世華": ["國泰世華"], 
+    "匯豐": ["匯豐"], 
+    "裕融": ["裕融"] 
   },
-  "收入": {
-    "欣宜獎金": ["欣宜獎金"],
-    "欣宜薪資": ["欣宜薪資"],
-    "租金補貼": ["租金補貼"],
-    "喬猷薪資": ["喬猷薪資"]
+  "收入": { 
+    "欣宜獎金": ["欣宜獎金"], 
+    "欣宜薪資": ["欣宜薪資"], 
+    "租金補貼": ["租金補貼"], 
+    "喬猷薪資": ["喬猷薪資"] 
   },
-  "平衡": {
-    "內控互轉": ["內控互轉"]
+  "平衡": { 
+    "內控互轉": ["內控互轉"] 
   },
-  "其他": {
-    "國泰證券": ["國泰證券"]
+  "其他": { 
+    "國泰證券": ["國泰證券"] 
   }
 };
 
-let isSubmitting=false; let currentSplits=[]; let selectedImages=[]; let activeSplitIdx = -1;
-const DRAFT_KEY='spend.draft.v6.1'; const SENT_KEY='spend.sent.v19'; 
+let isSubmitting=false; let currentSplits=[]; let selectedImages=[]; let activeSplitIdx = -1; let modalSelectedImages = [];
+const DRAFT_KEY='spend.draft.v6.0'; const SENT_KEY='spend.sent.v19'; 
 
 window.addEventListener('DOMContentLoaded', () => {
   $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
   loadCfg(); renderCategories(); resetForm(); renderLog(); route();
-  populateModalSelects();
-  
-  localStorage.removeItem(DRAFT_KEY);
 });
 
 const $ = id => document.getElementById(id);
@@ -310,16 +304,26 @@ function getFinalValues() {
 }
 
 /* Image */
-$('imgInput').onchange = async function(e) {
+$('imgInput').onchange = async function(e) { handleImg(e, selectedImages, renderImgPreview); };
+$('modalImgInput').onchange = async function(e) { handleImg(e, modalSelectedImages, renderModalImgPreview); };
+async function handleImg(e, arr, renderFn){
   const files = e.target.files; if (!files || files.length===0) return;
-  for (let i=0; i<files.length; i++) selectedImages.push(await compressImage(files[i]));
-  renderImgPreview(); this.value='';
-};
+  for (let i=0; i<files.length; i++) arr.push(await compressImage(files[i]));
+  renderFn(); e.target.value='';
+}
+
 function renderImgPreview() {
   const div=$('imgPreview'); div.style.display = selectedImages.length?'flex':'none';
   div.innerHTML = selectedImages.map((s,i)=>`<div class="img-thumb-wrap"><img src="${s}" class="img-thumb"><div class="img-del" onclick="removeImg(${i})">×</div></div>`).join('');
 }
+function renderModalImgPreview() {
+  const div=$('m-imgPreview'); if(!div) return; div.style.display = modalSelectedImages.length?'flex':'none';
+  div.innerHTML = modalSelectedImages.map((s,i)=>`<div class="img-thumb-wrap"><img src="${s}" class="img-thumb"><div class="img-del" onclick="removeModalImg(${i})">×</div></div>`).join('');
+}
+
 window.removeImg=(i)=>{selectedImages.splice(i,1);renderImgPreview();};
+window.removeModalImg=(i)=>{modalSelectedImages.splice(i,1);renderModalImgPreview();};
+
 window.attachSplitImg = (idx) => { activeSplitIdx = idx; $('splitImgInput').click(); };
 $('splitImgInput').onchange = async function(e) {
   if (activeSplitIdx<0 || !currentSplits[activeSplitIdx]) return;
@@ -332,20 +336,14 @@ function compressImage(file){
   return new Promise((r)=>{ const reader=new FileReader(); reader.readAsDataURL(file); reader.onload=(e)=>{ const img=new Image(); img.src=e.target.result; img.onload=()=>{ const cvs=document.createElement('canvas'); const scale=800/img.width; cvs.width=800; cvs.height=img.height*scale; cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height); r(cvs.toDataURL('image/jpeg',0.6)); } } });
 }
 
-/* Core - No Draft Saving on Input */
+/* Core */
 function resetForm() {
   localStorage.removeItem(DRAFT_KEY); 
   currentSplits = []; selectedImages = []; renderImgPreview();
   $('splitList').innerHTML = ''; $('splitSection').style.display = 'none'; $('btnSubmit').textContent = '確認送出';
-  
   $('date').disabled = false; $('account').disabled = false;
-  $('amount').value = ''; 
-  $('category').value = ''; renderItems(); // Reset cascading
-  $('account').value = ''; 
-  $('note').value = ''; 
-  $('subSelect').value = '';
-  $('subInput').value = '';
-  
+  $('amount').value = ''; $('category').value = ''; renderItems(); 
+  $('account').value = ''; $('note').value = ''; $('subSelect').value = ''; $('subInput').value = '';
   if($('isTransfer').checked) { $('isTransfer').checked = false; $('transferFields').style.display='none'; $('category').disabled = false; }
 }
 
@@ -424,13 +422,113 @@ $('btnImport').onclick=async()=>{
   } catch(e) { $('importHint').textContent='❌ 失敗'; }
 };
 
-/* Populate */
-const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
-const CATEGORIES=Object.keys(MENU_DATA);
-function populateModalSelects() {
-  const fill = (id, list) => { const el=$(id); if(!el)return; el.innerHTML=''; list.forEach(v=>{const op=document.createElement('option');op.value=v;op.textContent=v;el.appendChild(op)}); };
-  fill('modal-cat', CATEGORIES); fill('modal-acc', ACCOUNTS); 
+/* 明細與資產 */
+$('btnBalance').onclick=async()=>{
+  const ep=$('endpoint').value.trim(); if(!ep) return;
+  const btn=$('btnBalance'); btn.textContent='計算中...'; btn.disabled=true;
+  $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
+  try {
+     const res=await fetch(ep+'?balance=1'); const d=await res.json();
+     if(!d.ok) throw new Error(d.error||'Unknown Error');
+     let h='';
+     if(d.breakdown){
+       d.breakdown.forEach(b=>{ h+=`<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;font-size:15px;"><span style="color:var(--text)">${b.account}</span><span style="font-family:monospace;font-weight:600;">${b.balance.toFixed(2)}</span></div>`; });
+       $('balanceListContainer').innerHTML=h; $('balanceTotal').textContent=d.total.toFixed(2);
+     }
+  } catch(e){ alert('查詢失敗: '+e.message); $('balanceListContainer').innerHTML='<div style="color:red;text-align:center">載入失敗</div>'; }
+  btn.textContent='查詢所有餘額'; btn.disabled=false;
+};
+
+$('btnRecent').onclick=async()=>{
+  const ep=$('endpoint').value.trim(); if(!ep) return;
+  $('recentList').innerHTML='<div style="text-align:center;padding:20px">載入中...</div>';
+  try {
+    const p=new URLSearchParams({recent:$('rLimit').value});
+    if($('rCategory').value) p.set('category',$('rCategory').value);
+    const res=await fetch(ep+'?'+p); const d=await res.json();
+    if(d.ok && d.records){
+      let h='';
+      d.records.forEach(r=>{
+         const isOut=r.direction==='支出';
+         const photo=r.photos?`<a href="${r.photos.split('\n')[0]}" target="_blank" style="text-decoration:none;margin-left:4px">📸</a>`:'';
+         h+=`<div class="card" style="padding:0;margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'><div class="record-item" style="border:none;cursor:pointer"><div class="rec-left"><div class="rec-title">${r.item} <small style="color:#999">${r.subItem||''}</small> ${photo}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span></div><div class="rec-dates">${r.date}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${Math.abs(r.amount)}</span></div></div></div>`;
+      });
+      $('recentList').innerHTML=h||'<div style="text-align:center">無資料</div>';
+    } else { throw new Error(d.error || 'Server Error'); }
+  } catch(e){ alert('載入失敗: '+e.message); $('recentList').innerHTML='載入失敗'; }
+};
+
+/* Edit Modal */
+function openEditModal(r){
+  const amt=Math.abs(Number(r.amount)); const isOut=r.direction==='支出'; const isTransfer=(r.category==='平衡'&&r.item==='內控互轉');
+  modalSelectedImages = [];
+  
+  let html=`<div class="big-input-wrapper"><span class="currency-symbol">$</span><input id="m-amt" type="number" class="big-input" value="${amt}">
+     <label class="cam-btn" style="margin-left:8px;position:absolute;right:20px;bottom:10px;"><svg class="icon" viewBox="0 0 24 24"><path d="M12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg></label>
+     </div>
+    <div class="input-row"><span class="row-label">分類</span><select id="m-cat" class="row-input" onchange="updateModalItems()">${makeOpts(CATEGORIES,r.category)}</select></div>
+    <div class="input-row"><span class="row-label">項目</span><select id="m-item" class="row-input" onchange="updateModalSubItems()"></select></div>
+    <div class="input-row"><span class="row-label">次項目</span><select id="m-subItem" class="row-input"></select></div>
+    <div class="input-row"><span class="row-label">備註</span><input id="m-note" class="row-input" value="${r.note||''}"></div>
+    <div class="input-row"><span class="row-label">帳戶</span><select id="m-acc" class="row-input">${makeOpts(ACCOUNTS,r.account)}</select></div>
+    <div id="m-imgPreview" class="img-preview-area" style="display:none;margin-top:10px;"></div>
+    <div style="display:flex;gap:12px;margin-top:20px;"><button class="btn-main" onclick="saveModal('${r.createdAt}',${isTransfer},'${isOut?'支出':'收入'}')">儲存</button><button class="btn-main" style="background:#FEE2E2;color:var(--danger);box-shadow:none" onclick="delModal('${r.createdAt}')">刪除</button></div>`;
+  $('modalContent').innerHTML=html; $('editModal').classList.add('open');
+  
+  // Init Cascading dropdowns
+  updateModalItems(r.item);
+  updateModalSubItems(r.subItem);
+  
+  // Bind camera
+  $('modalContent').querySelector('.cam-btn').onclick = () => $('modalImgInput').click();
 }
+
+function updateModalItems(selectedItem) {
+    const cat = $('m-cat').value; const itemSel = $('m-item');
+    let opts = '';
+    if(cat && MENU_DATA[cat]){
+       opts = Object.keys(MENU_DATA[cat]).map(i=>`<option value="${i}">${i}</option>`).join('');
+    }
+    // If original item is not in list (e.g. custom text), add it temporarily
+    if(selectedItem && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][selectedItem])){
+       opts = `<option value="${selectedItem}">${selectedItem}</option>` + opts;
+    }
+    itemSel.innerHTML = `<option value="">選擇</option>` + opts;
+    if(selectedItem) itemSel.value = selectedItem;
+}
+
+function updateModalSubItems(selectedSub) {
+    const cat = $('m-cat').value; const item = $('m-item').value; const subSel = $('m-subItem');
+    let opts = '';
+    if(cat && MENU_DATA[cat] && MENU_DATA[cat][item]){
+       opts = MENU_DATA[cat][item].map(s=>`<option value="${s}">${s}</option>`).join('');
+    }
+    if(selectedSub && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][item] || !MENU_DATA[cat][item].includes(selectedSub))){
+       opts = `<option value="${selectedSub}">${selectedSub}</option>` + opts;
+    }
+    subSel.innerHTML = `<option value="">選擇</option>` + opts;
+    if(selectedSub) subSel.value = selectedSub;
+}
+
+function closeEditModal(){ $('editModal').classList.remove('open'); }
+function makeOpts(l,s){ return l.map(v=>`<option value="${v}" ${v===s?'selected':''}>${v}</option>`).join(''); }
+
+async function saveModal(key,isTransfer,dir){
+  const amt=$('m-amt').value; if(!amt) return toast('請輸金額');
+  const payload={
+    action:'update', createdAt:key, amount:amt,
+    note:$('m-note').value, account:$('m-acc').value,
+    category:$('m-cat').value, item:$('m-item').value, subItem:$('m-subItem').value,
+    apiKey:$('apiKey').value.trim(), images: modalSelectedImages
+  };
+  if(!isTransfer) payload.direction=dir;
+  closeEditModal(); toast('更新中...');
+  try{ await fetch($('endpoint').value.trim(),{method:'POST',body:JSON.stringify(payload)}); toast('已更新'); $('btnRecent').click(); }catch(e){ toast('更新失敗'); }
+}
+function delModal(key){ if(confirm('刪除?')){ closeEditModal(); fetch($('endpoint').value,{method:'POST',body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`}).then(()=>{toast('已刪除');$('btnRecent').click();}); } }
+
+const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
+const CATEGORIES=['共用','黃支出','蕭支出','洋支出','公司代墊','信用卡','負債','收入','平衡','其他'];
 </script>
 </body>
 </html>
