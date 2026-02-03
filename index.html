@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#F5F7F9">
-  <title>收支快記 v6.1</title>
+  <title>收支快記 v6.2</title>
   <style>
     :root { --bg:#F5F7F9; --card:#FFFFFF; --text:#334155; --text-light:#94A3B8; --primary:#5D7B9D; --danger:#EF4444; --success:#059669; --radius:12px; --border:#E2E8F0; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
@@ -110,14 +110,14 @@
             <option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option>
             <option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option>
             <option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-            <option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
+            <option>蕭中信</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
           </select>
         </div>
         
         <div class="input-row"><span class="row-label">備註</span><input id="note" class="row-input" placeholder="選填" oninput="saveDraft()"></div>
         
         <div class="input-row" style="justify-content:space-between;"><span class="row-label">帳戶互轉</span><label class="switch"><input type="checkbox" id="isTransfer" onchange="saveDraft()"><span class="slider"></span></label></div>
-        <div id="transferFields" class="input-row" style="display:none;background:#F1F5F9;"><span class="row-label" style="color:var(--primary)">轉入至</span><select id="accountIn" class="row-input" onchange="saveDraft()"><option value="">選擇轉入帳戶</option><option>黃現金</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option></select></div>
+        <div id="transferFields" class="input-row" style="display:none;background:#F1F5F9;"><span class="row-label" style="color:var(--primary)">轉入至</span><select id="accountIn" class="row-input" onchange="saveDraft()"><option value="">選擇轉入帳戶</option><option>黃現金</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option><option>蕭中信</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option></select></div>
         
         <div id="imgPreview" class="img-preview-area" style="display:none"></div>
       </div>
@@ -132,7 +132,7 @@
         <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
         <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--danger);font-size:12px;cursor:pointer">清除紀錄</span></div>
       </div>
-      <div class="footer"><span class="ver-badge">v6.1</span><div class="ver-desc">編輯支援照片・下拉選單・日期優化</div></div>
+      <div class="footer"><span class="ver-badge">v6.2</span><div class="ver-desc">新增蕭中信帳戶・編輯優化</div></div>
     </form>
   </section>
 
@@ -163,6 +163,7 @@
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--primary); font-size:12px; cursor:pointer; padding:10px;">🕒 查看版本紀錄</button>
       <div id="verLog">
         <ul>
+          <li><span class="ver-date">2026-02-02</span><strong>v6.2:</strong> 新增「蕭中信」帳戶。</li>
           <li><span class="ver-date">2026-02-02</span><strong>v6.1:</strong> 編輯視窗支援下拉選單與照片上傳，明細日期顯示優化。</li>
           <li><span class="ver-date">2026-02-02</span><strong>v6.0:</strong> 更新分類結構、防呆機制優化。</li>
         </ul>
@@ -527,7 +528,7 @@ async function saveModal(key,isTransfer,dir){
 }
 function delModal(key){ if(confirm('刪除?')){ closeEditModal(); fetch($('endpoint').value,{method:'POST',body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`}).then(()=>{toast('已刪除');$('btnRecent').click();}); } }
 
-const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','華南卡','國泰卡','聯邦卡'];
+const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','蕭中信','華南卡','國泰卡','聯邦卡'];
 const CATEGORIES=['共用','黃支出','蕭支出','洋支出','公司代墊','信用卡','負債','收入','平衡','其他'];
 </script>
 </body>
