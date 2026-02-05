@@ -562,9 +562,52 @@ const ICONS = {
   check: `<svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`
 };
 
+function saveDraft(){
+  const data = {
+    amount: $('amount').value,
+    date: $('date').value,
+    category: $('category').value,
+    itemIdx: $('itemSelect').selectedIndex,
+    itemCustom: $('itemInput').value,
+    subIdx: $('subSelect').selectedIndex,
+    subCustom: $('subInput').value,
+    account: $('account').value,
+    note: $('note').value,
+    isTransfer: $('isTransfer').checked,
+    accountIn: $('accountIn').value,
+    direction: $('direction').value
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+}
+
+function loadDraft(){
+  const d = JSON.parse(localStorage.getItem(DRAFT_KEY));
+  if(!d) return;
+  $('amount').value = d.amount;
+  $('date').value = d.date || new Date().toISOString().slice(0,10);
+  if(d.category){ $('category').value=d.category; renderItems(); }
+  if(d.itemIdx>0){ $('itemSelect').selectedIndex=d.itemIdx; renderSubItems(); }
+  if(d.itemCustom) $('itemInput').value=d.itemCustom;
+  if(d.subIdx>0) $('subSelect').selectedIndex=d.subIdx;
+  if(d.subCustom) $('subInput').value=d.subCustom;
+  $('account').value = d.account;
+  $('note').value = d.note;
+  if(d.direction) setDirection(d.direction);
+  if(d.isTransfer){ 
+    $('isTransfer').checked=true; 
+    $('transferFields').style.display='flex'; 
+    $('accountIn').value = d.accountIn;
+    // 觸發一次互轉的鎖定邏輯
+    $('category').value='平衡'; $('category').disabled=true; 
+  }
+  checkCustomInput('item'); checkCustomInput('sub');
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-  loadCfg(); renderCategories(); resetForm(); renderLog(); route();
+  loadCfg(); renderCategories(); 
+  loadDraft();
+  renderLog(); route();
 });
 
 const $ = id => document.getElementById(id);
