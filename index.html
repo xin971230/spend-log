@@ -7,399 +7,733 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>收支快記 v6.2</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
+
     :root {
-      --bg: #F5F5F7;
+      --bg: #F2F2F7;
       --card: #FFFFFF;
       --text: #1C1C1E;
       --text-light: #8E8E93;
-      --primary: #2C2C2E; /* 深灰主色 */
-      --primary-light: #E5E5EA;
-      --border: #E5E5EA;
+      --text-xlight: #C7C7CC;
+      --primary: #1C1C1E;
+      --border: rgba(0,0,0,0.06);
       --danger: #FF3B30;
       --success: #34C759;
-      --radius: 14px;
+      --warning: #FF9500;
       --input-bg: #F2F2F7;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.06);
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.04);
+      --nav-h: 88px;
+      --mono: 'DM Mono', 'SF Mono', monospace;
     }
-    
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; }
-    
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    }
+
+    html, body { height: 100%; }
+
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      height: 100vh;
       display: flex;
       flex-direction: column;
       padding-top: env(safe-area-inset-top);
-      padding-bottom: calc(90px + env(safe-area-inset-bottom));
+      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+      overscroll-behavior: none;
     }
 
-    /* SVG Icons */
-    .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .icon-sm { width: 16px; height: 16px; }
-    .icon-fill { fill: currentColor; stroke: none; }
+    /* ── Scrollable Container ── */
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 20px 16px 24px;
+      width: 100%;
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    section[hidden] { display: none !important; }
 
-    /* Navigation */
+    /* ── Navigation ── */
     .nav {
       position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-      border-radius: 40px;
-      padding: 8px 12px;
+      bottom: 0;
+      left: 0; right: 0;
+      height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-top: 1px solid var(--border);
       display: flex;
-      gap: 4px;
+      align-items: flex-start;
+      justify-content: center;
       z-index: 100;
-      width: auto;
-      min-width: 300px;
-      justify-content: space-between;
-      border: 1px solid rgba(255,255,255,0.5);
+      padding-top: 8px;
     }
-    
+
+    .nav-inner {
+      display: flex;
+      width: 100%;
+      max-width: 400px;
+      padding: 0 8px;
+    }
+
     .nav-item {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 10px 12px;
+      padding: 8px 6px;
       color: var(--text-light);
       text-decoration: none;
       font-size: 10px;
       font-weight: 500;
-      border-radius: 24px;
-      transition: all 0.2s ease;
+      border-radius: var(--radius-sm);
+      transition: color 0.2s, transform 0.15s;
+      gap: 4px;
+      cursor: pointer;
     }
-    
-    .nav-item.active {
-      color: var(--card);
-      background: var(--primary);
+    .nav-item:active { transform: scale(0.92); }
+    .nav-item.active { color: var(--text); }
+    .nav-item .nav-icon { 
+      width: 28px; height: 28px; 
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px;
+      transition: background 0.2s;
     }
-    
-    /* Layout */
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 24px 20px;
-      width: 100%;
-      flex: 1;
-      overflow-y: auto;
-    }
-    
-    section[hidden] { display: none; }
-    
+    .nav-item.active .nav-icon { background: var(--primary); color: white; }
+    .icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-sm { width: 14px; height: 14px; }
+    .icon-lg { width: 32px; height: 32px; stroke-width: 1.5; }
+
+    /* ── Cards ── */
     .card {
       background: var(--card);
       border-radius: var(--radius);
       padding: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.03);
-      margin-bottom: 20px;
-      border: 1px solid white;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
     }
-
-    .group-title {
-      font-size: 13px;
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
       color: var(--text-light);
-      margin: 24px 4px 8px;
-      font-weight: 500;
-      letter-spacing: 0.5px;
+      margin: 20px 4px 8px;
     }
 
-    /* Form Elements */
-    .big-input-wrapper {
+    /* ── Segment Control ── */
+    .seg-control {
+      display: flex;
+      background: var(--input-bg);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      margin-bottom: 4px;
+    }
+    .seg-item {
+      flex: 1;
+      text-align: center;
+      padding: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none;
+    }
+    .seg-item.active {
+      background: var(--card);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      color: var(--text);
+    }
+    .seg-item[data-val="支出"].active { color: var(--danger); }
+    .seg-item[data-val="收入"].active { color: var(--success); }
+
+    /* ── Amount Input ── */
+    .amount-area {
       display: flex;
       justify-content: center;
-      align-items: center;
-      padding: 30px 0;
+      align-items: baseline;
+      padding: 24px 0 20px;
+      gap: 4px;
       position: relative;
     }
-    
-    .currency-symbol {
-      font-size: 24px;
+    .currency-sym {
+      font-size: 22px;
+      font-weight: 300;
       color: var(--text-light);
-      margin-right: 8px;
-      margin-top: 8px;
+      font-family: var(--mono);
+      padding-bottom: 4px;
     }
-    
     .big-input {
       border: none;
       background: transparent;
-      text-align: center;
-      font-size: 52px;
+      font-size: 54px;
       font-weight: 300;
       color: var(--text);
-      width: 200px;
+      width: 220px;
       padding: 0;
       margin: 0;
-      font-family: -apple-system, monospace;
-      letter-spacing: -1px;
+      font-family: var(--mono);
+      letter-spacing: -2px;
+      text-align: center;
     }
-    
+    .big-input::placeholder { color: var(--text-xlight); }
+    .big-input:focus { outline: none; }
+    .cam-btn {
+      position: absolute;
+      right: 0;
+      bottom: 24px;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--input-bg);
+      color: var(--text-light);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .cam-btn:active { transform: scale(0.9); background: #E5E5EA; }
+    .cam-btn.has-img { background: var(--primary); color: white; }
+
+    /* ── Form Rows ── */
     .input-row {
       display: flex;
       align-items: center;
-      margin-bottom: 12px;
-      background: var(--input-bg);
-      border-radius: 12px;
-      padding: 4px 16px;
-      min-height: 56px;
-      transition: background 0.2s;
+      padding: 0 4px;
+      min-height: 52px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
     }
-    
-    .input-row:focus-within {
-      background: #E5E5EA;
-    }
+    .input-row:last-of-type { border-bottom: none; }
+    .input-row:focus-within { background: rgba(0,0,0,0.01); border-radius: 8px; }
 
     .row-label {
-      width: 70px;
-      font-size: 14px;
+      width: 64px;
+      font-size: 13px;
       color: var(--text-light);
       font-weight: 500;
       flex-shrink: 0;
     }
-    
     .row-input {
       flex: 1;
       border: none;
       background: transparent;
-      font-size: 16px;
+      font-size: 15px;
       color: var(--text);
       text-align: right;
-      width: 100%;
-      padding: 12px 0;
+      padding: 14px 0;
       font-weight: 400;
     }
-    
     select.row-input {
       appearance: none;
-      /* Custom Arrow SVG */
-      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C7C7CC' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right center;
-      padding-right: 20px;
+      background-position: right 2px center;
+      padding-right: 18px;
     }
+    .row-input::placeholder { color: var(--text-xlight); }
 
-    /* Buttons */
-    .btn-main {
-      background: var(--primary);
-      color: white;
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 16px;
-      font-weight: 600;
-      margin-top: 12px;
-      cursor: pointer;
+    /* ── Switch ── */
+    .switch-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: opacity 0.2s;
-    }
-    
-    .btn-main:active { opacity: 0.8; }
-    
-    .btn-ghost {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    
-    .cam-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--card);
-      color: var(--text);
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      border: 1px solid var(--border);
-    }
-
-    /* Segment Control */
-    .seg-control {
-      display: flex;
-      background: var(--input-bg);
-      border-radius: 10px;
-      padding: 3px;
-      margin: 0 0 20px;
-    }
-    
-    .seg-item {
-      flex: 1;
-      text-align: center;
-      padding: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      border-radius: 8px;
-      color: var(--text-light);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .seg-item.active {
-      background: var(--card);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      color: var(--text);
-    }
-    
-    .seg-item[data-val="支出"].active { color: var(--danger); font-weight: 600; }
-    .seg-item[data-val="收入"].active { color: var(--success); font-weight: 600; }
-
-    /* Switch */
-    .switch { position: relative; display: inline-block; width: 44px; height: 26px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E5E5EA; transition: .3s; border-radius: 34px; }
-    .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    input:checked + .slider { background-color: var(--primary); }
-    input:checked + .slider:before { transform: translateX(18px); }
-
-    /* Records */
-    .record-item {
-      padding: 16px 0;
+      justify-content: space-between;
+      padding: 14px 4px;
       border-bottom: 1px solid var(--border);
+    }
+    .switch-row:last-child { border-bottom: none; }
+    .switch-label { font-size: 15px; color: var(--text); }
+    .switch { position: relative; display: inline-block; width: 48px; height: 28px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #E5E5EA;
+      transition: .25s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute; content: "";
+      height: 24px; width: 24px;
+      left: 2px; bottom: 2px;
+      background-color: white;
+      transition: .25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* ── Transfer Row ── */
+    .transfer-row {
+      display: none;
+      background: #F8F8FA;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .btn {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn:active { opacity: 0.75; transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--input-bg); color: var(--text); }
+    .btn-danger { background: #FFF2F1; color: var(--danger); }
+    .btn-success-fill { background: var(--success); color: white; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Image Preview ── */
+    .img-preview-area {
+      display: none;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 10px 0 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .img-thumb-wrap { position: relative; flex-shrink: 0; }
+    .img-thumb {
+      width: 64px; height: 64px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      display: block;
+    }
+    .img-del {
+      position: absolute; top: -5px; right: -5px;
+      background: var(--danger); color: white;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(255,59,48,0.3);
+    }
+
+    /* ── Split Section ── */
+    .split-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
     }
-    .record-item:last-child { border-bottom: none; }
-    
-    .rec-left { display: flex; flex-direction: column; gap: 4px; }
-    .rec-title { font-size: 15px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 6px; }
-    .rec-meta { font-size: 12px; color: var(--text-light); display: flex; gap: 8px; }
-    .rec-tag { background: var(--input-bg); padding: 2px 6px; border-radius: 4px; }
-    .rec-dates { font-size: 11px; color: #C7C7CC; margin-top: 2px; }
-    
-    .rec-amt { font-size: 16px; font-weight: 600; font-family: -apple-system, monospace; }
-    .rec-amt.neg { color: var(--text); } 
-    .rec-amt.pos { color: var(--success); }
-
-    /* Image Preview */
-    .img-preview-area { display: flex; gap: 12px; overflow-x: auto; padding: 12px 0; }
-    .img-thumb { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
-    .img-thumb-wrap { position: relative; }
-    .img-del {
-      position: absolute; top: -6px; right: -6px;
-      background: var(--danger); color: white;
-      width: 18px; height: 18px; border-radius: 50%;
-      font-size: 12px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    .split-item:last-child { border-bottom: none; }
+    .split-meta { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .split-amt { font-family: var(--mono); font-size: 16px; font-weight: 500; }
+    .split-img-btn {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--input-bg);
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-light);
+      margin-left: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .split-img-btn.active { background: var(--primary); color: white; }
+    .split-del-btn {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      background: #FFF2F1;
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--danger);
+      margin-left: 6px;
     }
 
-    /* Modal */
+    /* ── Log Items ── */
+    .log-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .log-item:last-child { border-bottom: none; }
+    .log-title { font-size: 14px; font-weight: 500; }
+    .log-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+    .log-amt { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+    .log-amt.neg { color: var(--text); }
+    .log-amt.pos { color: var(--success); }
+    .clear-btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: 4px;
+      padding: 12px;
+      color: var(--text-light);
+      font-size: 12px;
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+      transition: color 0.15s;
+    }
+    .clear-btn:active { color: var(--danger); }
+
+    /* ── Recent List ── */
+    .recent-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 0 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .recent-card:active { transform: scale(0.99); box-shadow: var(--shadow-sm); }
+    .rec-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+    }
+    .rec-title-row { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 500; }
+    .rec-meta-row { display: flex; gap: 6px; margin-top: 5px; align-items: center; }
+    .tag { background: var(--input-bg); padding: 2px 7px; border-radius: 5px; font-size: 11px; color: var(--text-light); font-weight: 500; }
+    .rec-date { font-size: 11px; color: var(--text-xlight); }
+    .rec-amt-out { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--text); }
+    .rec-amt-in { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--success); }
+    .photo-link { color: var(--text-light); display: flex; }
+
+    /* ── Balance ── */
+    .balance-total-area {
+      text-align: center;
+      padding: 24px 0 20px;
+    }
+    .balance-label { font-size: 11px; color: var(--text-light); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+    .balance-total-num { font-family: var(--mono); font-size: 44px; font-weight: 300; color: var(--text); letter-spacing: -1px; }
+    .balance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .balance-item:last-child { border-bottom: none; }
+    .balance-item-num { font-family: var(--mono); font-weight: 600; font-size: 14px; }
+
+    /* ── Modal ── */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-      z-index: 999; display: none; justify-content: center; align-items: flex-end;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 999;
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
     }
     .modal-overlay.open { display: flex; }
     .modal-card {
-      background: #F2F2F7;
-      width: 100%; max-width: 600px;
+      background: var(--bg);
+      width: 100%; max-width: 560px;
       border-radius: 24px 24px 0 0;
-      padding: 24px;
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      max-height: 90vh; overflow-y: auto;
+      padding: 0 0 env(safe-area-inset-bottom);
+      animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 92vh;
+      overflow-y: auto;
     }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0.5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 20px 0;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 1;
+    }
+    .modal-header h3 { margin: 0; font-size: 17px; font-weight: 600; }
+    .modal-close {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #E5E5EA;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-light);
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .modal-body { padding: 16px 20px 24px; }
 
-    /* Utility */
+    /* ── Toast ── */
     .toast {
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-50px);
-      background: rgba(44, 44, 46, 0.9); backdrop-filter: blur(8px);
-      color: white; padding: 12px 24px; border-radius: 30px;
-      font-size: 14px; font-weight: 500;
-      opacity: 0; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      pointer-events: none; z-index: 2000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 16px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: rgba(30,30,32,0.92);
+      backdrop-filter: blur(12px);
+      color: white;
+      padding: 11px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 2000;
+      white-space: nowrap;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    
-    .split-btn-icon { color: var(--text-light); cursor: pointer; padding: 4px; transition: 0.2s; }
-    .split-btn-icon.active { color: var(--primary); }
 
-    /* Version Log */
-    #verLog {
-      font-size: 13px; color: var(--text); background: white;
-      padding: 20px; border-radius: 12px; line-height: 1.6;
-      max-height: 200px; overflow-y: auto; margin-top: 12px;
-      display: none; text-align: left; border: 1px solid var(--border);
+    /* ── Settings ── */
+    .cfg-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
     }
-    #verLog ul { padding-left: 20px; margin: 0; }
-    #verLog li { margin-bottom: 8px; }
-    .ver-date { font-size: 11px; color: var(--text-light); margin-right: 8px; background: var(--input-bg); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-    
-    .footer { text-align: center; margin-top: 40px; padding-bottom: 20px; color: var(--text-light); font-size: 12px; }
-    .ver-badge { background: #E5E5EA; padding: 2px 8px; border-radius: 6px; font-weight: 500; font-size: 10px; color: var(--text-light); }
+    .cfg-row:last-child { border-bottom: none; }
+    .cfg-label { font-size: 13px; color: var(--text-light); width: 70px; flex-shrink: 0; font-weight: 500; }
+    .cfg-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      color: var(--text);
+      text-align: right;
+      padding: 0;
+      font-family: var(--mono);
+    }
+    .cfg-btn-row { display: flex; gap: 8px; padding: 16px 0 0; }
+    .cfg-btn {
+      flex: 1; padding: 12px;
+      background: var(--input-bg);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .cfg-btn:active { opacity: 0.7; }
+    .cfg-btn.primary { background: var(--primary); color: white; }
+
+    /* ── Ver Log ── */
+    .ver-log {
+      display: none;
+      background: var(--card);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+    }
+    .ver-log ul { margin: 0; padding-left: 20px; }
+    .ver-log li { font-size: 13px; color: var(--text); margin-bottom: 10px; line-height: 1.5; }
+    .ver-badge { background: var(--input-bg); padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 600; color: var(--text-light); font-family: var(--mono); }
+    .ver-date { font-family: var(--mono); font-size: 10px; color: var(--text-light); background: var(--input-bg); padding: 2px 6px; border-radius: 4px; }
+
+    /* ── Footer ── */
+    .footer { text-align: center; padding: 32px 0 16px; color: var(--text-light); font-size: 11px; }
+
+    /* ── Dropdown Sub-row ── */
+    .sub-select-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex: 1;
+      gap: 2px;
+    }
+    .custom-input {
+      display: none;
+      width: 100%;
+      border: none;
+      border-bottom: 1px dashed #C7C7CC;
+      background: transparent;
+      font-size: 14px;
+      color: var(--text);
+      text-align: right;
+      padding: 6px 0;
+    }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .filter-bar input {
+      width: 70px;
+      flex: 0 0 70px;
+      background: var(--card);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 10px 8px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+    }
+    .filter-sel {
+      flex: 1;
+      background: var(--card);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 10px 28px 10px 12px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C7C7CC' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      min-width: 0;
+    }
+
+    /* ── Import Area ── */
+    .import-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .import-hint {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 12px;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: fadeSlideIn 0.25s ease forwards; }
+
+    /* ── Loading Spinner ── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-light);
+      font-size: 13px;
+    }
+    .empty-state-icon { margin-bottom: 12px; opacity: 0.4; color: var(--text-light); display: flex; justify-content: center; }
   </style>
 </head>
 <body>
 
   <nav class="nav">
-    <a href="#home" class="nav-item active" onclick="routeClick('home')">
-      <svg class="icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-      <span>記帳</span>
-    </a>
-    <a href="#recent" class="nav-item" onclick="routeClick('recent')">
-      <svg class="icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-      <span>明細</span>
-    </a>
-    <a href="#balance" class="nav-item" onclick="routeClick('balance')">
-      <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-      <span>資產</span>
-    </a>
-    <a href="#settings" class="nav-item" onclick="routeClick('settings')">
-      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      <span>設定</span>
-    </a>
+    <div class="nav-inner">
+      <a class="nav-item active" onclick="routeClick('home')">
+        <div class="nav-icon">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span>記帳</span>
+      </a>
+      <a class="nav-item" onclick="routeClick('recent')">
+        <div class="nav-icon">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </div>
+        <span>明細</span>
+      </a>
+      <a class="nav-item" onclick="routeClick('balance')">
+        <div class="nav-icon">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <span>資產</span>
+      </a>
+      <a class="nav-item" onclick="routeClick('settings')">
+        <div class="nav-icon">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <span>設定</span>
+      </a>
+    </div>
   </nav>
 
   <section data-view="home" class="container">
     <form id="form" autocomplete="off">
       <select id="direction" style="display:none"><option>支出</option><option>收入</option></select>
-      
-      <div class="card" style="padding-top: 24px; border:none;">
+
+      <div class="card">
         <div class="seg-control">
           <div class="seg-item active" data-val="支出" onclick="setDirection('支出')">支出</div>
           <div class="seg-item" data-val="收入" onclick="setDirection('收入')">收入</div>
         </div>
 
-        <div class="big-input-wrapper">
-          <span class="currency-symbol">$</span>
+        <div class="amount-area">
+          <span class="currency-sym">$</span>
           <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal" oninput="saveDraft()">
-          <label class="cam-btn" style="position:absolute; right:10px;">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="12" r="4"></circle></svg>
-            <input type="file" id="imgInput" accept="image/*" multiple style="display:none">
-          </label>
+          <button type="button" class="cam-btn" id="camBtn" onclick="$('imgInput').click()">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="12" r="4"/></svg>
+          </button>
+          <input type="file" id="imgInput" accept="image/*" multiple style="display:none">
         </div>
 
-        <div class="input-row"><span class="row-label">日期</span><input type="date" id="date" class="row-input" required onchange="saveDraft()"></div>
-        <div class="input-row"><span class="row-label">分類</span><select id="category" class="row-input" onchange="renderItems()"><option value="">選擇分類</option></select></div>
-        
-        <div class="input-row"><span class="row-label">項目</span>
-          <div style="flex:1; display:flex; flex-direction:column; align-items:flex-end;">
-            <select id="itemSelect" class="row-input" onchange="renderSubItems()"><option value="">選擇項目</option></select>
-            <input id="itemInput" class="row-input" placeholder="輸入項目" style="display:none; border-bottom:1px dashed #ccc; margin-top:4px;" oninput="saveDraft()">
+        <div class="input-row">
+          <span class="row-label">日期</span>
+          <input type="date" id="date" class="row-input" required onchange="saveDraft()">
+        </div>
+        <div class="input-row">
+          <span class="row-label">分類</span>
+          <select id="category" class="row-input" onchange="renderItems()"><option value="">選擇</option></select>
+        </div>
+        <div class="input-row">
+          <span class="row-label">項目</span>
+          <div class="sub-select-row">
+            <select id="itemSelect" class="row-input" onchange="renderSubItems()"><option value="">選擇</option></select>
+            <input id="itemInput" class="custom-input" placeholder="輸入自訂項目" oninput="saveDraft()">
           </div>
         </div>
-        
-        <div class="input-row"><span class="row-label">細項</span>
-          <div style="flex:1; display:flex; flex-direction:column; align-items:flex-end;">
-            <select id="subSelect" class="row-input" onchange="checkCustomInput('sub')"><option value="">選擇細項</option></select>
-            <input id="subInput" class="row-input" placeholder="輸入細項" style="display:none; border-bottom:1px dashed #ccc; margin-top:4px;" oninput="saveDraft()">
+        <div class="input-row">
+          <span class="row-label">細項</span>
+          <div class="sub-select-row">
+            <select id="subSelect" class="row-input" onchange="checkCustomInput('sub')"><option value="">選擇</option></select>
+            <input id="subInput" class="custom-input" placeholder="輸入自訂細項" oninput="saveDraft()">
           </div>
         </div>
-
-        <div class="input-row"><span class="row-label">帳戶</span>
+        <div class="input-row">
+          <span class="row-label">帳戶</span>
           <select id="account" class="row-input" onchange="saveDraft()">
-            <option value="">選擇帳戶</option>
+            <option value="">選擇</option>
             <option>黃現金</option><option>蕭現金</option>
             <option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option>
             <option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option>
@@ -407,491 +741,940 @@
             <option>蕭中信</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
           </select>
         </div>
-        
-        <div class="input-row"><span class="row-label">備註</span><input id="note" class="row-input" placeholder="選填" oninput="saveDraft()"></div>
-        
-        <div class="input-row" style="justify-content:space-between;"><span class="row-label">帳戶互轉</span><label class="switch"><input type="checkbox" id="isTransfer" onchange="saveDraft()"><span class="slider"></span></label></div>
-        <div id="transferFields" class="input-row" style="display:none;background:#F1F5F9;border:1px solid #E5E5EA;"><span class="row-label" style="color:var(--primary)">轉入至</span><select id="accountIn" class="row-input" onchange="saveDraft()"><option value="">選擇轉入帳戶</option><option>黃現金</option><option>蕭現金</option><option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option><option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option><option>黃中信</option><option>黃LINE</option><option>國泰世華</option><option>蕭中信</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option></select></div>
-        
-        <div id="imgPreview" class="img-preview-area" style="display:none"></div>
+        <div class="input-row" style="border-bottom:none">
+          <span class="row-label">備註</span>
+          <input id="note" class="row-input" placeholder="選填" oninput="saveDraft()">
+        </div>
+
+        <div id="imgPreview" class="img-preview-area"></div>
       </div>
 
-      <div id="splitSection" style="display:none"><div class="group-title">分帳預覽</div><div class="card" style="padding:10px;"><div id="splitList"></div></div></div>
-      <div style="display:flex;gap:12px;">
-        <button class="btn-main btn-ghost" type="button" id="btnAddSplit">
-           <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-           分帳
-        </button>
-        <button class="btn-main" type="submit" id="btnSubmit">
-           <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-           確認儲存
-        </button>
-      </div>
-      
-      <div class="group-title">本機暫存紀錄</div>
       <div class="card">
-        <div class="log" id="log" style="max-height:200px;overflow:auto;"></div>
-        <div style="padding:12px;text-align:center;border-top:1px solid var(--border);"><span id="btnClear" style="color:var(--text-light);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;"><svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> 清除紀錄</span></div>
+        <div class="switch-row" style="border:none; padding: 6px 4px;">
+          <span class="switch-label">帳戶互轉</span>
+          <label class="switch"><input type="checkbox" id="isTransfer" onchange="handleTransferToggle()"><span class="slider"></span></label>
+        </div>
+        <div id="transferFields" class="transfer-row">
+          <div class="input-row" style="padding:0 16px; border-bottom:none;">
+            <span class="row-label" style="color:var(--text-light);font-size:13px">轉入至</span>
+            <select id="accountIn" class="row-input" onchange="saveDraft()">
+              <option value="">選擇帳戶</option>
+              <option>黃現金</option><option>蕭現金</option>
+              <option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option>
+              <option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option>
+              <option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
+              <option>蕭中信</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
+            </select>
+          </div>
+        </div>
       </div>
-      <div class="footer"><span class="ver-badge">v6.2</span><div style="margin-top:6px;">Minimalist Design</div></div>
+
+      <div id="splitSection" style="display:none">
+        <div class="card-title">分帳列表</div>
+        <div class="card" style="padding:0 16px">
+          <div id="splitList"></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" type="button" id="btnAddSplit" style="flex:0 0 auto; padding:15px 18px;">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          分帳
+        </button>
+        <button class="btn btn-primary" type="submit" id="btnSubmit">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          確認儲存
+        </button>
+      </div>
+
+      <div class="card-title">本機暫存記錄</div>
+      <div class="card" style="padding:0 16px">
+        <div id="log" style="max-height:180px; overflow-y:auto"></div>
+        <div class="clear-btn" id="btnClear">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          清除記錄
+        </div>
+      </div>
+
+      <div class="footer"><span class="ver-badge">v6.2.2</span></div>
     </form>
+  </section>
+
+  <section data-view="recent" class="container" hidden>
+    <div class="filter-bar">
+      <input type="number" id="rLimit" value="10" placeholder="筆數">
+      <select id="rCategory" class="filter-sel">
+        <option value="">全部分類</option>
+      </select>
+      <select id="rAccount" class="filter-sel">
+        <option value="">全部帳戶</option>
+      </select>
+      <button class="btn btn-primary" id="btnRecent" type="button" style="flex:0 0 auto; padding:10px 16px; font-size:13px">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        刷新
+      </button>
+    </div>
+    <div id="recentList"></div>
+  </section>
+
+  <section data-view="balance" class="container" hidden>
+    <div class="card">
+      <button class="btn btn-primary" id="btnBalance" type="button" style="width:100%">查詢所有餘額</button>
+    </div>
+    <div class="card" id="balanceArea" style="display:none">
+      <div class="balance-total-area">
+        <div class="balance-label">淨資產總計</div>
+        <div id="balanceTotal" class="balance-total-num">—</div>
+      </div>
+      <div id="balanceListContainer"></div>
+    </div>
+  </section>
+
+  <section data-view="settings" class="container" hidden>
+    <div style="text-align:center; padding: 8px 0 4px;">
+      <button onclick="toggleLog()" style="background:none; border:none; color:var(--text-light); font-size:13px; cursor:pointer; padding:10px; display:inline-flex; align-items:center; gap:6px;">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        版本紀錄
+      </button>
+      <div class="ver-log" id="verLog">
+        <ul>
+          <li><span class="ver-date">2026-02-05</span> <strong>v6.2.2:</strong> 修正點擊崩潰問題、移除所有 Emoji、優化匯入流程。</li>
+          <li><span class="ver-date">2026-02-05</span> <strong>v6.2:</strong> 介面極簡化。</li>
+          <li><span class="ver-date">2026-02-02</span> <strong>v6.2:</strong> 新增「蕭中信」帳戶。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card-title">連線設定</div>
+    <div class="card">
+      <div class="cfg-row">
+        <span class="cfg-label">API URL</span>
+        <input id="endpoint" class="cfg-input" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec">
+      </div>
+      <div class="cfg-row" style="border-bottom:none">
+        <span class="cfg-label">API Key</span>
+        <input id="apiKey" class="cfg-input" placeholder="選填">
+      </div>
+      <div class="cfg-btn-row">
+        <button id="btnTest" class="cfg-btn">測試連線</button>
+        <button id="btnSaveCfg" class="cfg-btn primary">儲存設定</button>
+      </div>
+    </div>
+
+    <div class="card-title">Gmail 匯入</div>
+    <div class="card">
+      <div class="import-row">
+        <input id="importDays" type="number" value="10" style="width:70px; background:var(--input-bg); border:none; border-radius:8px; padding:10px; text-align:center; font-size:14px;" placeholder="天數">
+        <div style="flex:1; display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+          <span style="font-size:13px; color:var(--text-light)">強制重抓</span>
+          <label class="switch" style="transform:scale(0.85)"><input type="checkbox" id="importForce"><span class="slider"></span></label>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnImport" type="button" style="width:100%">開始抓取帳單</button>
+      <div class="import-hint" id="importHint">—</div>
+    </div>
   </section>
 
   <input type="file" id="splitImgInput" accept="image/*" multiple style="display:none">
   <input type="file" id="modalImgInput" accept="image/*" multiple style="display:none">
 
-  <section data-view="recent" class="container" hidden>
-    <div class="card" style="padding:16px;">
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-         <input type="number" id="rLimit" value="10" class="row-input" style="background:var(--input-bg);border-radius:8px;padding:8px;text-align:center;font-size:14px;" placeholder="筆數">
-         <select id="rCategory" class="row-input" style="background:var(--input-bg);border-radius:8px;padding:0 8px;font-size:14px;"><option value="">全部分類</option></select>
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>編輯紀錄</h3>
+        <button class="modal-close" onclick="closeEditModal()">✕</button>
       </div>
-      <button class="btn-main" id="btnRecent" type="button" style="margin:0;padding:12px;background:var(--card);color:var(--text);border:1px solid var(--border);">
-         <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> 刷新列表
-      </button>
+      <div class="modal-body" id="modalContent"></div>
     </div>
-    <div id="recentList" style="padding-bottom:20px;"></div>
-  </section>
+  </div>
 
-  <section data-view="balance" class="container" hidden>
-    <div class="card" style="padding:16px;">
-       <h2 style="margin:0 0 16px;font-size:16px;color:var(--text);font-weight:600;">當下資產總覽</h2>
-       <button class="btn-main" id="btnBalance" type="button" style="margin-top:0;padding:12px;background:var(--primary);">查詢所有餘額</button>
-    </div>
-    <div class="card" id="balanceArea" style="display:none;padding:24px;">
-       <div style="text-align:center;margin-bottom:24px;">
-         <div style="font-size:12px;color:var(--text-light);margin-bottom:4px;">淨資產總計</div>
-         <div id="balanceTotal" style="font-size:40px;font-weight:300;color:var(--text);font-family:-apple-system, monospace;">0.00</div>
-       </div>
-       <div id="balanceListContainer"></div>
-    </div>
-  </section>
-
-  <section data-view="settings" class="container" hidden>
-    <div style="text-align:center; margin-top:30px;">
-      <button onclick="toggleLog()" style="background:none; border:none; color:var(--text-light); font-size:13px; cursor:pointer; padding:10px; display:flex; align-items:center; justify-content:center; gap:6px; margin:0 auto;">
-         <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 版本紀錄
-      </button>
-      <div id="verLog">
-        <ul>
-          <li><span class="ver-date">2026-02-05</span><strong>v6.2:</strong> 介面極簡化與去 Emoji 優化。</li>
-          <li><span class="ver-date">2026-02-02</span><strong>v6.2:</strong> 新增「蕭中信」帳戶。</li>
-          <li><span class="ver-date">2026-02-02</span><strong>v6.1:</strong> 編輯視窗支援下拉選單與照片上傳，明細日期顯示優化。</li>
-        </ul>
-      </div>
-    </div>
-    <div class="group-title">連線設定</div>
-    <div class="card">
-      <div class="input-row"><span class="row-label">API URL</span><input id="endpoint" class="row-input" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec"></div>
-      <div class="input-row"><span class="row-label">API Key</span><input id="apiKey" class="row-input" placeholder="選填"></div>
-      <div style="display:flex;padding:16px 0 0;gap:12px;"><button id="btnTest" style="flex:1;padding:12px;background:var(--input-bg);border:none;border-radius:10px;color:var(--text);font-weight:500;">測試連線</button><button id="btnSaveCfg" style="flex:1;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:500;">儲存設定</button></div>
-    </div>
-    <div class="group-title">Gmail 匯入</div>
-    <div class="card" style="padding:16px;">
-      <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;"><input id="importDays" type="number" value="10" class="row-input" style="background:var(--input-bg);border-radius:8px;padding:8px;text-align:center;width:80px;" placeholder="天數"><div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span style="font-size:13px;color:var(--text);">強制重抓</span><label class="switch" style="transform:scale(0.8);"><input type="checkbox" id="importForce"><span class="slider"></span></label></div></div>
-      <button class="btn-main" id="btnImport" type="button" style="margin:0;">開始抓取帳單</button>
-      <div id="importHint" style="text-align:center;font-size:12px;color:var(--text-light);margin-top:12px;">—</div>
-    </div>
-  </section>
-
-  <div id="editModal" class="modal-overlay"><div class="modal-card"><div style="display:flex;justify-content:space-between;margin-bottom:20px;align-items:center;"><h3 style="margin:0;font-size:18px;">編輯紀錄</h3><span onclick="closeEditModal()" style="font-size:24px;cursor:pointer;color:var(--text-light);">&times;</span></div><div id="modalContent"></div></div></div>
-  <div id="toast" class="toast">訊息</div>
+  <div id="toast" class="toast"></div>
 
 <script>
+/* ─────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────── */
 const MENU_DATA = {
-  "共用": { 
-    "水電費": ["電費","水費","瓦斯費"], 
-    "交通": ["汽車油資","汽車保養","保險","洗車","停車費","罰單","機車油資","機車保養"], 
-    "房租": ["房租"], 
-    "玩樂": ["行程","住宿"], 
-    "食物": ["假日早餐","假日午餐","假日晚餐","平日早餐","平日午餐","平日晚餐","水果","飲料","點心"], 
-    "家用品": ["消耗品","非消耗品"], 
-    "電話費": ["小額支付","會員費","電話費"] 
+  "共用": {
+    "水電費": ["電費","水費","瓦斯費"],
+    "交通": ["汽車油資","汽車保養","保險","洗車","停車費","罰單","機車油資","機車保養"],
+    "房租": ["房租"],
+    "玩樂": ["行程","住宿"],
+    "食物": ["假日早餐","假日午餐","假日晚餐","平日早餐","平日午餐","平日晚餐","水果","飲料","點心"],
+    "家用品": ["消耗品","非消耗品"],
+    "電話費": ["小額支付","會員費","電話費"]
   },
-  "黃支出": { 
-    "玩樂": ["用品","服飾","玩具","學費"], 
-    "食物": ["人情往來","個人午餐","個人晚餐","飲料","點心"], 
-    "健康": ["保健品","看診","藥費"] 
+  "黃支出": {
+    "玩樂": ["用品","服飾","玩具","學費"],
+    "食物": ["人情往來","個人午餐","個人晚餐","飲料","點心"],
+    "健康": ["保健品","看診","藥費"]
   },
-  "蕭支出": { 
-    "玩樂": ["人情往來","用品","服飾","玩具","保養品","書籍"], 
-    "食物": ["人情往來","個人晚餐","個人午餐","個人早餐","飲料"], 
-    "健康": ["保健品","減重藥品","看診","藥費"] 
+  "蕭支出": {
+    "玩樂": ["人情往來","用品","服飾","玩具","保養品","書籍"],
+    "食物": ["人情往來","個人晚餐","個人午餐","個人早餐","飲料"],
+    "健康": ["保健品","減重藥品","看診","藥費"]
   },
-  "洋支出": { 
+  "洋支出": {
     "食物": ["零食","飼料"],
     "玩樂": ["玩具","衣服","洗澡"]
   },
-  "公司代墊": { 
-    "公司代墊": ["公司代墊"], 
-    "食物": ["公司午餐"] 
+  "公司代墊": {
+    "公司代墊": ["公司代墊"],
+    "食物": ["公司午餐"]
   },
-  "信用卡": { 
-    "國泰世華": ["國泰世華"], 
-    "華南銀行": ["華南銀行"], 
-    "聯邦銀行": ["聯邦銀行"] 
+  "信用卡": {
+    "國泰世華": ["國泰世華"],
+    "華南銀行": ["華南銀行"],
+    "聯邦銀行": ["聯邦銀行"]
   },
-  "負債": { 
-    "中國信託": ["中國信託"], 
-    "國泰世華": ["國泰世華"], 
-    "匯豐": ["匯豐"], 
-    "裕融": ["裕融"] 
+  "負債": {
+    "中國信託": ["中國信託"],
+    "國泰世華": ["國泰世華"],
+    "匯豐": ["匯豐"],
+    "裕融": ["裕融"]
   },
-  "收入": { 
-    "欣宜獎金": ["欣宜獎金"], 
-    "欣宜薪資": ["欣宜薪資"], 
-    "租金補貼": ["租金補貼"], 
-    "喬猷薪資": ["喬猷薪資"] 
+  "收入": {
+    "欣宜獎金": ["欣宜獎金"],
+    "欣宜薪資": ["欣宜薪資"],
+    "租金補貼": ["租金補貼"],
+    "喬猷薪資": ["喬猷薪資"]
   },
-  "平衡": { 
-    "內控互轉": ["內控互轉"] 
-  },
-  "其他": { 
-    "國泰證券": ["國泰證券"] 
-  }
+  "平衡": { "內控互轉": ["內控互轉"] },
+  "其他": { "國泰證券": ["國泰證券"] }
 };
 
-let isSubmitting=false; let currentSplits=[]; let selectedImages=[]; let activeSplitIdx = -1; let modalSelectedImages = [];
-const DRAFT_KEY='spend.draft.v6.0'; const SENT_KEY='spend.sent.v19'; 
+const ACCOUNTS = ['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','蕭中信','華南卡','國泰卡','聯邦卡'];
+const CATEGORIES = Object.keys(MENU_DATA);
 
-/* Icons SVG Strings for JS Injection */
-const ICONS = {
-  cam: `<svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="12" r="4"></circle></svg>`,
-  img: `<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
-  del: `<svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#FF3B30"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
-  check: `<svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`
-};
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+let isSubmitting = false;
+let isRestoring = false; // Flag to prevent auto-save during draft restore
+let currentSplits = [];
+let selectedImages = [];
+let modalSelectedImages = [];
+let activeSplitIdx = -1;
 
-function saveDraft(){
-  const data = {
-    amount: $('amount').value,
-    date: $('date').value,
-    category: $('category').value,
-    itemIdx: $('itemSelect').selectedIndex,
-    itemCustom: $('itemInput').value,
-    subIdx: $('subSelect').selectedIndex,
-    subCustom: $('subInput').value,
-    account: $('account').value,
-    note: $('note').value,
-    isTransfer: $('isTransfer').checked,
-    accountIn: $('accountIn').value,
-    direction: $('direction').value
-  };
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-}
+const DRAFT_KEY = 'spend.draft.v6.2';
+const SENT_KEY  = 'spend.sent.v19';
 
-function loadDraft(){
-  const d = JSON.parse(localStorage.getItem(DRAFT_KEY));
-  if(!d) return;
-  $('amount').value = d.amount;
-  $('date').value = d.date || new Date().toISOString().slice(0,10);
-  if(d.category){ $('category').value=d.category; renderItems(); }
-  if(d.itemIdx>0){ $('itemSelect').selectedIndex=d.itemIdx; renderSubItems(); }
-  if(d.itemCustom) $('itemInput').value=d.itemCustom;
-  if(d.subIdx>0) $('subSelect').selectedIndex=d.subIdx;
-  if(d.subCustom) $('subInput').value=d.subCustom;
-  $('account').value = d.account;
-  $('note').value = d.note;
-  if(d.direction) setDirection(d.direction);
-  if(d.isTransfer){ 
-    $('isTransfer').checked=true; 
-    $('transferFields').style.display='flex'; 
-    $('accountIn').value = d.accountIn;
-    // 觸發一次互轉的鎖定邏輯
-    $('category').value='平衡'; $('category').disabled=true; 
-  }
-  checkCustomInput('item'); checkCustomInput('sub');
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  $('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-  loadCfg(); renderCategories(); 
-  loadDraft();
-  renderLog(); route();
-});
-
+/* ─────────────────────────────────────────────
+   UTILS
+───────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
-const toast = (m)=>{ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+
+function toast(msg, duration = 2200) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function fmt(n) {
+  return Number(n).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
 function getDeviceType() {
   let id = localStorage.getItem('spend.deviceId');
-  if(!id) { id = Math.random().toString(36).substring(2,6).toUpperCase(); localStorage.setItem('spend.deviceId', id); }
-  const ua = navigator.userAgent; let os='Web'; if(/iPhone|iPad/.test(ua)) os='iOS'; else if(/Android/.test(ua)) os='Android';
+  if (!id) { id = Math.random().toString(36).substring(2,6).toUpperCase(); localStorage.setItem('spend.deviceId', id); }
+  const ua = navigator.userAgent;
+  const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : 'Web';
   return `${os} #${id}`;
 }
-function routeClick(name) { location.hash = '#' + name; }
-function showView(name){ document.querySelectorAll('section[data-view]').forEach(sec=>sec.hidden = sec.dataset.view !== name); document.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + name)); }
-function route(){ const name=(location.hash||'#home').slice(1); showView(['home','recent','balance','settings'].includes(name)?name:'home'); }
-window.addEventListener('hashchange', route);
-function toggleLog(){ const l=$('verLog'); l.style.display = l.style.display==='block'?'none':'block'; }
 
-/* 🧠 Cascade Logic */
-function renderCategories() {
-  const catSel = $('category'); const rCat = $('rCategory');
-  const cats = Object.keys(MENU_DATA);
-  const opts = `<option value="">選擇分類</option>` + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
-  catSel.innerHTML = opts; rCat.innerHTML = `<option value="">全部分類</option>` + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+function normAccount(s) {
+  return s.replace(/^合作$/, '合作金庫').replace(/^蕭賴$/, '蕭LINE');
 }
+
+/* ─────────────────────────────────────────────
+   ROUTING
+───────────────────────────────────────────── */
+function routeClick(name) { location.hash = '#' + name; }
+function route() {
+  const name = (location.hash || '#home').slice(1);
+  const valid = ['home','recent','balance','settings'];
+  const target = valid.includes(name) ? name : 'home';
+  document.querySelectorAll('section[data-view]').forEach(s => s.hidden = s.dataset.view !== target);
+  document.querySelectorAll('.nav-item').forEach((a, i) => a.classList.toggle('active', valid[i] === target));
+}
+window.addEventListener('hashchange', route);
+
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  // Set today's date
+  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10);
+  $('date').value = today;
+  
+  loadCfg();
+  renderCategories();
+  loadDraft();
+  renderLog();
+  route();
+  bindEvents();
+});
+
+/* ─────────────────────────────────────────────
+   EVENT BINDINGS
+───────────────────────────────────────────── */
+function bindEvents() {
+  $('btnClear').onclick = () => { if (confirm('確定清除所有本機記錄？')) { localStorage.removeItem(SENT_KEY); renderLog(); } };
+  $('btnSaveCfg').onclick = () => { localStorage.setItem('spend.endpoint', $('endpoint').value); localStorage.setItem('spend.apiKey', $('apiKey').value); toast('設定已儲存'); };
+  $('btnTest').onclick = () => { fetch($('endpoint').value + '?ping=1').then(r => toast(r.ok ? '連線成功' : '連線失敗')).catch(() => toast('連線失敗')); };
+  $('btnImport').onclick = handleImport;
+  $('btnBalance').onclick = handleBalance;
+  $('btnRecent').onclick = handleRecent;
+  $('btnAddSplit').onclick = handleAddSplit;
+  $('form').onsubmit = handleSubmit;
+  $('imgInput').onchange = e => handleImg(e, selectedImages, renderImgPreview);
+  $('modalImgInput').onchange = e => handleImg(e, modalSelectedImages, renderModalImgPreview);
+  $('isTransfer').onchange = handleTransferToggle;
+  $('splitImgInput').onchange = handleSplitImg;
+  
+  // Close modal on overlay click
+  $('editModal').onclick = e => { if (e.target === $('editModal')) closeEditModal(); };
+}
+
+/* ─────────────────────────────────────────────
+   DRAFT
+───────────────────────────────────────────── */
+function saveDraft() {
+  if (isRestoring) return; // Don't save while restoring
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      amount: $('amount').value,
+      date: $('date').value,
+      category: $('category').value,
+      itemIdx: $('itemSelect').selectedIndex,
+      itemCustom: $('itemInput').value,
+      subIdx: $('subSelect').selectedIndex,
+      subCustom: $('subInput').value,
+      account: $('account').value,
+      note: $('note').value,
+      isTransfer: $('isTransfer').checked,
+      accountIn: $('accountIn').value,
+      direction: $('direction').value
+    }));
+  } catch(e) { /* quota exceeded */ }
+}
+
+function loadDraft() {
+  isRestoring = true;
+  const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+  if (!d) { isRestoring = false; return; }
+  
+  if (d.amount) $('amount').value = d.amount;
+  if (d.date) $('date').value = d.date;
+  if (d.direction) setDirection(d.direction);
+  
+  if (d.category) { $('category').value = d.category; renderItems(); }
+  if (d.itemIdx > 0) { $('itemSelect').selectedIndex = d.itemIdx; renderSubItems(); }
+  if (d.itemCustom) $('itemInput').value = d.itemCustom;
+  if (d.subIdx > 0) $('subSelect').selectedIndex = d.subIdx;
+  if (d.subCustom) $('subInput').value = d.subCustom;
+  
+  if (d.account) $('account').value = d.account;
+  if (d.note) $('note').value = d.note;
+  
+  if (d.isTransfer) {
+    $('isTransfer').checked = true;
+    $('transferFields').style.display = 'block';
+    if (d.accountIn) $('accountIn').value = d.accountIn;
+    $('category').value = '平衡';
+    $('category').disabled = true;
+  }
+  
+  checkCustomInput('item');
+  checkCustomInput('sub');
+  isRestoring = false;
+}
+
+/* ─────────────────────────────────────────────
+   DIRECTION / SEGMENT
+───────────────────────────────────────────── */
+function setDirection(val) {
+  $('direction').value = val;
+  document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val));
+}
+
+/* ─────────────────────────────────────────────
+   CASCADE MENUS
+───────────────────────────────────────────── */
+function renderCategories() {
+  const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+  $('category').innerHTML = `<option value="">選擇</option>` + opts;
+  $('rCategory').innerHTML = `<option value="">全部分類</option>` + opts;
+  $('rAccount').innerHTML = `<option value="">全部帳戶</option>` + ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
+}
+
 function renderItems() {
   const cat = $('category').value;
-  const itemSel = $('itemSelect');
-  itemSel.innerHTML = `<option value="">選擇項目</option>`;
-  $('itemInput').style.display = 'none'; $('subSelect').innerHTML = `<option value="">選擇細項</option>`; $('subInput').style.display = 'none';
+  $('itemSelect').innerHTML = `<option value="">選擇</option>`;
+  $('itemInput').style.display = 'none';
+  $('subSelect').innerHTML = `<option value="">選擇</option>`;
+  $('subInput').style.display = 'none';
   if (cat && MENU_DATA[cat]) {
     const items = Object.keys(MENU_DATA[cat]);
-    itemSel.innerHTML += items.map(i=>`<option value="${i}">${i}</option>`).join('') + `<option value="其他">其他...</option>`;
+    $('itemSelect').innerHTML += items.map(i => `<option value="${i}">${i}</option>`).join('') + `<option value="其他">其他...</option>`;
   }
+  saveDraft();
 }
+
 function renderSubItems() {
-  const cat = $('category').value; const item = $('itemSelect').value; const subSel = $('subSelect');
-  subSel.innerHTML = `<option value="">選擇細項</option>`; $('subInput').style.display = 'none';
+  const cat = $('category').value;
+  const item = $('itemSelect').value;
+  $('subSelect').innerHTML = `<option value="">選擇</option>`;
+  $('subInput').style.display = 'none';
   if (item === '其他') {
     $('itemInput').style.display = 'block';
-    subSel.innerHTML += `<option value="其他">其他...</option>`;
+    $('subSelect').innerHTML += `<option value="其他">其他...</option>`;
   } else {
     $('itemInput').style.display = 'none';
     if (cat && MENU_DATA[cat] && MENU_DATA[cat][item]) {
       const subs = MENU_DATA[cat][item];
-      subSel.innerHTML += subs.map(s=>`<option value="${s}">${s}</option>`).join('') + `<option value="其他">其他...</option>`;
+      $('subSelect').innerHTML += subs.map(s => `<option value="${s}">${s}</option>`).join('') + `<option value="其他">其他...</option>`;
     }
   }
+  saveDraft();
 }
+
 function checkCustomInput(type) {
-  const sel = $(type + 'Select'); const inp = $(type + 'Input');
-  inp.style.display = sel.value === '其他' ? 'block' : 'none';
+  const sel = $(`${type}Select`);
+  const inp = $(`${type}Input`);
+  inp.style.display = sel && sel.value === '其他' ? 'block' : 'none';
 }
+
 function getFinalValues() {
   const cat = $('category').value;
-  const itemSel = $('itemSelect').value; const item = itemSel === '其他' ? $('itemInput').value : itemSel;
-  const subSel = $('subSelect').value; const sub = subSel === '其他' ? $('subInput').value : subSel;
+  const itemSel = $('itemSelect').value;
+  const item = itemSel === '其他' ? $('itemInput').value.trim() : itemSel;
+  const subSel = $('subSelect').value;
+  const sub  = subSel === '其他' ? $('subInput').value.trim() : subSel;
   return { cat, item, sub };
 }
 
-/* Image */
-$('imgInput').onchange = async function(e) { handleImg(e, selectedImages, renderImgPreview); };
-$('modalImgInput').onchange = async function(e) { handleImg(e, modalSelectedImages, renderModalImgPreview); };
-async function handleImg(e, arr, renderFn){
-  const files = e.target.files; if (!files || files.length===0) return;
-  for (let i=0; i<files.length; i++) arr.push(await compressImage(files[i]));
-  renderFn(); e.target.value='';
+/* ─────────────────────────────────────────────
+   TRANSFER
+───────────────────────────────────────────── */
+function handleTransferToggle() {
+  const on = $('isTransfer').checked;
+  $('transferFields').style.display = on ? 'block' : 'none';
+  if (on) {
+    $('category').value = '平衡';
+    $('category').disabled = true;
+    renderItems();
+    $('itemSelect').value = '內控互轉';
+    renderSubItems();
+    $('subSelect').value = '內控互轉';
+    setDirection('支出');
+    if (currentSplits.length > 0) { toast('互轉模式：已清除分帳'); currentSplits = []; renderSplits(); }
+  } else {
+    $('category').disabled = false;
+  }
+  saveDraft();
+}
+
+/* ─────────────────────────────────────────────
+   IMAGE HANDLING
+───────────────────────────────────────────── */
+async function handleImg(e, arr, renderFn) {
+  const files = e.target.files;
+  if (!files || !files.length) return;
+  for (let i = 0; i < files.length; i++) arr.push(await compressImage(files[i]));
+  renderFn();
+  e.target.value = '';
+}
+
+function compressImage(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = e => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const MAX = 900;
+        const scale = img.width > MAX ? MAX / img.width : 1;
+        const cvs = document.createElement('canvas');
+        cvs.width = img.width * scale;
+        cvs.height = img.height * scale;
+        cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
+        resolve(cvs.toDataURL('image/jpeg', 0.65));
+      };
+    };
+  });
 }
 
 function renderImgPreview() {
-  const div=$('imgPreview'); div.style.display = selectedImages.length?'flex':'none';
-  div.innerHTML = selectedImages.map((s,i)=>`<div class="img-thumb-wrap"><img src="${s}" class="img-thumb"><div class="img-del" onclick="removeImg(${i})">×</div></div>`).join('');
+  const div = $('imgPreview');
+  div.style.display = selectedImages.length ? 'flex' : 'none';
+  div.innerHTML = selectedImages.map((s, i) =>
+    `<div class="img-thumb-wrap"><img src="${s}" class="img-thumb"><div class="img-del" onclick="removeImg(${i})">✕</div></div>`
+  ).join('');
+  $('camBtn').classList.toggle('has-img', selectedImages.length > 0);
 }
+
 function renderModalImgPreview() {
-  const div=$('m-imgPreview'); if(!div) return; div.style.display = modalSelectedImages.length?'flex':'none';
-  div.innerHTML = modalSelectedImages.map((s,i)=>`<div class="img-thumb-wrap"><img src="${s}" class="img-thumb"><div class="img-del" onclick="removeModalImg(${i})">×</div></div>`).join('');
+  const div = $('m-imgPreview');
+  if (!div) return;
+  div.style.display = modalSelectedImages.length ? 'flex' : 'none';
+  div.innerHTML = modalSelectedImages.map((s, i) =>
+    `<div class="img-thumb-wrap"><img src="${s}" class="img-thumb"><div class="img-del" onclick="removeModalImg(${i})">✕</div></div>`
+  ).join('');
 }
 
-window.removeImg=(i)=>{selectedImages.splice(i,1);renderImgPreview();};
-window.removeModalImg=(i)=>{modalSelectedImages.splice(i,1);renderModalImgPreview();};
+window.removeImg = i => { selectedImages.splice(i, 1); renderImgPreview(); };
+window.removeModalImg = i => { modalSelectedImages.splice(i, 1); renderModalImgPreview(); };
 
-window.attachSplitImg = (idx) => { activeSplitIdx = idx; $('splitImgInput').click(); };
-$('splitImgInput').onchange = async function(e) {
-  if (activeSplitIdx<0 || !currentSplits[activeSplitIdx]) return;
-  const files=e.target.files; if(!files.length) return;
-  if(!currentSplits[activeSplitIdx].images) currentSplits[activeSplitIdx].images=[];
-  for(let i=0; i<files.length; i++) currentSplits[activeSplitIdx].images.push(await compressImage(files[i]));
-  renderSplits(); this.value=''; activeSplitIdx=-1;
-};
-function compressImage(file){
-  return new Promise((r)=>{ const reader=new FileReader(); reader.readAsDataURL(file); reader.onload=(e)=>{ const img=new Image(); img.src=e.target.result; img.onload=()=>{ const cvs=document.createElement('canvas'); const scale=800/img.width; cvs.width=800; cvs.height=img.height*scale; cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height); r(cvs.toDataURL('image/jpeg',0.6)); } } });
+function handleSplitImg(e) {
+  if (activeSplitIdx < 0 || !currentSplits[activeSplitIdx]) return;
+  const files = e.target.files;
+  if (!files.length) return;
+  if (!currentSplits[activeSplitIdx].images) currentSplits[activeSplitIdx].images = [];
+  (async () => {
+    for (let i = 0; i < files.length; i++) currentSplits[activeSplitIdx].images.push(await compressImage(files[i]));
+    renderSplits();
+    e.target.value = '';
+    activeSplitIdx = -1;
+  })();
 }
 
-/* Core */
-function resetForm() {
-  localStorage.removeItem(DRAFT_KEY); 
-  currentSplits = []; selectedImages = []; renderImgPreview();
-  $('splitList').innerHTML = ''; $('splitSection').style.display = 'none'; $('btnSubmit').innerHTML = `${ICONS.check} 確認儲存`;
-  $('date').disabled = false; $('account').disabled = false;
-  $('amount').value = ''; $('category').value = ''; renderItems(); 
-  $('account').value = ''; $('note').value = ''; $('subSelect').value = ''; $('subInput').value = '';
-  if($('isTransfer').checked) { $('isTransfer').checked = false; $('transferFields').style.display='none'; $('category').disabled = false; }
-}
+window.attachSplitImg = idx => { activeSplitIdx = idx; $('splitImgInput').click(); };
 
-function setDirection(val) { $('direction').value = val; document.querySelectorAll('.seg-item').forEach(el => el.classList.toggle('active', el.dataset.val === val)); }
-$('isTransfer').onchange = ()=>{
-  const on = $('isTransfer').checked; $('transferFields').style.display = on ? 'flex' : 'none';
-  if (on){ $('category').value='平衡'; $('category').disabled=true; renderItems(); $('itemSelect').value='內控互轉'; renderSubItems(); $('subSelect').value='內控互轉'; $('direction').value='支出'; if(currentSplits.length>0){toast('互轉已清除');currentSplits=[];renderSplits();} } 
-  else { $('category').disabled=false; }
-};
-function renderSplits() {
-  const btnSubmit = $('btnSubmit'); const listDiv = $('splitList'); const section = $('splitSection');
-  if (currentSplits.length === 0) { section.style.display = 'none'; listDiv.innerHTML = ''; btnSubmit.innerHTML = `${ICONS.check} 確認儲存`; $('date').disabled = false; $('account').disabled = false; return; }
-  section.style.display = 'block'; let html = ''; let total = 0;
-  currentSplits.forEach((s, i) => { 
-    const isOut = s.direction === '支出'; total += (isOut?1:-1)*s.amount; 
-    const hasImg = s.images && s.images.length > 0;
-    html += `<div class="record-item"><div class="rec-left"><div class="rec-title">${s.category} - ${s.item}</div><div class="rec-meta">${s.subItem||''}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${s.amount}</span><span class="split-btn-icon ${hasImg?'active':''}" onclick="attachSplitImg(${i})">${hasImg?ICONS.img:ICONS.cam}</span><span style="margin-left:8px;cursor:pointer" onclick="delSplit(${i})">${ICONS.del}</span></div></div>`; 
-  });
-  listDiv.innerHTML = html; btnSubmit.textContent = `送出 ${currentSplits.length} 筆分帳`; $('date').disabled = true; $('account').disabled = true;
-}
-window.delSplit = (i) => { currentSplits.splice(i, 1); renderSplits(); };
-$('btnAddSplit').onclick = () => {
+/* ─────────────────────────────────────────────
+   SPLIT
+───────────────────────────────────────────── */
+function handleAddSplit() {
   const { cat, item, sub } = getFinalValues();
-  const amt = Number($('amount').value || 0); 
+  const amt = Math.abs(Number($('amount').value || 0));
   if (!cat || !item) return toast('請填寫分類與項目');
-  if (!amt) return toast('請輸金額');
-  currentSplits.push({ amount: amt, category: cat, item: item, subItem: sub, note: $('note').value.trim(), direction: $('direction').value, images: [] });
-  renderSplits(); $('amount').value = ''; $('note').value = ''; $('subItem').value = ''; $('amount').focus();
-};
+  if (!amt || amt <= 0) return toast('請輸入正確金額');
+  currentSplits.push({
+    amount: amt, category: cat, item, subItem: sub,
+    note: $('note').value.trim(), direction: $('direction').value, images: []
+  });
+  renderSplits();
+  $('amount').value = '';
+  $('note').value = '';
+  $('amount').focus();
+}
 
-$('form').onsubmit = (e) => {
-  e.preventDefault(); if (isSubmitting) return;
+function renderSplits() {
+  const section = $('splitSection');
+  const listDiv = $('splitList');
+  const btn = $('btnSubmit');
+  if (currentSplits.length === 0) {
+    section.style.display = 'none';
+    listDiv.innerHTML = '';
+    btn.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 確認儲存`;
+    $('date').disabled = false;
+    $('account').disabled = false;
+    return;
+  }
+  section.style.display = 'block';
+  listDiv.innerHTML = currentSplits.map((s, i) => {
+    const isOut = s.direction === '支出';
+    const hasImg = s.images && s.images.length > 0;
+    return `<div class="split-item animate-in">
+      <div>
+        <div style="font-size:14px;font-weight:500">${s.category} · ${s.item}</div>
+        <div class="split-meta">${s.subItem || ''} ${s.note ? '— ' + s.note : ''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span class="split-amt" style="color:${isOut?'var(--text)':'var(--success)'}">
+          ${isOut ? '-' : '+'}${fmt(s.amount)}
+        </span>
+        <button type="button" class="split-img-btn ${hasImg?'active':''}" onclick="attachSplitImg(${i})">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="12" r="4"/></svg>
+        </button>
+        <button type="button" class="split-del-btn" onclick="delSplit(${i})">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  btn.textContent = `送出 ${currentSplits.length} 筆分帳`;
+  $('date').disabled = true;
+  $('account').disabled = true;
+}
+
+window.delSplit = i => { currentSplits.splice(i, 1); renderSplits(); };
+
+/* ─────────────────────────────────────────────
+   SUBMIT
+───────────────────────────────────────────── */
+function resetForm() {
+  localStorage.removeItem(DRAFT_KEY);
+  currentSplits = [];
+  selectedImages = [];
+  renderImgPreview();
+  renderSplits();
+  $('amount').value = '';
+  $('category').value = '';
+  renderItems();
+  $('account').value = '';
+  $('note').value = '';
+  // 重設日期為今天
+  $('date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10);
+  $('date').disabled = false;
+  $('account').disabled = false;
+  if ($('isTransfer').checked) {
+    $('isTransfer').checked = false;
+    $('transferFields').style.display = 'none';
+    $('category').disabled = false;
+  }
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  if (isSubmitting) return;
   const { cat, item, sub } = getFinalValues();
-  const amt = Number($('amount').value); const isXfer = $('isTransfer').checked;
+  const amt = Math.abs(Number($('amount').value));
+  const isXfer = $('isTransfer').checked;
   if (!$('account').value) return toast('請選擇帳戶');
   if (isXfer && !$('accountIn').value) return toast('請選擇轉入帳戶');
   if (currentSplits.length === 0) {
-    if (!amt) return toast('請輸入金額');
-    if (!isXfer && (!cat || !item)) return toast('請完整填寫分類/項目');
+    if (!amt || amt <= 0) return toast('請輸入正確金額');
+    if (!isXfer && (!cat || !item)) return toast('請填寫分類與項目');
   }
-  
-  isSubmitting = true; const btn = $('btnSubmit'); const ot = btn.innerHTML; btn.textContent = '處理中...'; btn.disabled = true;
-  const norm = s => s.replace(/^合作$/,'合作金庫').replace(/^蕭賴$/,'蕭LINE');
-  
-  const payload = { 
-    date: $('date').value, account: norm($('account').value), apiKey: $('apiKey').value.trim(), device: getDeviceType(), images: selectedImages,
-    category: cat, item: item, subItem: sub, amount: amt, note: $('note').value, direction: $('direction').value
+  isSubmitting = true;
+  const btn = $('btnSubmit');
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = `<span class="spinner"></span> 處理中`;
+  btn.disabled = true;
+
+  const payload = {
+    date: $('date').value,
+    account: normAccount($('account').value),
+    apiKey: $('apiKey').value.trim(),
+    device: getDeviceType(),
+    category: cat, item, subItem: sub,
+    amount: amt,   // already Math.abs'd above
+    note: $('note').value,
+    direction: $('direction').value
   };
-  if(isXfer) { payload.isTransfer = 'true'; payload.accountIn = norm($('accountIn').value); }
-  if(currentSplits.length > 0) { payload.action = 'split_add'; payload.splits_json = JSON.stringify(currentSplits); }
-  
-  const ts = new Date().toLocaleString('sv').replace(' ','T');
-  if(currentSplits.length) currentSplits.forEach(s=>addSent({ts, ...s, account:payload.account}));
-  else addSent({ts, ...payload});
 
-  fetch($('endpoint').value, { method: 'POST', body: JSON.stringify(payload) })
-  .then(r=>r.json()).then(d=>{
-    if(d.ok) { toast('✅ 完成'); renderLog(); setTimeout(resetForm, 300); }
-    else toast('失敗:'+d.error);
-  }).finally(()=>{ isSubmitting=false; btn.disabled=false; btn.innerHTML=ot; });
-};
+  if (currentSplits.length > 0) {
+    // 分帳模式：不傳主表單 images（每筆 split 自己帶 images）
+    payload.action = 'split_add';
+    payload.splits_json = JSON.stringify(currentSplits);
+    // 若主表單也有選圖，附加到第一筆 split（視為該筆的照片）
+    if (selectedImages.length > 0 && currentSplits.length > 0) {
+      const parsed = JSON.parse(payload.splits_json);
+      if (!parsed[0].images || parsed[0].images.length === 0) parsed[0].images = selectedImages;
+      payload.splits_json = JSON.stringify(parsed);
+    }
+  } else {
+    // 單筆模式：直接帶 images
+    payload.images = selectedImages;
+  }
 
-function addSent(rec){ const l=JSON.parse(localStorage.getItem(SENT_KEY)||'[]'); l.push(rec); localStorage.setItem(SENT_KEY, JSON.stringify(l.slice(-50))); }
-function renderLog(){ const l=JSON.parse(localStorage.getItem(SENT_KEY)||'[]').reverse(); $('log').innerHTML = l.length ? l.map(r=>{ const isOut=r.direction==='支出'; return `<div class="record-item"><div class="rec-left"><div class="rec-title">${r.item} <small>${r.subItem||''}</small></div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${r.amount}</span></div></div>`}).join('') : '<div style="text-align:center;padding:10px;color:#ccc;font-size:12px">無資料</div>'; }
-$('btnClear').onclick=()=>{ localStorage.removeItem(SENT_KEY); renderLog(); };
-function loadCfg(){ if(localStorage.getItem('spend.endpoint')) $('endpoint').value=localStorage.getItem('spend.endpoint'); if(localStorage.getItem('spend.apiKey')) $('apiKey').value=localStorage.getItem('spend.apiKey'); }
-$('btnSaveCfg').onclick=()=>{ localStorage.setItem('spend.endpoint',$('endpoint').value); localStorage.setItem('spend.apiKey',$('apiKey').value); toast('設定已儲存'); };
-$('btnTest').onclick=()=>{ fetch($('endpoint').value+'?ping=1').then(r=>toast(r.ok?'✅ 連線成功':'❌ 連線失敗')).catch(()=>toast('❌ 連線失敗')); };
-$('btnImport').onclick=async()=>{
-  const ep=$('endpoint').value.trim();
-  $('importHint').textContent='系統處理中...';
+  if (isXfer) { payload.isTransfer = 'true'; payload.accountIn = normAccount($('accountIn').value); }
+
+  const ts = new Date().toLocaleString('sv').replace(' ', 'T');
+  if (currentSplits.length) currentSplits.forEach(s => addSent({ ts, ...s, account: payload.account }));
+  else addSent({ ts, ...payload });
+
   try {
-    const res = await fetch(ep, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`action=ingest_gmail&days=${$('importDays').value}&force=${$('importForce').checked}&apiKey=${$('apiKey').value}`});
+    const r = await fetch($('endpoint').value, { method: 'POST', body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (d.ok) { toast('已儲存'); renderLog(); setTimeout(resetForm, 300); }
+    else toast('失敗：' + d.error);
+  } catch (err) {
+    toast('網路錯誤，請稍後再試');
+  } finally {
+    isSubmitting = false;
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   LOCAL LOG
+───────────────────────────────────────────── */
+function addSent(rec) {
+  const l = JSON.parse(localStorage.getItem(SENT_KEY) || '[]');
+  l.push(rec);
+  localStorage.setItem(SENT_KEY, JSON.stringify(l.slice(-60)));
+}
+
+function renderLog() {
+  const l = JSON.parse(localStorage.getItem(SENT_KEY) || '[]').reverse();
+  $('log').innerHTML = l.length
+    ? l.map(r => {
+        const isOut = r.direction === '支出';
+        return `<div class="log-item">
+          <div>
+            <div class="log-title">${r.item || '—'} <span style="font-size:11px;color:var(--text-light);font-weight:400">${r.subItem || ''}</span></div>
+            <div class="log-sub">${r.category || ''} · ${r.account || ''}</div>
+          </div>
+          <span class="log-amt ${isOut ? 'neg' : 'pos'}">${isOut ? '-' : '+'}${fmt(r.amount)}</span>
+        </div>`;
+      }).join('')
+    : `<div class="empty-state"><div class="empty-state-icon"><svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg></div>尚無記錄</div>`;
+}
+
+/* ─────────────────────────────────────────────
+   CONFIG
+───────────────────────────────────────────── */
+function loadCfg() {
+  const ep = localStorage.getItem('spend.endpoint');
+  const key = localStorage.getItem('spend.apiKey');
+  if (ep) $('endpoint').value = ep;
+  if (key) $('apiKey').value = key;
+}
+
+function toggleLog() {
+  const l = $('verLog');
+  l.style.display = l.style.display === 'block' ? 'none' : 'block';
+}
+
+/* ─────────────────────────────────────────────
+   IMPORT
+───────────────────────────────────────────── */
+async function handleImport() {
+  const ep = $('endpoint').value.trim();
+  const hint = $('importHint');
+  const btn = $('btnImport');
+  hint.textContent = '處理中...';
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> 抓取中`;
+  try {
+    const res = await fetch(ep, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'ingest_gmail',
+        days: Number($('importDays').value),
+        force: $('importForce').checked,
+        apiKey: $('apiKey').value.trim()
+      })
+    });
     const d = await res.json();
-    if(d.ok) { toast(`新增 ${d.added} 筆`); $('importHint').textContent=`✅ 成功新增 ${d.added} 筆`; } else throw d;
-  } catch(e) { $('importHint').textContent='❌ 處理失敗'; }
-};
+    if (d.ok) {
+      toast(`新增 ${d.added} 筆`);
+      hint.textContent = `成功新增 ${d.added} 筆（${d.elapsedMs || 0}ms）`;
+    } else {
+      throw new Error(d.error || '匯入失敗');
+    }
+  } catch (e) {
+    hint.textContent = `處理失敗：${e.message}`;
+    toast('抓取失敗');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '開始抓取帳單';
+  }
+}
 
-/* 明細與資產 */
-$('btnBalance').onclick=async()=>{
-  const ep=$('endpoint').value.trim(); if(!ep) return;
-  const btn=$('btnBalance'); btn.textContent='計算中...'; btn.disabled=true;
-  $('balanceListContainer').innerHTML=''; $('balanceTotal').textContent='...'; $('balanceArea').style.display='block';
+/* ─────────────────────────────────────────────
+   BALANCE
+───────────────────────────────────────────── */
+async function handleBalance() {
+  const ep = $('endpoint').value.trim();
+  if (!ep) return;
+  const btn = $('btnBalance');
+  btn.innerHTML = `<span class="spinner"></span> 計算中`;
+  btn.disabled = true;
+  $('balanceListContainer').innerHTML = '';
+  $('balanceTotal').textContent = '...';
+  $('balanceArea').style.display = 'block';
   try {
-     const res=await fetch(ep+'?balance=1'); const d=await res.json();
-     if(!d.ok) throw new Error(d.error||'Unknown Error');
-     let h='';
-     if(d.breakdown){
-       d.breakdown.forEach(b=>{ h+=`<div style="display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;font-size:15px;"><span style="color:var(--text)">${b.account}</span><span style="font-family:-apple-system, monospace;font-weight:600;">${b.balance.toFixed(2)}</span></div>`; });
-       $('balanceListContainer').innerHTML=h; $('balanceTotal').textContent=d.total.toFixed(2);
-     }
-  } catch(e){ alert('查詢失敗: '+e.message); $('balanceListContainer').innerHTML='<div style="color:red;text-align:center">載入失敗</div>'; }
-  btn.textContent='查詢所有餘額'; btn.disabled=false;
-};
+    const res = await fetch(ep + '?balance=1');
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'Unknown Error');
+    if (d.breakdown) {
+      $('balanceListContainer').innerHTML = d.breakdown.map(b =>
+        `<div class="balance-item"><span>${b.account}</span><span class="balance-item-num">${fmt(b.balance)}</span></div>`
+      ).join('');
+      $('balanceTotal').textContent = fmt(d.total);
+    }
+  } catch (e) {
+    $('balanceListContainer').innerHTML = `<div style="color:var(--danger);text-align:center;padding:16px;font-size:13px">載入失敗：${e.message}</div>`;
+  }
+  btn.textContent = '查詢所有餘額';
+  btn.disabled = false;
+}
 
-$('btnRecent').onclick=async()=>{
-  const ep=$('endpoint').value.trim(); if(!ep) return;
-  $('recentList').innerHTML='<div style="text-align:center;padding:20px;color:#999">載入中...</div>';
+/* ─────────────────────────────────────────────
+   RECENT
+───────────────────────────────────────────── */
+async function handleRecent() {
+  const ep = $('endpoint').value.trim();
+  if (!ep) return;
+  $('recentList').innerHTML = `<div class="empty-state"><div class="spinner" style="border-color:var(--border);border-top-color:var(--text-light);width:28px;height:28px;margin:0 auto 12px"></div>載入中</div>`;
   try {
-    const p=new URLSearchParams({recent:$('rLimit').value});
-    if($('rCategory').value) p.set('category',$('rCategory').value);
-    const res=await fetch(ep+'?'+p); const d=await res.json();
-    if(d.ok && d.records){
-      let h='';
-      d.records.forEach(r=>{
-         const isOut=r.direction==='支出';
-         const photo=r.photos?`<a href="${r.photos.split('\n')[0]}" target="_blank" style="text-decoration:none;margin-left:4px;color:var(--text-light)">${ICONS.img}</a>`:'';
-         h+=`<div class="card" style="padding:0;margin-bottom:12px;" onclick='openEditModal(${JSON.stringify(r)})'><div class="record-item" style="border:none;cursor:pointer;padding:16px;"><div class="rec-left"><div class="rec-title">${r.item} <small style="color:#999">${r.subItem||''}</small> ${photo}</div><div class="rec-meta"><span class="rec-tag">${r.category}</span><span class="rec-tag">${r.account}</span></div><div class="rec-dates">${r.date}</div></div><div class="rec-right"><span class="rec-amt ${isOut?'neg':'pos'}">${isOut?'-':''}${Math.abs(r.amount)}</span></div></div></div>`;
-      });
-      $('recentList').innerHTML=h||'<div style="text-align:center;color:#999">無資料</div>';
-    } else { throw new Error(d.error || 'Server Error'); }
-  } catch(e){ alert('載入失敗: '+e.message); $('recentList').innerHTML='載入失敗'; }
-};
+    const p = new URLSearchParams({ recent: $('rLimit').value });
+    if ($('rCategory').value) p.set('category', $('rCategory').value);
+    if ($('rAccount').value) p.set('account', $('rAccount').value);
+    const res = await fetch(ep + '?' + p);
+    const d = await res.json();
+    if (d.ok && d.records) {
+      if (!d.records.length) {
+        $('recentList').innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>沒有符合的記錄</div>`;
+        return;
+      }
+      $('recentList').innerHTML = d.records.map(r => {
+        const isOut = r.direction === '支出';
+        const photoHTML = r.photos
+          ? `<a href="${r.photos.split('\n')[0]}" target="_blank" class="photo-link" onclick="event.stopPropagation()">
+               <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+             </a>` : '';
+        // 用 data-rec 屬性儲存，避免 r.note/item 含 ' 號破壞 onclick
+        const safeRec = escapeAttr(JSON.stringify(r));
+        return `<div class="recent-card animate-in" data-rec="${safeRec}">
+          <div class="rec-item">
+            <div>
+              <div class="rec-title-row">
+                ${escapeHtml(r.item || '—')}
+                <span style="font-weight:400;color:var(--text-light);font-size:13px">${escapeHtml(r.subItem || '')}</span>
+                ${photoHTML}
+              </div>
+              <div class="rec-meta-row">
+                <span class="tag">${escapeHtml(r.category)}</span>
+                <span class="tag">${escapeHtml(r.account)}</span>
+                <span class="rec-date">${r.date}</span>
+              </div>
+            </div>
+            <span class="${isOut ? 'rec-amt-out' : 'rec-amt-in'}">${isOut ? '-' : '+'}${fmt(Math.abs(r.amount))}</span>
+          </div>
+        </div>`;
+      }).join('');
+      // 事件委派：點擊任一 recent-card 開啟編輯
+      $('recentList').onclick = e => {
+        const card = e.target.closest('.recent-card');
+        if (!card) return;
+        try { openEditModal(JSON.parse(card.dataset.rec)); } catch(err) { toast('無法開啟編輯'); }
+      };
+    } else {
+      throw new Error(d.error || 'Server Error');
+    }
+  } catch (e) {
+    $('recentList').innerHTML = `<div class="empty-state" style="color:var(--danger)">載入失敗：${e.message}</div>`;
+  }
+}
 
-/* Edit Modal */
-function openEditModal(r){
-  const amt=Math.abs(Number(r.amount)); const isOut=r.direction==='支出'; const isTransfer=(r.category==='平衡'&&r.item==='內控互轉');
+/* ─────────────────────────────────────────────
+   EDIT MODAL
+───────────────────────────────────────────── */
+function escapeAttr(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function openEditModal(r) {
   modalSelectedImages = [];
-  
-  let html=`<div class="big-input-wrapper"><span class="currency-symbol">$</span><input id="m-amt" type="number" class="big-input" value="${amt}">
-     <label class="cam-btn" style="margin-left:8px;position:absolute;right:0;bottom:10px;">${ICONS.cam}</label>
-     </div>
-    <div class="input-row"><span class="row-label">分類</span><select id="m-cat" class="row-input" onchange="updateModalItems()">${makeOpts(CATEGORIES,r.category)}</select></div>
-    <div class="input-row"><span class="row-label">項目</span><select id="m-item" class="row-input" onchange="updateModalSubItems()"></select></div>
-    <div class="input-row"><span class="row-label">細項</span><select id="m-subItem" class="row-input"></select></div>
-    <div class="input-row"><span class="row-label">備註</span><input id="m-note" class="row-input" value="${r.note||''}"></div>
-    <div class="input-row"><span class="row-label">帳戶</span><select id="m-acc" class="row-input">${makeOpts(ACCOUNTS,r.account)}</select></div>
-    <div id="m-imgPreview" class="img-preview-area" style="display:none;margin-top:10px;"></div>
-    <div style="display:flex;gap:12px;margin-top:20px;"><button class="btn-main" onclick="saveModal('${r.createdAt}',${isTransfer},'${isOut?'支出':'收入'}')">儲存變更</button><button class="btn-main" style="background:#FFE5E5;color:var(--danger);box-shadow:none" onclick="delModal('${r.createdAt}')">刪除紀錄</button></div>`;
-  $('modalContent').innerHTML=html; $('editModal').classList.add('open');
-  
-  // Init Cascading dropdowns
+  const isXfer = (r.category === '平衡' && r.item === '內控互轉');
+  const isOut = r.direction === '支出';
+  const catOpts = CATEGORIES.map(c => `<option value="${c}" ${c === r.category ? 'selected' : ''}>${c}</option>`).join('');
+  const accOpts = ACCOUNTS.map(a => `<option value="${a}" ${a === r.account ? 'selected' : ''}>${a}</option>`).join('');
+
+  $('modalContent').innerHTML = `
+    <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+      <div class="amount-area" style="padding:16px 0 12px;position:relative">
+        <span class="currency-sym">$</span>
+        <input id="m-amt" type="number" class="big-input" value="${Math.abs(Number(r.amount))}">
+        <button type="button" class="cam-btn" id="m-camBtn" onclick="$('modalImgInput').click()">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="12" r="4"/></svg>
+        </button>
+      </div>
+      <div class="input-row">
+        <span class="row-label">分類</span>
+        <select id="m-cat" class="row-input" onchange="updateModalItems()"><option value="">選擇</option>${catOpts}</select>
+      </div>
+      <div class="input-row">
+        <span class="row-label">項目</span>
+        <select id="m-item" class="row-input" onchange="updateModalSubItems()"><option value="">選擇</option></select>
+      </div>
+      <div class="input-row">
+        <span class="row-label">細項</span>
+        <select id="m-subItem" class="row-input"><option value="">選擇</option></select>
+      </div>
+      <div class="input-row">
+        <span class="row-label">備註</span>
+        <input id="m-note" class="row-input" value="${escapeAttr(r.note)}">
+      </div>
+      <div class="input-row" style="border-bottom:none">
+        <span class="row-label">帳戶</span>
+        <select id="m-acc" class="row-input"><option value="">選擇</option>${accOpts}</select>
+      </div>
+    </div>
+    <div id="m-imgPreview" class="img-preview-area" style="margin:0 0 12px"></div>
+    <div class="btn-row">
+      <button type="button" class="btn btn-danger" data-key="${escapeAttr(r.createdAt)}" onclick="delModal(this.dataset.key)">刪除</button>
+      <button type="button" class="btn btn-primary" data-key="${escapeAttr(r.createdAt)}" data-isxfer="${isXfer}" data-dir="${isOut ? '支出' : '收入'}" onclick="saveModal(this.dataset.key, this.dataset.isxfer==='true', this.dataset.dir)">儲存變更</button>
+    </div>`;
+
+  $('editModal').classList.add('open');
   updateModalItems(r.item);
   updateModalSubItems(r.subItem);
-  
-  // Bind camera
-  $('modalContent').querySelector('.cam-btn').onclick = () => $('modalImgInput').click();
 }
 
 function updateModalItems(selectedItem) {
-    const cat = $('m-cat').value; const itemSel = $('m-item');
-    let opts = '';
-    if(cat && MENU_DATA[cat]){
-       opts = Object.keys(MENU_DATA[cat]).map(i=>`<option value="${i}">${i}</option>`).join('');
-    }
-    // If original item is not in list (e.g. custom text), add it temporarily
-    if(selectedItem && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][selectedItem])){
-       opts = `<option value="${selectedItem}">${selectedItem}</option>` + opts;
-    }
-    itemSel.innerHTML = `<option value="">選擇</option>` + opts;
-    if(selectedItem) itemSel.value = selectedItem;
+  const cat = $('m-cat').value;
+  const sel = $('m-item');
+  let opts = '';
+  if (cat && MENU_DATA[cat]) {
+    opts = Object.keys(MENU_DATA[cat]).map(i => `<option value="${i}">${i}</option>`).join('');
+  }
+  if (selectedItem && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][selectedItem])) {
+    opts = `<option value="${selectedItem}">${selectedItem}</option>` + opts;
+  }
+  sel.innerHTML = `<option value="">選擇</option>` + opts;
+  if (selectedItem) sel.value = selectedItem;
 }
 
 function updateModalSubItems(selectedSub) {
-    const cat = $('m-cat').value; const item = $('m-item').value; const subSel = $('m-subItem');
-    let opts = '';
-    if(cat && MENU_DATA[cat] && MENU_DATA[cat][item]){
-       opts = MENU_DATA[cat][item].map(s=>`<option value="${s}">${s}</option>`).join('');
-    }
-    if(selectedSub && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][item] || !MENU_DATA[cat][item].includes(selectedSub))){
-       opts = `<option value="${selectedSub}">${selectedSub}</option>` + opts;
-    }
-    subSel.innerHTML = `<option value="">選擇</option>` + opts;
-    if(selectedSub) subSel.value = selectedSub;
+  const cat = $('m-cat').value;
+  const item = $('m-item').value;
+  const sel = $('m-subItem');
+  let opts = '';
+  if (cat && MENU_DATA[cat] && MENU_DATA[cat][item]) {
+    opts = MENU_DATA[cat][item].map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+  if (selectedSub && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][item] || !MENU_DATA[cat][item].includes(selectedSub))) {
+    opts = `<option value="${selectedSub}">${selectedSub}</option>` + opts;
+  }
+  sel.innerHTML = `<option value="">選擇</option>` + opts;
+  if (selectedSub) sel.value = selectedSub;
 }
 
-function closeEditModal(){ $('editModal').classList.remove('open'); }
-function makeOpts(l,s){ return l.map(v=>`<option value="${v}" ${v===s?'selected':''}>${v}</option>`).join(''); }
+function closeEditModal() { $('editModal').classList.remove('open'); }
 
-async function saveModal(key,isTransfer,dir){
-  const amt=$('m-amt').value; if(!amt) return toast('請輸金額');
-  const payload={
-    action:'update', createdAt:key, amount:amt,
-    note:$('m-note').value, account:$('m-acc').value,
-    category:$('m-cat').value, item:$('m-item').value, subItem:$('m-subItem').value,
-    apiKey:$('apiKey').value.trim(), images: modalSelectedImages
+async function saveModal(key, isXfer, dir) {
+  const amt = Math.abs(Number($('m-amt').value));
+  if (!amt || amt <= 0) return toast('請輸入正確金額');
+  const payload = {
+    action: 'update', createdAt: key, amount: amt,
+    note: $('m-note').value, account: $('m-acc').value,
+    category: $('m-cat').value, item: $('m-item').value, subItem: $('m-subItem').value,
+    apiKey: $('apiKey').value.trim(), images: modalSelectedImages
   };
-  if(!isTransfer) payload.direction=dir;
-  closeEditModal(); toast('更新中...');
-  try{ await fetch($('endpoint').value.trim(),{method:'POST',body:JSON.stringify(payload)}); toast('已更新'); $('btnRecent').click(); }catch(e){ toast('更新失敗'); }
+  if (!isXfer) payload.direction = dir;
+  closeEditModal();
+  toast('更新中...');
+  try {
+    const res = await fetch($('endpoint').value.trim(), { method: 'POST', body: JSON.stringify(payload) });
+    const d = await res.json();
+    if (d.ok) { toast('已更新'); handleRecent(); }
+    else toast('更新失敗：' + d.error);
+  } catch (e) { toast('更新失敗'); }
 }
-function delModal(key){ if(confirm('確定要刪除這筆紀錄嗎?')){ closeEditModal(); fetch($('endpoint').value,{method:'POST',body:`action=delete&createdAt=${key}&apiKey=${$('apiKey').value}`}).then(()=>{toast('已刪除');$('btnRecent').click();}); } }
 
-const ACCOUNTS=['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','蕭中信','華南卡','國泰卡','聯邦卡'];
-const CATEGORIES=['共用','黃支出','蕭支出','洋支出','公司代墊','信用卡','負債','收入','平衡','其他'];
+function delModal(key) {
+  if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+  closeEditModal();
+  fetch($('endpoint').value, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete', createdAt: key, apiKey: $('apiKey').value.trim() })
+  }).then(r => r.json())
+    .then(d => { toast(d.ok ? `已刪除 ${d.deleted} 筆` : '刪除失敗：' + d.error); handleRecent(); })
+    .catch(() => toast('刪除失敗'));
+}
 </script>
 </body>
 </html>
