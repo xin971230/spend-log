@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v6.3</title>
+  <title>收支快記 v6.4</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -796,7 +796,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v6.3.1</span></div>
+      <div class="footer"><span class="ver-badge">v6.4</span></div>
     </form>
   </section>
 
@@ -838,9 +838,9 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
-          <li><span class="ver-date">2026-02-12</span> <strong>v6.3.1:</strong> 修正帳戶/備註未清空問題、提升照片畫質至 2K。</li>
+          <li><span class="ver-date">2026-02-23</span> <strong>v6.4:</strong> 更新最新分類與項目清單，並強制送出後清空所有欄位。</li>
+          <li><span class="ver-date">2026-02-12</span> <strong>v6.3.1:</strong> 提升照片畫質至 2K。</li>
           <li><span class="ver-date">2026-02-05</span> <strong>v6.2.2:</strong> 修正點擊崩潰、移除 Emoji。</li>
-          <li><span class="ver-date">2026-02-05</span> <strong>v6.2:</strong> 介面極簡化。</li>
         </ul>
       </div>
     </div>
@@ -896,27 +896,29 @@
 ───────────────────────────────────────────── */
 const MENU_DATA = {
   "共用": {
-    "水電費": ["電費","水費","瓦斯費"],
-    "交通": ["汽車油資","汽車保養","保險","洗車","停車費","罰單","機車油資","機車保養"],
+    "水電費": ["電費", "水費", "瓦斯費"],
+    "交通": ["汽車油資", "汽車保養", "保險", "洗車", "停車費", "罰單", "機車油資", "機車保養"],
     "房租": ["房租"],
-    "玩樂": ["行程","住宿"],
-    "食物": ["假日早餐","假日午餐","假日晚餐","平日早餐","平日午餐","平日晚餐","水果","飲料","點心"],
-    "家用品": ["消耗品","非消耗品"],
-    "電話費": ["小額支付","會員費","電話費"]
+    "玩樂": ["行程", "住宿", "出國", "用品", "票券"],
+    "食物": ["假日早餐", "假日午餐", "假日晚餐", "平日早餐", "平日午餐", "平日晚餐", "水果", "飲料", "點心"],
+    "家用品": ["消耗品", "非消耗品"],
+    "電話費": ["小額支付", "會員費", "電話費"]
   },
   "黃支出": {
-    "玩樂": ["用品","服飾","玩具","學費"],
-    "食物": ["人情往來","個人午餐","個人晚餐","飲料","點心"],
-    "健康": ["保健品","看診","藥費"]
+    "人情往來": ["餐費", "禮金", "禮品"],
+    "玩樂": ["用品", "服飾", "玩具", "學費", "書籍", "行程", "電玩", "票券", "出國"],
+    "食物": ["個人早餐", "個人午餐", "個人晚餐", "飲料", "點心", "水果"],
+    "健康": ["保健品", "看診", "藥品", "減重藥品"]
   },
   "蕭支出": {
-    "玩樂": ["人情往來","用品","服飾","玩具","保養品","書籍"],
-    "食物": ["人情往來","個人晚餐","個人午餐","個人早餐","飲料"],
-    "健康": ["保健品","減重藥品","看診","藥費"]
+    "人情往來": ["餐費", "禮金", "禮品"],
+    "玩樂": ["用品", "服飾", "玩具", "學費", "書籍", "行程", "保養品", "票券", "出國"],
+    "食物": ["個人早餐", "個人午餐", "個人晚餐", "飲料", "點心", "水果"],
+    "健康": ["保健品", "看診", "藥品", "減重藥品"]
   },
   "洋支出": {
-    "食物": ["零食","飼料"],
-    "玩樂": ["玩具","衣服","洗澡"]
+    "食物": ["零食", "飼料"],
+    "玩樂": ["玩具", "衣服", "洗澡", "住宿"]
   },
   "公司代墊": {
     "公司代墊": ["公司代墊"],
@@ -925,22 +927,28 @@ const MENU_DATA = {
   "信用卡": {
     "國泰世華": ["國泰世華"],
     "華南銀行": ["華南銀行"],
-    "聯邦銀行": ["聯邦銀行"]
+    "聯邦銀行": ["聯邦銀行"],
+    "玉山銀行": ["玉山銀行"]
   },
   "負債": {
-    "中國信託": ["中國信託"],
-    "國泰世華": ["國泰世華"],
-    "匯豐": ["匯豐"],
-    "裕融": ["裕融"]
+    "中國信託": ["中國信託(蕭)", "中國信託(黃)"],
+    "裕融": ["裕融"],
+    "喬猷朋友": ["喬猷朋友"]
   },
   "收入": {
-    "欣宜獎金": ["欣宜獎金"],
-    "欣宜薪資": ["欣宜薪資"],
+    "欣宜薪資": ["欣宜薪資", "欣宜獎金"],
     "租金補貼": ["租金補貼"],
-    "喬猷薪資": ["喬猷薪資"]
+    "喬猷薪資": ["喬猷薪資", "喬猷獎金"]
   },
-  "平衡": { "內控互轉": ["內控互轉"] },
-  "其他": { "國泰證券": ["國泰證券"] }
+  "平衡": {
+    "內控互轉": ["內控互轉"],
+    "刷卡平衡": ["刷卡平衡", "刷卡帳單"],
+    "結帳": ["承上期", "盤差", "轉下期"]
+  },
+  "其他": {
+    "國泰證券": ["國泰證券"],
+    "存款": ["喬猷存款", "欣宜存款"]
+  }
 };
 
 const ACCOUNTS = ['黃現金','蕭現金','合作金庫','蕭郵局','華南銀行','黃郵局','蕭LINE','彰化銀行','黃中信','黃LINE','國泰世華','蕭中信','華南卡','國泰卡','聯邦卡'];
@@ -1196,13 +1204,13 @@ function compressImage(file) {
       const img = new Image();
       img.src = e.target.result;
       img.onload = () => {
-        const MAX = 2048; // Increased from 1600
+        const MAX = 2048; // Increased Quality
         const scale = img.width > MAX ? MAX / img.width : 1;
         const cvs = document.createElement('canvas');
         cvs.width = img.width * scale;
         cvs.height = img.height * scale;
         cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
-        resolve(cvs.toDataURL('image/jpeg', 0.95)); // Increased from 0.85
+        resolve(cvs.toDataURL('image/jpeg', 0.95)); // Higher quality
       };
     };
   });
@@ -1316,7 +1324,7 @@ function resetForm() {
   $('category').value = '';
   renderItems();
   
-  // CLEAR THESE FIELDS (Fixing the "issue" of persistence)
+  // FIX: Force Clear Account and Note fields after submit
   $('account').value = ''; 
   $('note').value = '';
   
@@ -1329,7 +1337,7 @@ function resetForm() {
     $('transferFields').style.display = 'none';
     $('category').disabled = false;
   }
-  // Save empty state to draft to prevent reloading old data
+  // 儲存空狀態到暫存
   saveDraft();
 }
 
@@ -1363,14 +1371,17 @@ async function handleSubmit(e) {
   };
 
   if (currentSplits.length > 0) {
+    // 分帳模式：不傳主表單 images（每筆 split 自己帶 images）
     payload.action = 'split_add';
     payload.splits_json = JSON.stringify(currentSplits);
+    // 若主表單也有選圖，附加到第一筆 split（視為該筆的照片）
     if (selectedImages.length > 0 && currentSplits.length > 0) {
       const parsed = JSON.parse(payload.splits_json);
       if (!parsed[0].images || parsed[0].images.length === 0) parsed[0].images = selectedImages;
       payload.splits_json = JSON.stringify(parsed);
     }
   } else {
+    // 單筆模式：直接帶 images
     payload.images = selectedImages;
   }
 
