@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v6.5.1</title>
+  <title>收支快記 v6.6</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -802,7 +802,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v6.5.1</span></div>
+      <div class="footer"><span class="ver-badge">v6.6</span></div>
     </form>
   </section>
 
@@ -844,6 +844,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-03-04</span> <strong>v6.6:</strong> 強制清空所有欄位（包含帳戶與備註），避免連續記帳錯誤。</li>
           <li><span class="ver-date">2026-03-03</span> <strong>v6.5.1:</strong> 修復照片過大導致卡在處理中的問題，優化高畫質壓縮平衡。</li>
         </ul>
       </div>
@@ -1210,7 +1211,6 @@ function compressImage(file) {
       img.src = e.target.result;
       img.onerror = reject;
       img.onload = () => {
-        // [FIX] 最高解析度 1600px, 壓縮率 0.85 確保不爆掉 LocalStorage
         const MAX = 1600; 
         const scale = img.width > MAX ? MAX / img.width : 1;
         const cvs = document.createElement('canvas');
@@ -1376,22 +1376,32 @@ function resetForm() {
   selectedImages = [];
   renderImgPreview();
   renderSplits();
+  
   $('amount').value = '';
   $('category').value = '';
   renderItems();
+  $('itemInput').value = '';
+  $('subInput').value = '';
   
-  // 保留 account 和 note，不做清空動作
-  // $('account').value = ''; 
-  // $('note').value = '';
+  // ==========================================
+  // FIX: Force Clear ALL remaining fields here
+  // ==========================================
+  $('account').value = ''; 
+  $('note').value = '';
+  $('accountIn').value = '';
   
+  // Set date to today
   $('date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10);
   $('date').disabled = false;
   $('account').disabled = false;
+  
   if ($('isTransfer').checked) {
     $('isTransfer').checked = false;
     $('transferFields').style.display = 'none';
     $('category').disabled = false;
   }
+  
+  // Save empty state to draft to prevent reloading old data
   saveDraft();
 }
 
@@ -1446,7 +1456,6 @@ async function handleSubmit(e) {
     if (d.ok) { 
       toast('已儲存'); 
       
-      // [FIX] 只有在成功存入後，才將資料寫入本機暫存記錄
       const ts = new Date().toLocaleString('sv').replace(' ', 'T');
       if (currentSplits.length) {
         currentSplits.forEach(s => addSent({ ts, ...s, account: payload.account }));
@@ -1472,7 +1481,6 @@ async function handleSubmit(e) {
 ───────────────────────────────────────────── */
 function addSent(rec) {
   try {
-    // [FIX] 移除照片資料，避免 LocalStorage 容量爆滿
     const r = { ...rec };
     delete r.images;
     delete r.splits_json;
