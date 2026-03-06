@@ -1,0 +1,23 @@
+{
+  "name": "收支快記",
+  "short_name": "記帳",
+  "description": "極簡個人收支記帳系統",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
+  "icons": [
+    {
+      "src": "https://ui-avatars.com/api/?name=Ledger&background=5D7B9D&color=fff&size=192&font-size=0.3&rounded=true",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://ui-avatars.com/api/?name=Ledger&background=5D7B9D&color=fff&size=512&font-size=0.3&rounded=true",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
