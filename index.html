@@ -6,6 +6,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>收支快記 v6.6</title>
+  
+  <link rel="manifest" href="./manifest.json">
+  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -202,7 +205,6 @@
     .cam-btn:active { transform: scale(0.9); background: #E5E5EA; }
     .cam-btn.has-img { background: var(--primary); color: white; }
 
-    /* Upload progress indicator */
     .upload-progress {
       display: none;
       align-items: center;
@@ -682,7 +684,7 @@
       </a>
       <a class="nav-item" onclick="routeClick('settings')">
         <div class="nav-icon">
-          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </div>
         <span>設定</span>
       </a>
@@ -802,7 +804,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v6.6</span></div>
+      <div class="footer"><span class="ver-badge">v6.6 PWA</span></div>
     </form>
   </section>
 
@@ -844,7 +846,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
-          <li><span class="ver-date">2026-03-04</span> <strong>v6.6:</strong> 強制清空所有欄位（包含帳戶與備註），避免連續記帳錯誤。</li>
+          <li><span class="ver-date">2026-03-06</span> <strong>v6.6 PWA:</strong> 支援 PWA 安裝、強制送出後清空所有欄位。</li>
           <li><span class="ver-date">2026-03-03</span> <strong>v6.5.1:</strong> 修復照片過大導致卡在處理中的問題，優化高畫質壓縮平衡。</li>
         </ul>
       </div>
@@ -896,6 +898,17 @@
   <div id="toast" class="toast"></div>
 
 <script>
+/* ─────────────────────────────────────────────
+   註冊 PWA Service Worker
+───────────────────────────────────────────── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(registration => console.log('ServiceWorker 註冊成功'))
+      .catch(err => console.log('ServiceWorker 註冊失敗: ', err));
+  });
+}
+
 /* ─────────────────────────────────────────────
    DATA
 ───────────────────────────────────────────── */
@@ -1211,13 +1224,13 @@ function compressImage(file) {
       img.src = e.target.result;
       img.onerror = reject;
       img.onload = () => {
-        const MAX = 1600; 
+        const MAX = 2048; // 高畫質
         const scale = img.width > MAX ? MAX / img.width : 1;
         const cvs = document.createElement('canvas');
         cvs.width = Math.round(img.width * scale);
         cvs.height = Math.round(img.height * scale);
         cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
-        resolve(cvs.toDataURL('image/jpeg', 0.85)); 
+        resolve(cvs.toDataURL('image/jpeg', 0.95)); 
       };
     };
   });
@@ -1384,13 +1397,12 @@ function resetForm() {
   $('subInput').value = '';
   
   // ==========================================
-  // FIX: Force Clear ALL remaining fields here
+  // 強制清空所有欄位 (v6.6)
   // ==========================================
   $('account').value = ''; 
   $('note').value = '';
   $('accountIn').value = '';
   
-  // Set date to today
   $('date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10);
   $('date').disabled = false;
   $('account').disabled = false;
@@ -1400,8 +1412,6 @@ function resetForm() {
     $('transferFields').style.display = 'none';
     $('category').disabled = false;
   }
-  
-  // Save empty state to draft to prevent reloading old data
   saveDraft();
 }
 
