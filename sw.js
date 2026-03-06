@@ -1,12 +1,14 @@
-const CACHE_NAME = 'ledger-cache-v6.6';
+// 這裡的版本號改了，手機就會知道有新版需要下載
+const CACHE_NAME = 'ledger-cache-v6.7'; 
 const urlsToCache = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-yuanbao.png'
 ];
 
-// 安裝 Service Worker 並快取基本檔案
 self.addEventListener('install', event => {
+  self.skipWaiting(); // 強制立刻安裝新版
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -15,18 +17,15 @@ self.addEventListener('install', event => {
   );
 });
 
-// 攔截網路請求（達成離線也能開啟畫面的基本要求）
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // 如果快取裡有，就回傳快取；否則透過網路抓取
-        return response || fetch(event.request);
-      })
+    // 策略改為：先嘗試從網路抓最新的，失敗才讀取快取
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
   );
 });
 
-// 更新 Service Worker 時清除舊快取
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -34,10 +33,12 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            // 刪除舊版快取
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  return self.clients.claim(); // 讓更新立刻在所有開啟的畫面生效
 });
