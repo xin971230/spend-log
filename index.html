@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v6.6</title>
+  <title>收支快記 v6.7</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -105,8 +105,8 @@
     }
     .nav-item:active { transform: scale(0.92); }
     .nav-item.active { color: var(--text); }
-    .nav-item .nav-icon {
-      width: 28px; height: 28px;
+    .nav-item .nav-icon { 
+      width: 28px; height: 28px; 
       display: flex; align-items: center; justify-content: center;
       border-radius: 8px;
       transition: background 0.2s;
@@ -662,6 +662,7 @@
 </head>
 <body>
 
+  <!-- Navigation -->
   <nav class="nav">
     <div class="nav-inner">
       <a class="nav-item active" onclick="routeClick('home')">
@@ -684,13 +685,14 @@
       </a>
       <a class="nav-item" onclick="routeClick('settings')">
         <div class="nav-icon">
-          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </div>
         <span>設定</span>
       </a>
     </div>
   </nav>
 
+  <!-- ── HOME ── -->
   <section data-view="home" class="container">
     <form id="form" autocomplete="off">
       <select id="direction" style="display:none"><option>支出</option><option>收入</option></select>
@@ -710,6 +712,7 @@
           <input type="file" id="imgInput" accept="image/*" multiple style="display:none">
         </div>
 
+        <!-- Upload progress bar -->
         <div class="upload-progress" id="uploadProgress">
           <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           <div class="upload-bar-wrap"><div class="upload-bar" id="uploadBar"></div></div>
@@ -757,6 +760,7 @@
         <div id="imgPreview" class="img-preview-area"></div>
       </div>
 
+      <!-- Transfer Toggle -->
       <div class="card">
         <div class="switch-row" style="border:none; padding: 6px 4px;">
           <span class="switch-label">帳戶互轉</span>
@@ -777,6 +781,7 @@
         </div>
       </div>
 
+      <!-- Split Section -->
       <div id="splitSection" style="display:none">
         <div class="card-title">分帳列表</div>
         <div class="card" style="padding:0 16px">
@@ -795,6 +800,7 @@
         </button>
       </div>
 
+      <!-- Local Log -->
       <div class="card-title">本機暫存記錄</div>
       <div class="card" style="padding:0 16px">
         <div id="log" style="max-height:180px; overflow-y:auto"></div>
@@ -804,10 +810,11 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v6.6 PWA</span></div>
+      <div class="footer"><span class="ver-badge">v6.7</span></div>
     </form>
   </section>
 
+  <!-- ── RECENT ── -->
   <section data-view="recent" class="container" hidden>
     <div class="filter-bar">
       <input type="number" id="rLimit" value="10" placeholder="筆數">
@@ -825,6 +832,7 @@
     <div id="recentList"></div>
   </section>
 
+  <!-- ── BALANCE ── -->
   <section data-view="balance" class="container" hidden>
     <div class="card">
       <button class="btn btn-primary" id="btnBalance" type="button" style="width:100%">查詢所有餘額</button>
@@ -838,6 +846,7 @@
     </div>
   </section>
 
+  <!-- ── SETTINGS ── -->
   <section data-view="settings" class="container" hidden>
     <div style="text-align:center; padding: 8px 0 4px;">
       <button onclick="toggleLog()" style="background:none; border:none; color:var(--text-light); font-size:13px; cursor:pointer; padding:10px; display:inline-flex; align-items:center; gap:6px;">
@@ -846,6 +855,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-06-01</span> <strong>v6.7:</strong> 更新最新分類與項目清單。</li>
           <li><span class="ver-date">2026-03-06</span> <strong>v6.6 PWA:</strong> 支援 PWA 安裝、強制送出後清空所有欄位。</li>
           <li><span class="ver-date">2026-03-03</span> <strong>v6.5.1:</strong> 修復照片過大導致卡在處理中的問題，優化高畫質壓縮平衡。</li>
         </ul>
@@ -882,9 +892,11 @@
     </div>
   </section>
 
+  <!-- Hidden file inputs -->
   <input type="file" id="splitImgInput" accept="image/*" multiple style="display:none">
   <input type="file" id="modalImgInput" accept="image/*" multiple style="display:none">
 
+  <!-- Edit Modal -->
   <div id="editModal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -920,7 +932,8 @@ const MENU_DATA = {
     "玩樂": ["行程", "住宿", "出國", "用品", "票券"],
     "食物": ["假日早餐", "假日午餐", "假日晚餐", "平日早餐", "平日午餐", "平日晚餐", "水果", "飲料", "點心"],
     "家用品": ["消耗品", "非消耗品"],
-    "電話費": ["小額支付", "會員費", "電話費"]
+    "電話費": ["小額支付", "會員費", "電話費"],
+    "規費": ["稅金"]
   },
   "黃支出": {
     "人情往來": ["餐費", "禮金", "禮品"],
@@ -945,13 +958,13 @@ const MENU_DATA = {
   "信用卡": {
     "國泰世華": ["國泰世華"],
     "華南銀行": ["華南銀行"],
-    "聯邦銀行": ["聯邦銀行"],
-    "玉山銀行": ["玉山銀行"]
+    "聯邦銀行": ["聯邦銀行"]
   },
   "負債": {
-    "中國信託": ["中國信託(蕭)", "中國信託(黃)"],
+    "中國信託": ["中國信託(黃)"],
     "裕融": ["裕融"],
-    "喬猷朋友": ["喬猷朋友"]
+    "喬猷朋友": ["喬猷朋友"],
+    "合作金庫": ["合作金庫"]
   },
   "收入": {
     "欣宜薪資": ["欣宜薪資", "欣宜獎金"],
@@ -1224,13 +1237,13 @@ function compressImage(file) {
       img.src = e.target.result;
       img.onerror = reject;
       img.onload = () => {
-        const MAX = 2048; // 高畫質
+        const MAX = 1600; 
         const scale = img.width > MAX ? MAX / img.width : 1;
         const cvs = document.createElement('canvas');
         cvs.width = Math.round(img.width * scale);
         cvs.height = Math.round(img.height * scale);
         cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
-        resolve(cvs.toDataURL('image/jpeg', 0.95)); 
+        resolve(cvs.toDataURL('image/jpeg', 0.85)); 
       };
     };
   });
@@ -1396,9 +1409,7 @@ function resetForm() {
   $('itemInput').value = '';
   $('subInput').value = '';
   
-  // ==========================================
-  // 強制清空所有欄位 (v6.6)
-  // ==========================================
+  // Force Clear Account and Note fields after submit
   $('account').value = ''; 
   $('note').value = '';
   $('accountIn').value = '';
@@ -1412,6 +1423,7 @@ function resetForm() {
     $('transferFields').style.display = 'none';
     $('category').disabled = false;
   }
+  
   saveDraft();
 }
 
