@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v6.8</title>
+  <title>收支快記 v6.9</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -800,7 +800,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v6.8</span></div>
+      <div class="footer"><span class="ver-badge">v6.9</span></div>
     </form>
   </section>
 
@@ -845,6 +845,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-07-19</span> <strong>v6.9:</strong> 編輯/刪除改用每筆紀錄的唯一 ID 定位,並對舊資料加上金額+項目驗證,修正可能改到別筆資料的問題。</li>
           <li><span class="ver-date">2026-07-19</span> <strong>v6.8:</strong> 重新開啟 App 時自動清空上次輸入(日期回到當日)、帳戶清單改為單一來源自動產生、明細與紀錄顯示加強字元跳脫防護。</li>
           <li><span class="ver-date">2026-06-01</span> <strong>v6.7:</strong> 更新最新分類與項目清單。</li>
           <li><span class="ver-date">2026-03-06</span> <strong>v6.6 PWA:</strong> 支援 PWA 安裝、強制送出後清空所有欄位。</li>
@@ -1632,6 +1633,8 @@ async function handleRecent() {
    EDIT MODAL
 ───────────────────────────────────────────── */
 let currentModalKey = '';
+let currentModalId = '';                          // v6.9:唯一 ID(後端 P 欄)
+let currentModalOrig = { amount: 0, item: '' };   // v6.9:開啟編輯當下的原始值,供後端驗證
 let currentModalIsXfer = false;
 let currentModalDir = '支出';
 
@@ -1643,6 +1646,8 @@ function openEditModal(r) {
   const accOpts = ACCOUNTS.map(a => `<option value="${a}" ${a === r.account ? 'selected' : ''}>${a}</option>`).join('');
 
   currentModalKey = r.createdAt;
+  currentModalId = r.id || '';
+  currentModalOrig = { amount: Math.abs(Number(r.amount)), item: r.item || '' };
   currentModalIsXfer = isXfer;
   currentModalDir = isOut ? '支出' : '收入';
 
@@ -1722,7 +1727,9 @@ async function saveModal() {
   const amt = Math.abs(Number($('m-amt').value));
   if (!amt || amt <= 0) return toast('請輸入正確金額');
   const payload = {
-    action: 'update', createdAt: currentModalKey, amount: amt,
+    action: 'update', createdAt: currentModalKey, id: currentModalId,
+    expectAmount: currentModalOrig.amount, expectItem: currentModalOrig.item,
+    amount: amt,
     note: $('m-note').value, account: $('m-acc').value,
     category: $('m-cat').value, item: $('m-item').value, subItem: $('m-subItem').value,
     apiKey: $('apiKey').value.trim(), images: modalSelectedImages
@@ -1743,7 +1750,7 @@ function delModal() {
   closeEditModal();
   fetch($('endpoint').value, {
     method: 'POST',
-    body: JSON.stringify({ action: 'delete', createdAt: currentModalKey, apiKey: $('apiKey').value.trim() })
+    body: JSON.stringify({ action: 'delete', createdAt: currentModalKey, id: currentModalId, expectAmount: currentModalOrig.amount, expectItem: currentModalOrig.item, apiKey: $('apiKey').value.trim() })
   }).then(r => r.json())
     .then(d => { toast(d.ok ? `已刪除 ${d.deleted} 筆` : '刪除失敗：' + d.error); handleRecent(); })
     .catch(() => toast('刪除失敗'));
