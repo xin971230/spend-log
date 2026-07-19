@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v6.7</title>
+  <title>收支快記 v6.8</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -705,7 +705,7 @@
 
         <div class="amount-area">
           <span class="currency-sym">$</span>
-          <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal" oninput="saveDraft()">
+          <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal">
           <button type="button" class="cam-btn" id="camBtn" onclick="$('imgInput').click()">
             <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="12" r="4"/></svg>
           </button>
@@ -721,7 +721,7 @@
 
         <div class="input-row">
           <span class="row-label">日期</span>
-          <input type="date" id="date" class="row-input" required onchange="saveDraft()">
+          <input type="date" id="date" class="row-input" required>
         </div>
         <div class="input-row">
           <span class="row-label">分類</span>
@@ -731,30 +731,25 @@
           <span class="row-label">項目</span>
           <div class="sub-select-row">
             <select id="itemSelect" class="row-input" onchange="renderSubItems()"><option value="">選擇</option></select>
-            <input id="itemInput" class="custom-input" placeholder="輸入自訂項目" oninput="saveDraft()">
+            <input id="itemInput" class="custom-input" placeholder="輸入自訂項目">
           </div>
         </div>
         <div class="input-row">
           <span class="row-label">細項</span>
           <div class="sub-select-row">
             <select id="subSelect" class="row-input" onchange="checkCustomInput('sub')"><option value="">選擇</option></select>
-            <input id="subInput" class="custom-input" placeholder="輸入自訂細項" oninput="saveDraft()">
+            <input id="subInput" class="custom-input" placeholder="輸入自訂細項">
           </div>
         </div>
         <div class="input-row">
           <span class="row-label">帳戶</span>
-          <select id="account" class="row-input" onchange="saveDraft()">
+          <select id="account" class="row-input">
             <option value="">選擇</option>
-            <option>黃現金</option><option>蕭現金</option>
-            <option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option>
-            <option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option>
-            <option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-            <option>蕭中信</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
           </select>
         </div>
         <div class="input-row" style="border-bottom:none">
           <span class="row-label">備註</span>
-          <input id="note" class="row-input" placeholder="選填" oninput="saveDraft()">
+          <input id="note" class="row-input" placeholder="選填">
         </div>
 
         <div id="imgPreview" class="img-preview-area"></div>
@@ -769,13 +764,8 @@
         <div id="transferFields" class="transfer-row">
           <div class="input-row" style="padding:0 16px; border-bottom:none;">
             <span class="row-label" style="color:var(--text-light);font-size:13px">轉入至</span>
-            <select id="accountIn" class="row-input" onchange="saveDraft()">
+            <select id="accountIn" class="row-input">
               <option value="">選擇帳戶</option>
-              <option>黃現金</option><option>蕭現金</option>
-              <option>合作金庫</option><option>蕭郵局</option><option>華南銀行</option>
-              <option>黃郵局</option><option>蕭LINE</option><option>彰化銀行</option>
-              <option>黃中信</option><option>黃LINE</option><option>國泰世華</option>
-              <option>蕭中信</option><option>華南卡</option><option>國泰卡</option><option>聯邦卡</option>
             </select>
           </div>
         </div>
@@ -810,7 +800,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v6.7</span></div>
+      <div class="footer"><span class="ver-badge">v6.8</span></div>
     </form>
   </section>
 
@@ -855,6 +845,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-07-19</span> <strong>v6.8:</strong> 重新開啟 App 時自動清空上次輸入(日期回到當日)、帳戶清單改為單一來源自動產生、明細與紀錄顯示加強字元跳脫防護。</li>
           <li><span class="ver-date">2026-06-01</span> <strong>v6.7:</strong> 更新最新分類與項目清單。</li>
           <li><span class="ver-date">2026-03-06</span> <strong>v6.6 PWA:</strong> 支援 PWA 安裝、強制送出後清空所有欄位。</li>
           <li><span class="ver-date">2026-03-03</span> <strong>v6.5.1:</strong> 修復照片過大導致卡在處理中的問題，優化高畫質壓縮平衡。</li>
@@ -989,7 +980,6 @@ const CATEGORIES = Object.keys(MENU_DATA);
    STATE
 ───────────────────────────────────────────── */
 let isSubmitting = false;
-let isRestoring = false;
 let currentSplits = [];
 let selectedImages = [];
 let modalSelectedImages = [];
@@ -997,7 +987,8 @@ let activeSplitIdx = -1;
 
 let recentRecords = [];
 
-const DRAFT_KEY = 'spend.draft.v6.2';
+// v6.8:草稿功能已停用(每次開啟一律從空白表單開始),保留 key 名稱以清除舊版殘留資料
+const LEGACY_DRAFT_KEY = 'spend.draft.v6.2';
 const SENT_KEY  = 'spend.sent.v19';
 
 /* ─────────────────────────────────────────────
@@ -1015,6 +1006,18 @@ function toast(msg, duration = 2200) {
 
 function fmt(n) {
   return Number(n).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function escapeAttr(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function todayStr() {
+  return new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 
 function getDeviceType() {
@@ -1046,15 +1049,25 @@ window.addEventListener('hashchange', route);
    INIT
 ───────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
-  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10);
-  $('date').value = today;
+  // v6.8:每次開啟一律清除舊草稿,不還原先前輸入的資料
+  try { localStorage.removeItem(LEGACY_DRAFT_KEY); } catch (e) {}
+
+  $('date').value = todayStr();
 
   loadCfg();
   renderCategories();
-  loadDraft();
+  renderAccounts();
   renderLog();
   route();
   bindEvents();
+});
+
+// v6.8:PWA 從背景切回前台時,若日期已跨日則自動更新為當日
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !$('date').disabled) {
+    const t = todayStr();
+    if ($('date').value < t) $('date').value = t;
+  }
 });
 
 /* ─────────────────────────────────────────────
@@ -1086,60 +1099,6 @@ function bindEvents() {
 }
 
 /* ─────────────────────────────────────────────
-   DRAFT
-───────────────────────────────────────────── */
-function saveDraft() {
-  if (isRestoring) return;
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({
-      amount: $('amount').value,
-      date: $('date').value,
-      category: $('category').value,
-      itemIdx: $('itemSelect').selectedIndex,
-      itemCustom: $('itemInput').value,
-      subIdx: $('subSelect').selectedIndex,
-      subCustom: $('subInput').value,
-      account: $('account').value,
-      note: $('note').value,
-      isTransfer: $('isTransfer').checked,
-      accountIn: $('accountIn').value,
-      direction: $('direction').value
-    }));
-  } catch(e) {}
-}
-
-function loadDraft() {
-  isRestoring = true;
-  const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
-  if (!d) { isRestoring = false; return; }
-
-  if (d.amount) $('amount').value = d.amount;
-  if (d.date) $('date').value = d.date;
-  if (d.direction) setDirection(d.direction);
-
-  if (d.category) { $('category').value = d.category; renderItems(); }
-  if (d.itemIdx > 0) { $('itemSelect').selectedIndex = d.itemIdx; renderSubItems(); }
-  if (d.itemCustom) $('itemInput').value = d.itemCustom;
-  if (d.subIdx > 0) $('subSelect').selectedIndex = d.subIdx;
-  if (d.subCustom) $('subInput').value = d.subCustom;
-
-  if (d.account) $('account').value = d.account;
-  if (d.note) $('note').value = d.note;
-
-  if (d.isTransfer) {
-    $('isTransfer').checked = true;
-    $('transferFields').style.display = 'block';
-    if (d.accountIn) $('accountIn').value = d.accountIn;
-    $('category').value = '平衡';
-    $('category').disabled = true;
-  }
-
-  checkCustomInput('item');
-  checkCustomInput('sub');
-  isRestoring = false;
-}
-
-/* ─────────────────────────────────────────────
    DIRECTION / SEGMENT
 ───────────────────────────────────────────── */
 function setDirection(val) {
@@ -1157,6 +1116,13 @@ function renderCategories() {
   $('rAccount').innerHTML = `<option value="">全部帳戶</option>` + ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
 }
 
+// v6.8:帳戶選單改由 ACCOUNTS 陣列統一產生,避免 HTML 與 JS 兩份清單不同步
+function renderAccounts() {
+  const opts = ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
+  $('account').innerHTML = `<option value="">選擇</option>` + opts;
+  $('accountIn').innerHTML = `<option value="">選擇帳戶</option>` + opts;
+}
+
 function renderItems() {
   const cat = $('category').value;
   $('itemSelect').innerHTML = `<option value="">選擇</option>`;
@@ -1167,7 +1133,6 @@ function renderItems() {
     const items = Object.keys(MENU_DATA[cat]);
     $('itemSelect').innerHTML += items.map(i => `<option value="${i}">${i}</option>`).join('') + `<option value="其他">其他...</option>`;
   }
-  saveDraft();
 }
 
 function renderSubItems() {
@@ -1185,7 +1150,6 @@ function renderSubItems() {
       $('subSelect').innerHTML += subs.map(s => `<option value="${s}">${s}</option>`).join('') + `<option value="其他">其他...</option>`;
     }
   }
-  saveDraft();
 }
 
 function checkCustomInput(type) {
@@ -1221,7 +1185,6 @@ function handleTransferToggle() {
   } else {
     $('category').disabled = false;
   }
-  saveDraft();
 }
 
 /* ─────────────────────────────────────────────
@@ -1370,8 +1333,8 @@ function renderSplits() {
     const hasImg = s.images && s.images.length > 0;
     return `<div class="split-item animate-in">
       <div>
-        <div style="font-size:14px;font-weight:500">${s.category} · ${s.item}</div>
-        <div class="split-meta">${s.subItem || ''} ${s.note ? '— ' + s.note : ''}</div>
+        <div style="font-size:14px;font-weight:500">${escapeHtml(s.category)} · ${escapeHtml(s.item)}</div>
+        <div class="split-meta">${escapeHtml(s.subItem || '')} ${s.note ? '— ' + escapeHtml(s.note) : ''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
         <span class="split-amt" style="color:${isOut?'var(--text)':'var(--success)'}">
@@ -1397,7 +1360,6 @@ window.delSplit = i => { currentSplits.splice(i, 1); renderSplits(); };
    SUBMIT
 ───────────────────────────────────────────── */
 function resetForm() {
-  localStorage.removeItem(DRAFT_KEY);
   currentSplits = [];
   selectedImages = [];
   renderImgPreview();
@@ -1409,12 +1371,12 @@ function resetForm() {
   $('itemInput').value = '';
   $('subInput').value = '';
   
-  // Force Clear Account and Note fields after submit
+  // 送出後強制清空帳戶與備註
   $('account').value = ''; 
   $('note').value = '';
   $('accountIn').value = '';
   
-  $('date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10);
+  $('date').value = todayStr();
   $('date').disabled = false;
   $('account').disabled = false;
   
@@ -1424,7 +1386,7 @@ function resetForm() {
     $('category').disabled = false;
   }
   
-  saveDraft();
+  setDirection('支出');
 }
 
 async function handleSubmit(e) {
@@ -1436,6 +1398,7 @@ async function handleSubmit(e) {
   
   if (!$('account').value) return toast('請選擇帳戶');
   if (isXfer && !$('accountIn').value) return toast('請選擇轉入帳戶');
+  if (isXfer && $('accountIn').value === $('account').value) return toast('轉出與轉入帳戶不可相同');
   if (currentSplits.length === 0) {
     if (!amt || amt <= 0) return toast('請輸入正確金額');
     if (!isXfer && (!cat || !item)) return toast('請填寫分類與項目');
@@ -1506,6 +1469,7 @@ function addSent(rec) {
     const r = { ...rec };
     delete r.images;
     delete r.splits_json;
+    delete r.apiKey; // v6.8:本機記錄不儲存 API Key
     
     const l = JSON.parse(localStorage.getItem(SENT_KEY) || '[]');
     l.push(r);
@@ -1522,8 +1486,8 @@ function renderLog() {
         const isOut = r.direction === '支出';
         return `<div class="log-item">
           <div>
-            <div class="log-title">${r.item || '—'} <span style="font-size:11px;color:var(--text-light);font-weight:400">${r.subItem || ''}</span></div>
-            <div class="log-sub">${r.category || ''} · ${r.account || ''}</div>
+            <div class="log-title">${escapeHtml(r.item || '—')} <span style="font-size:11px;color:var(--text-light);font-weight:400">${escapeHtml(r.subItem || '')}</span></div>
+            <div class="log-sub">${escapeHtml(r.category || '')} · ${escapeHtml(r.account || '')}</div>
           </div>
           <span class="log-amt ${isOut ? 'neg' : 'pos'}">${isOut ? '-' : '+'}${fmt(r.amount)}</span>
         </div>`;
@@ -1600,12 +1564,12 @@ async function handleBalance() {
     if (!d.ok) throw new Error(d.error || 'Unknown Error');
     if (d.breakdown) {
       $('balanceListContainer').innerHTML = d.breakdown.map(b =>
-        `<div class="balance-item"><span>${b.account}</span><span class="balance-item-num">${fmt(b.balance)}</span></div>`
+        `<div class="balance-item"><span>${escapeHtml(b.account)}</span><span class="balance-item-num">${fmt(b.balance)}</span></div>`
       ).join('');
       $('balanceTotal').textContent = fmt(d.total);
     }
   } catch (e) {
-    $('balanceListContainer').innerHTML = `<div style="color:var(--danger);text-align:center;padding:16px;font-size:13px">載入失敗：${e.message}</div>`;
+    $('balanceListContainer').innerHTML = `<div style="color:var(--danger);text-align:center;padding:16px;font-size:13px">載入失敗：${escapeHtml(e.message)}</div>`;
   }
   btn.textContent = '查詢所有餘額';
   btn.disabled = false;
@@ -1635,7 +1599,7 @@ async function handleRecent() {
       $('recentList').innerHTML = recentRecords.map((r, idx) => {
         const isOut = r.direction === '支出';
         const photoHTML = r.photos
-          ? `<a href="${r.photos.split('\n')[0]}" target="_blank" class="photo-link" onclick="event.stopPropagation()">
+          ? `<a href="${escapeAttr(r.photos.split('\n')[0])}" target="_blank" rel="noopener" class="photo-link" onclick="event.stopPropagation()">
                <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
              </a>` : '';
         return `<div class="recent-card animate-in" data-idx="${idx}">
@@ -1649,7 +1613,7 @@ async function handleRecent() {
               <div class="rec-meta-row">
                 <span class="tag">${escapeHtml(r.category)}</span>
                 <span class="tag">${escapeHtml(r.account)}</span>
-                <span class="rec-date">${r.date}</span>
+                <span class="rec-date">${escapeHtml(r.date)}</span>
               </div>
             </div>
             <span class="${isOut ? 'rec-amt-out' : 'rec-amt-in'}">${isOut ? '-' : '+'}${fmt(Math.abs(r.amount))}</span>
@@ -1660,21 +1624,13 @@ async function handleRecent() {
       throw new Error(d.error || 'Server Error');
     }
   } catch (e) {
-    $('recentList').innerHTML = `<div class="empty-state" style="color:var(--danger)">載入失敗：${e.message}</div>`;
+    $('recentList').innerHTML = `<div class="empty-state" style="color:var(--danger)">載入失敗：${escapeHtml(e.message)}</div>`;
   }
 }
 
 /* ─────────────────────────────────────────────
    EDIT MODAL
 ───────────────────────────────────────────── */
-function escapeAttr(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function escapeHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
 let currentModalKey = '';
 let currentModalIsXfer = false;
 let currentModalDir = '支出';
@@ -1739,7 +1695,7 @@ function updateModalItems(selectedItem) {
     opts = Object.keys(MENU_DATA[cat]).map(i => `<option value="${i}">${i}</option>`).join('');
   }
   if (selectedItem && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][selectedItem])) {
-    opts = `<option value="${selectedItem}">${selectedItem}</option>` + opts;
+    opts = `<option value="${escapeAttr(selectedItem)}">${escapeHtml(selectedItem)}</option>` + opts;
   }
   sel.innerHTML = `<option value="">選擇</option>` + opts;
   if (selectedItem) sel.value = selectedItem;
@@ -1754,7 +1710,7 @@ function updateModalSubItems(selectedSub) {
     opts = MENU_DATA[cat][item].map(s => `<option value="${s}">${s}</option>`).join('');
   }
   if (selectedSub && (!cat || !MENU_DATA[cat] || !MENU_DATA[cat][item] || !MENU_DATA[cat][item].includes(selectedSub))) {
-    opts = `<option value="${selectedSub}">${selectedSub}</option>` + opts;
+    opts = `<option value="${escapeAttr(selectedSub)}">${escapeHtml(selectedSub)}</option>` + opts;
   }
   sel.innerHTML = `<option value="">選擇</option>` + opts;
   if (selectedSub) sel.value = selectedSub;
