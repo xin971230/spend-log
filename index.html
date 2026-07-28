@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v6.9</title>
+  <title>收支快記 v7.0</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -705,12 +705,14 @@
 
         <div class="amount-area">
           <span class="currency-sym">$</span>
-          <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal">
+          <input type="number" id="amount" class="big-input" placeholder="0" step="0.01" inputmode="decimal" oninput="updateEqHint()">
           <button type="button" class="cam-btn" id="camBtn" onclick="$('imgInput').click()">
             <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="12" r="4"/></svg>
           </button>
           <input type="file" id="imgInput" accept="image/*" multiple style="display:none">
         </div>
+
+        <div id="eqHint" style="display:none;text-align:center;font-size:12px;color:var(--text-light);margin:-8px 0 10px"></div>
 
         <!-- Upload progress bar -->
         <div class="upload-progress" id="uploadProgress">
@@ -753,6 +755,34 @@
         </div>
 
         <div id="imgPreview" class="img-preview-area"></div>
+      </div>
+
+      <!-- Equal Split Toggle -->
+      <div class="card">
+        <div class="switch-row" style="border:none; padding: 6px 4px;">
+          <span class="switch-label">均分(金額 ÷2,兩組分類)</span>
+          <label class="switch"><input type="checkbox" id="isEqual" onchange="handleEqualToggle()"><span class="slider"></span></label>
+        </div>
+        <div id="equalFields" class="transfer-row">
+          <div class="input-row" style="padding:0 16px;">
+            <span class="row-label" style="color:var(--text-light);font-size:13px">分類 2</span>
+            <select id="eqCategory" class="row-input" onchange="renderEqItems(true)"><option value="">選擇</option></select>
+          </div>
+          <div class="input-row" style="padding:0 16px;">
+            <span class="row-label" style="color:var(--text-light);font-size:13px">項目 2</span>
+            <div class="sub-select-row">
+              <select id="eqItemSelect" class="row-input" onchange="renderEqSubItems()"><option value="">選擇</option></select>
+              <input id="eqItemInput" class="custom-input" placeholder="輸入自訂項目">
+            </div>
+          </div>
+          <div class="input-row" style="padding:0 16px; border-bottom:none;">
+            <span class="row-label" style="color:var(--text-light);font-size:13px">細項 2</span>
+            <div class="sub-select-row">
+              <select id="eqSubSelect" class="row-input" onchange="checkCustomInput('eqSub')"><option value="">選擇</option></select>
+              <input id="eqSubInput" class="custom-input" placeholder="輸入自訂細項">
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Transfer Toggle -->
@@ -800,7 +830,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v6.9</span></div>
+      <div class="footer"><span class="ver-badge">v7.0</span></div>
     </form>
   </section>
 
@@ -845,6 +875,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-07-19</span> <strong>v7.0:</strong> 新增「均分」功能:金額自動除以二、可分別選擇兩組分類/項目/細項,一次寫入兩筆。</li>
           <li><span class="ver-date">2026-07-19</span> <strong>v6.9:</strong> 編輯/刪除改用每筆紀錄的唯一 ID 定位,並對舊資料加上金額+項目驗證,修正可能改到別筆資料的問題。</li>
           <li><span class="ver-date">2026-07-19</span> <strong>v6.8:</strong> 重新開啟 App 時自動清空上次輸入(日期回到當日)、帳戶清單改為單一來源自動產生、明細與紀錄顯示加強字元跳脫防護。</li>
           <li><span class="ver-date">2026-06-01</span> <strong>v6.7:</strong> 更新最新分類與項目清單。</li>
@@ -1113,6 +1144,7 @@ function setDirection(val) {
 function renderCategories() {
   const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
   $('category').innerHTML = `<option value="">選擇</option>` + opts;
+  $('eqCategory').innerHTML = `<option value="">選擇</option>` + opts;
   $('rCategory').innerHTML = `<option value="">全部分類</option>` + opts;
   $('rAccount').innerHTML = `<option value="">全部帳戶</option>` + ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
 }
@@ -1175,6 +1207,7 @@ function handleTransferToggle() {
   const on = $('isTransfer').checked;
   $('transferFields').style.display = on ? 'block' : 'none';
   if (on) {
+    if ($('isEqual').checked) { $('isEqual').checked = false; $('equalFields').style.display = 'none'; updateEqHint(); toast('互轉模式:已關閉均分'); }
     $('category').value = '平衡';
     $('category').disabled = true;
     renderItems();
@@ -1186,6 +1219,91 @@ function handleTransferToggle() {
   } else {
     $('category').disabled = false;
   }
+}
+
+/* ─────────────────────────────────────────────
+   EQUAL SPLIT(均分)
+───────────────────────────────────────────── */
+function handleEqualToggle() {
+  const on = $('isEqual').checked;
+  $('equalFields').style.display = on ? 'block' : 'none';
+  if (on) {
+    if ($('isTransfer').checked) {
+      $('isTransfer').checked = false;
+      $('transferFields').style.display = 'none';
+      $('category').disabled = false;
+      toast('均分模式:已關閉互轉');
+    }
+    if (currentSplits.length > 0) { toast('均分模式:已清除分帳'); currentSplits = []; renderSplits(); }
+  }
+  updateEqHint();
+}
+
+function updateEqHint() {
+  const el = $('eqHint');
+  const amt = Math.abs(Number($('amount').value || 0));
+  if ($('isEqual').checked && amt > 0) {
+    const h = eqHalves(amt);
+    el.textContent = h[0] === h[1] ? `均分後每筆 $${fmt(h[0])}` : `均分後 $${fmt(h[0])} + $${fmt(h[1])}`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// 拆成兩半,保證加總 = 原金額(除不盡時第一筆多一分)
+function eqHalves(amt) {
+  const h1 = Math.round((amt / 2) * 100) / 100;
+  const h2 = Math.round((amt - h1) * 100) / 100;
+  return [h1, h2];
+}
+
+function renderEqItems(keepFromMain) {
+  const cat = $('eqCategory').value;
+  $('eqItemSelect').innerHTML = `<option value="">選擇</option>`;
+  $('eqItemInput').style.display = 'none';
+  $('eqSubSelect').innerHTML = `<option value="">選擇</option>`;
+  $('eqSubInput').style.display = 'none';
+  if (cat && MENU_DATA[cat]) {
+    $('eqItemSelect').innerHTML += Object.keys(MENU_DATA[cat]).map(i => `<option value="${i}">${i}</option>`).join('') + `<option value="其他">其他...</option>`;
+  }
+  // 貼心同步:第二筆分類選好後,自動帶入與第一筆相同的項目/細項(若該分類下存在)
+  if (keepFromMain) {
+    const mainItem = $('itemSelect').value;
+    if (mainItem && mainItem !== '其他' && cat && MENU_DATA[cat] && MENU_DATA[cat][mainItem]) {
+      $('eqItemSelect').value = mainItem;
+      renderEqSubItems();
+      const mainSub = $('subSelect').value;
+      if (mainSub && mainSub !== '其他' && MENU_DATA[cat][mainItem].includes(mainSub)) {
+        $('eqSubSelect').value = mainSub;
+      }
+    }
+  }
+}
+
+function renderEqSubItems() {
+  const cat = $('eqCategory').value;
+  const item = $('eqItemSelect').value;
+  $('eqSubSelect').innerHTML = `<option value="">選擇</option>`;
+  $('eqSubInput').style.display = 'none';
+  if (item === '其他') {
+    $('eqItemInput').style.display = 'block';
+    $('eqSubSelect').innerHTML += `<option value="其他">其他...</option>`;
+  } else {
+    $('eqItemInput').style.display = 'none';
+    if (cat && MENU_DATA[cat] && MENU_DATA[cat][item]) {
+      $('eqSubSelect').innerHTML += MENU_DATA[cat][item].map(s => `<option value="${s}">${s}</option>`).join('') + `<option value="其他">其他...</option>`;
+    }
+  }
+}
+
+function getEqFinalValues() {
+  const cat = $('eqCategory').value;
+  const itemSel = $('eqItemSelect').value;
+  const item = itemSel === '其他' ? $('eqItemInput').value.trim() : itemSel;
+  const subSel = $('eqSubSelect').value;
+  const sub  = subSel === '其他' ? $('eqSubInput').value.trim() : subSel;
+  return { cat, item, sub };
 }
 
 /* ─────────────────────────────────────────────
@@ -1302,6 +1420,7 @@ window.attachSplitImg = idx => { activeSplitIdx = idx; $('splitImgInput').click(
    SPLIT
 ───────────────────────────────────────────── */
 function handleAddSplit() {
+  if ($('isEqual').checked) return toast('均分模式下無法使用分帳,請先關閉均分');
   const { cat, item, sub } = getFinalValues();
   const amt = Math.abs(Number($('amount').value || 0));
   if (!cat || !item) return toast('請填寫分類與項目');
@@ -1386,6 +1505,16 @@ function resetForm() {
     $('transferFields').style.display = 'none';
     $('category').disabled = false;
   }
+
+  if ($('isEqual').checked) {
+    $('isEqual').checked = false;
+    $('equalFields').style.display = 'none';
+  }
+  $('eqCategory').value = '';
+  renderEqItems(false);
+  $('eqItemInput').value = '';
+  $('eqSubInput').value = '';
+  updateEqHint();
   
   setDirection('支出');
 }
@@ -1403,6 +1532,20 @@ async function handleSubmit(e) {
   if (currentSplits.length === 0) {
     if (!amt || amt <= 0) return toast('請輸入正確金額');
     if (!isXfer && (!cat || !item)) return toast('請填寫分類與項目');
+  }
+
+  const isEq = $('isEqual').checked && !isXfer;
+  let eqSplits = null;
+  if (isEq) {
+    const eq2 = getEqFinalValues();
+    if (!eq2.cat || !eq2.item) return toast('請填寫均分第二筆的分類與項目');
+    const h = eqHalves(amt);
+    if (!(h[1] > 0)) return toast('金額太小,無法均分');
+    const noteVal = $('note').value.trim();
+    eqSplits = [
+      { amount: h[0], category: cat,     item: item,     subItem: sub,     note: noteVal, direction: $('direction').value, images: selectedImages },
+      { amount: h[1], category: eq2.cat, item: eq2.item, subItem: eq2.sub, note: noteVal, direction: $('direction').value, images: [] }
+    ];
   }
   
   isSubmitting = true;
@@ -1422,7 +1565,11 @@ async function handleSubmit(e) {
     direction: $('direction').value
   };
 
-  if (currentSplits.length > 0) {
+  if (eqSplits) {
+    // 均分:借用後端既有的 split_add,一次寫入兩筆(照片附在第一筆)
+    payload.action = 'split_add';
+    payload.splits_json = JSON.stringify(eqSplits);
+  } else if (currentSplits.length > 0) {
     payload.action = 'split_add';
     payload.splits_json = JSON.stringify(currentSplits);
     if (selectedImages.length > 0 && currentSplits.length > 0) {
@@ -1443,7 +1590,9 @@ async function handleSubmit(e) {
       toast('已儲存'); 
       
       const ts = new Date().toLocaleString('sv').replace(' ', 'T');
-      if (currentSplits.length) {
+      if (eqSplits) {
+        eqSplits.forEach(s => addSent({ ts, ...s, account: payload.account }));
+      } else if (currentSplits.length) {
         currentSplits.forEach(s => addSent({ ts, ...s, account: payload.account }));
       } else {
         addSent({ ts, ...payload });
