@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v7.2</title>
+  <title>收支快記 v7.3</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -845,7 +845,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v7.2</span></div>
+      <div class="footer"><span class="ver-badge">v7.3</span></div>
     </form>
   </section>
 
@@ -879,28 +879,6 @@
       </div>
       <div id="balanceListContainer"></div>
     </div>
-
-    <div id="stkSection" style="display:none">
-      <div class="card-title">一鍵盤差</div>
-      <div class="card">
-        <div class="input-row" style="border-bottom:none">
-          <span class="row-label">盤點日期</span>
-          <input type="date" id="stkDate" class="row-input">
-        </div>
-        <div class="stk-hint">在上方餘額列表的「實際」欄輸入各帳戶盤點金額(留空 = 不異動),系統會自動產生差額的盤差紀錄。</div>
-        <button class="btn btn-primary" id="btnStocktake" type="button" style="width:100%;margin-top:8px">產生盤差紀錄</button>
-      </div>
-    </div>
-
-    <div class="card-title">一鍵月結</div>
-    <div class="card">
-      <div class="input-row" style="border-bottom:none">
-        <span class="row-label">結算月份</span>
-        <input type="month" id="closeMonthInput" class="row-input">
-      </div>
-      <div class="stk-hint">為每個帳戶產生「月底轉下期」+「次月 1 日承上期」成對紀錄;該月已有轉下期的帳戶自動跳過。建議先完成盤差再執行。</div>
-      <button class="btn btn-primary" id="btnCloseMonth" type="button" style="width:100%;margin-top:8px">執行月結(轉下期+承上期)</button>
-    </div>
   </section>
 
   <!-- ── SETTINGS ── -->
@@ -912,6 +890,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-08-11</span> <strong>v7.3:</strong> 盤差與月結移至設定頁,整合為「步驟 1 盤差 → 步驟 2 月結」流程;點開始盤差自動查詢餘額;資產頁還原為純餘額顯示。</li>
           <li><span class="ver-date">2026-08-11</span> <strong>v7.2:</strong> 資產頁新增「一鍵盤差」(輸入實際金額自動產生差額紀錄)與「一鍵月結」(自動產生轉下期+承上期成對紀錄,已月結帳戶自動跳過)。</li>
           <li><span class="ver-date">2026-08-11</span> <strong>v7.1:</strong> 依實際使用習慣全面調整分類選單:新增運動/公司午餐/稅金細項/補貼/貓砂等,移除長期未用選項,洋支出重整為食物/用品/服務。</li>
           <li><span class="ver-date">2026-07-19</span> <strong>v7.0:</strong> 新增「均分」功能:金額自動除以二、可分別選擇兩組分類/項目/細項,一次寫入兩筆。</li>
@@ -951,6 +930,30 @@
       </div>
       <button class="btn btn-primary" id="btnImport" type="button" style="width:100%">開始抓取帳單</button>
       <div class="import-hint" id="importHint">—</div>
+    </div>
+
+    <div class="card-title">月結流程 — 步驟 1:盤差</div>
+    <div class="card">
+      <button class="btn btn-primary" id="btnStkLoad" type="button" style="width:100%">開始盤差(查詢目前餘額)</button>
+      <div id="stkArea" style="display:none">
+        <div class="input-row" style="margin-top:8px">
+          <span class="row-label">盤點日期</span>
+          <input type="date" id="stkDate" class="row-input">
+        </div>
+        <div id="stkList"></div>
+        <div class="stk-hint">在「實際」欄輸入各帳戶盤點金額(留空 = 不異動),差額會即時顯示;確認後按下方按鈕產生盤差紀錄。</div>
+        <button class="btn btn-primary" id="btnStocktake" type="button" style="width:100%;margin-top:8px">產生盤差紀錄</button>
+      </div>
+    </div>
+
+    <div class="card-title">月結流程 — 步驟 2:月結</div>
+    <div class="card">
+      <div class="input-row" style="border-bottom:none">
+        <span class="row-label">結算月份</span>
+        <input type="month" id="closeMonthInput" class="row-input">
+      </div>
+      <div class="stk-hint">完成盤差後執行:為每個帳戶產生「月底轉下期」+「次月 1 日承上期」成對紀錄;該月已有轉下期的帳戶自動跳過。</div>
+      <button class="btn btn-primary" id="btnCloseMonth" type="button" style="width:100%;margin-top:8px">執行月結(轉下期+承上期)</button>
     </div>
   </section>
 
@@ -1157,6 +1160,7 @@ function bindEvents() {
   $('btnTest').onclick = () => { fetch($('endpoint').value + '?ping=1').then(r => toast(r.ok ? '連線成功' : '連線失敗')).catch(() => toast('連線失敗')); };
   $('btnImport').onclick = handleImport;
   $('btnBalance').onclick = handleBalance;
+  $('btnStkLoad').onclick = handleStkLoad;
   $('btnStocktake').onclick = handleStocktake;
   $('btnCloseMonth').onclick = handleCloseMonth;
   $('btnRecent').onclick = handleRecent;
@@ -1761,21 +1765,10 @@ async function handleBalance() {
     const d = await res.json();
     if (!d.ok) throw new Error(d.error || 'Unknown Error');
     if (d.breakdown) {
-      bookBalances = {};
-      $('balanceListContainer').innerHTML = d.breakdown.map(b => {
-        bookBalances[b.account] = b.balance;
-        return `<div class="balance-item">
-          <span style="flex-shrink:0">${escapeHtml(b.account)}</span>
-          <span style="display:flex;align-items:center;gap:8px">
-            <span class="balance-item-num">${fmt(b.balance)}</span>
-            <input class="stk-input" data-acct="${escapeAttr(b.account)}" inputmode="decimal" placeholder="實際" oninput="updateStkDiff(this)">
-            <span class="stk-diff" style="color:var(--text-light)"></span>
-          </span>
-        </div>`;
-      }).join('');
+      $('balanceListContainer').innerHTML = d.breakdown.map(b =>
+        `<div class="balance-item"><span>${escapeHtml(b.account)}</span><span class="balance-item-num">${fmt(b.balance)}</span></div>`
+      ).join('');
       $('balanceTotal').textContent = fmt(d.total);
-      $('stkSection').style.display = 'block';
-      $('stkDate').value = todayStr();
     }
   } catch (e) {
     $('balanceListContainer').innerHTML = `<div style="color:var(--danger);text-align:center;padding:16px;font-size:13px">載入失敗：${escapeHtml(e.message)}</div>`;
@@ -1788,6 +1781,39 @@ async function handleBalance() {
    STOCKTAKE(一鍵盤差)& MONTH CLOSE(一鍵月結)
 ───────────────────────────────────────────── */
 let bookBalances = {};
+
+// 步驟 1 入口:查詢目前餘額並展開盤差輸入列表
+async function handleStkLoad() {
+  const ep = $('endpoint').value.trim();
+  if (!ep) return toast('請先設定 API URL');
+  const btn = $('btnStkLoad');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> 查詢餘額中`;
+  try {
+    const res = await fetch(ep + '?balance=1');
+    const d = await res.json();
+    if (!d.ok || !d.breakdown) throw new Error(d.error || 'Server Error');
+    bookBalances = {};
+    $('stkList').innerHTML = d.breakdown.map(b => {
+      bookBalances[b.account] = b.balance;
+      return `<div class="balance-item">
+        <span style="flex-shrink:0">${escapeHtml(b.account)}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="balance-item-num">${fmt(b.balance)}</span>
+          <input class="stk-input" data-acct="${escapeAttr(b.account)}" inputmode="decimal" placeholder="實際" oninput="updateStkDiff(this)">
+          <span class="stk-diff" style="color:var(--text-light)"></span>
+        </span>
+      </div>`;
+    }).join('');
+    $('stkDate').value = todayStr();
+    $('stkArea').style.display = 'block';
+    btn.textContent = '重新查詢餘額';
+  } catch (e) {
+    toast('餘額查詢失敗:' + e.message, 3000);
+    btn.textContent = '開始盤差(查詢目前餘額)';
+  }
+  btn.disabled = false;
+}
 
 function updateStkDiff(inp) {
   const diffEl = inp.parentElement.querySelector('.stk-diff');
@@ -1838,7 +1864,7 @@ async function handleStocktake() {
     const d = await r.json();
     if (d.ok) {
       toast(`已建立 ${(d.created||[]).length} 筆盤差`);
-      handleBalance();
+      handleStkLoad(); // 重新查詢,確認調整後的餘額已與實際相符
     } else {
       toast('盤差失敗:' + d.error);
     }
@@ -1876,7 +1902,7 @@ async function handleCloseMonth() {
         const detail = d.closed.map(c => `${c.account}:${fmt(c.balance)}`).join('\n');
         setTimeout(() => alert(`已結轉帳戶與金額:\n\n${detail}`), 400);
       }
-      handleBalance();
+      if ($('stkArea').style.display === 'block') handleStkLoad();
     } else {
       toast('月結失敗:' + d.error, 3500);
     }
