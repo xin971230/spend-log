@@ -1,5 +1,5 @@
 // 這裡的版本號改了，手機就會知道有新版需要下載
-const CACHE_NAME = 'ledger-cache-v6.7'; 
+const CACHE_NAME = 'ledger-cache-v7.4'; 
 const urlsToCache = [
   './',
   './index.html',

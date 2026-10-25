@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v7.3</title>
+  <title>收支快記 v7.4</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -845,7 +845,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v7.3</span></div>
+      <div class="footer"><span class="ver-badge">v7.4</span></div>
     </form>
   </section>
 
@@ -890,6 +890,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-10-25</span> <strong>v7.4:</strong> 安全性更新:後端網址與 API Key 改為在連線設定手動輸入、僅存本機;所有查詢都會帶金鑰。</li>
           <li><span class="ver-date">2026-08-11</span> <strong>v7.3:</strong> 盤差與月結移至設定頁,整合為「步驟 1 盤差 → 步驟 2 月結」流程;點開始盤差自動查詢餘額;資產頁還原為純餘額顯示。</li>
           <li><span class="ver-date">2026-08-11</span> <strong>v7.2:</strong> 資產頁新增「一鍵盤差」(輸入實際金額自動產生差額紀錄)與「一鍵月結」(自動產生轉下期+承上期成對紀錄,已月結帳戶自動跳過)。</li>
           <li><span class="ver-date">2026-08-11</span> <strong>v7.1:</strong> 依實際使用習慣全面調整分類選單:新增運動/公司午餐/稅金細項/補貼/貓砂等,移除長期未用選項,洋支出重整為食物/用品/服務。</li>
@@ -907,11 +908,11 @@
     <div class="card">
       <div class="cfg-row">
         <span class="cfg-label">API URL</span>
-        <input id="endpoint" class="cfg-input" value="https://script.google.com/macros/s/AKfycbzjpwoEGtRpX9FnQ0i-rSjvgaUB40gG44tBAcd_tI30R1X9HydICtdlSiooJXViatJZ/exec">
+        <input id="endpoint" class="cfg-input" placeholder="貼上 Apps Script /exec 網址">
       </div>
       <div class="cfg-row" style="border-bottom:none">
         <span class="cfg-label">API Key</span>
-        <input id="apiKey" class="cfg-input" placeholder="選填">
+        <input id="apiKey" class="cfg-input" type="password" autocomplete="off" placeholder="必填">
       </div>
       <div class="cfg-btn-row">
         <button id="btnTest" class="cfg-btn">測試連線</button>
@@ -1061,6 +1062,12 @@ let modalSelectedImages = [];
 let activeSplitIdx = -1;
 
 let recentRecords = [];
+function getUrl(params) {
+  const ep = $('endpoint').value.trim();
+  const q = new URLSearchParams(params);
+  q.set('key', $('apiKey').value.trim());
+  return ep + (ep.includes('?') ? '&' : '?') + q.toString();
+}
 
 // v6.8:草稿功能已停用(每次開啟一律從空白表單開始),保留 key 名稱以清除舊版殘留資料
 const LEGACY_DRAFT_KEY = 'spend.draft.v6.2';
@@ -1156,8 +1163,8 @@ document.addEventListener('visibilitychange', () => {
 ───────────────────────────────────────────── */
 function bindEvents() {
   $('btnClear').onclick = () => { if (confirm('確定清除所有本機記錄？')) { localStorage.removeItem(SENT_KEY); renderLog(); } };
-  $('btnSaveCfg').onclick = () => { localStorage.setItem('spend.endpoint', $('endpoint').value); localStorage.setItem('spend.apiKey', $('apiKey').value); toast('設定已儲存'); };
-  $('btnTest').onclick = () => { fetch($('endpoint').value + '?ping=1').then(r => toast(r.ok ? '連線成功' : '連線失敗')).catch(() => toast('連線失敗')); };
+  $('btnSaveCfg').onclick = () => { localStorage.setItem('spend.endpoint', $('endpoint').value.trim()); localStorage.setItem('spend.apiKey', $('apiKey').value.trim()); toast('設定已儲存'); };
+  $('btnTest').onclick = () => { fetch(getUrl({ ping: '1' })).then(r => r.json()).then(d => toast(d.ok && d.auth ? '連線成功' : (d.ok ? '可連線但金鑰錯誤' : '連線失敗'))).catch(() => toast('連線失敗')); };
   $('btnImport').onclick = handleImport;
   $('btnBalance').onclick = handleBalance;
   $('btnStkLoad').onclick = handleStkLoad;
@@ -1705,6 +1712,7 @@ function loadCfg() {
   const key = localStorage.getItem('spend.apiKey');
   if (ep) $('endpoint').value = ep;
   if (key) $('apiKey').value = key;
+  if (!ep) setTimeout(() => { toast('請先到設定頁填入後端網址與 API Key'); try { routeClick('settings'); } catch (e) {} }, 300);
 }
 
 function toggleLog() {
@@ -1761,7 +1769,7 @@ async function handleBalance() {
   $('balanceTotal').textContent = '...';
   $('balanceArea').style.display = 'block';
   try {
-    const res = await fetch(ep + '?balance=1');
+    const res = await fetch(getUrl({ balance: '1' }));
     const d = await res.json();
     if (!d.ok) throw new Error(d.error || 'Unknown Error');
     if (d.breakdown) {
@@ -1790,7 +1798,7 @@ async function handleStkLoad() {
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> 查詢餘額中`;
   try {
-    const res = await fetch(ep + '?balance=1');
+    const res = await fetch(getUrl({ balance: '1' }));
     const d = await res.json();
     if (!d.ok || !d.breakdown) throw new Error(d.error || 'Server Error');
     bookBalances = {};
@@ -1922,7 +1930,7 @@ async function handleRecent() {
     const p = new URLSearchParams({ recent: $('rLimit').value });
     if ($('rCategory').value) p.set('category', $('rCategory').value);
     if ($('rAccount').value) p.set('account', $('rAccount').value);
-    const res = await fetch(ep + '?' + p);
+    const res = await fetch(getUrl(p));
     const d = await res.json();
     if (d.ok && d.records) {
       recentRecords = d.records;
