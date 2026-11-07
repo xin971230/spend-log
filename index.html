@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v7.6</title>
+  <title>收支快記 v7.7</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -845,7 +845,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v7.6</span></div>
+      <div class="footer"><span class="ver-badge">v7.7</span></div>
     </form>
   </section>
 
@@ -890,6 +890,7 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-11-07</span> <strong>v7.7:</strong> 將細項「出國」從「玩樂」移到同一分類下的「娛樂興趣」（共用、黃支出、蕭支出）。黃支出的玩樂仍保留用品與行程；共用與蕭支出的玩樂已無其他細項，選單不再列出。舊的玩樂／出國明細在編輯時仍保留原名稱。</li>
           <li><span class="ver-date">2026-11-07</span> <strong>v7.6:</strong> 同步最新分類邏輯：個人用品取消成人用品選項，統一使用日常用品；黃支出與蕭支出的娛樂興趣新增書籍、展演票券及休閒活動。編輯舊明細時，不在新選單中的分類、帳戶、項目與細項仍保留原名稱。</li>
           <li><span class="ver-date">2026-11-07</span> <strong>v7.5:</strong> 依試算表「分類邏輯」同步分類、項目與細項，更新互轉判斷及月結標示，保留舊明細編輯相容性。</li>
           <li><span class="ver-date">2026-10-25</span> <strong>v7.4:</strong> 安全性更新:後端網址與 API Key 改為在連線設定手動輸入、僅存本機;所有查詢都會帶金鑰。</li>
@@ -1036,9 +1037,7 @@ const MENU_DATA = {
     "娛樂興趣": [
       "書籍",
       "展演票券",
-      "休閒活動"
-    ],
-    "玩樂": [
+      "休閒活動",
       "出國"
     ],
     "教育學習": [
@@ -1099,10 +1098,10 @@ const MENU_DATA = {
       "玩具",
       "書籍",
       "展演票券",
-      "休閒活動"
+      "休閒活動",
+      "出國"
     ],
     "玩樂": [
-      "出國",
       "用品",
       "行程"
     ],
@@ -1155,9 +1154,7 @@ const MENU_DATA = {
       "玩具",
       "書籍",
       "展演票券",
-      "休閒活動"
-    ],
-    "玩樂": [
+      "休閒活動",
       "出國"
     ],
     "教育學習": [
