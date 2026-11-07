@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>收支快記 v7.4</title>
+  <title>收支快記 v7.6</title>
   
   <link rel="manifest" href="./manifest.json">
   
@@ -845,7 +845,7 @@
         </div>
       </div>
 
-      <div class="footer"><span class="ver-badge">v7.4</span></div>
+      <div class="footer"><span class="ver-badge">v7.6</span></div>
     </form>
   </section>
 
@@ -890,6 +890,8 @@
       </button>
       <div class="ver-log" id="verLog">
         <ul>
+          <li><span class="ver-date">2026-11-07</span> <strong>v7.6:</strong> 同步最新分類邏輯：個人用品取消成人用品選項，統一使用日常用品；黃支出與蕭支出的娛樂興趣新增書籍、展演票券及休閒活動。編輯舊明細時，不在新選單中的分類、帳戶、項目與細項仍保留原名稱。</li>
+          <li><span class="ver-date">2026-11-07</span> <strong>v7.5:</strong> 依試算表「分類邏輯」同步分類、項目與細項，更新互轉判斷及月結標示，保留舊明細編輯相容性。</li>
           <li><span class="ver-date">2026-10-25</span> <strong>v7.4:</strong> 安全性更新:後端網址與 API Key 改為在連線設定手動輸入、僅存本機;所有查詢都會帶金鑰。</li>
           <li><span class="ver-date">2026-08-11</span> <strong>v7.3:</strong> 盤差與月結移至設定頁,整合為「步驟 1 盤差 → 步驟 2 月結」流程;點開始盤差自動查詢餘額;資產頁還原為純餘額顯示。</li>
           <li><span class="ver-date">2026-08-11</span> <strong>v7.2:</strong> 資產頁新增「一鍵盤差」(輸入實際金額自動產生差額紀錄)與「一鍵月結」(自動產生轉下期+承上期成對紀錄,已月結帳戶自動跳過)。</li>
@@ -953,8 +955,8 @@
         <span class="row-label">結算月份</span>
         <input type="month" id="closeMonthInput" class="row-input">
       </div>
-      <div class="stk-hint">完成盤差後執行:為每個帳戶產生「月底轉下期」+「次月 1 日承上期」成對紀錄;該月已有轉下期的帳戶自動跳過。</div>
-      <button class="btn btn-primary" id="btnCloseMonth" type="button" style="width:100%;margin-top:8px">執行月結(轉下期+承上期)</button>
+      <div class="stk-hint">完成盤差後執行:為每個帳戶產生「月底期末結轉」+「次月 1 日期初餘額」成對紀錄;該月已有期末結轉或舊版轉下期的帳戶自動跳過。</div>
+      <button class="btn btn-primary" id="btnCloseMonth" type="button" style="width:100%;margin-top:8px">執行月結(期末結轉+期初餘額)</button>
     </div>
   </section>
 
@@ -992,60 +994,268 @@ if ('serviceWorker' in navigator) {
 ───────────────────────────────────────────── */
 const MENU_DATA = {
   "共用": {
-    "水電費": ["電費", "水費", "瓦斯費"],
-    "交通": ["汽車油資", "汽車保養", "保險", "洗車", "停車費", "罰單", "機車油資", "機車保養"],
-    "房租": ["房租"],
-    "玩樂": ["行程", "住宿", "出國", "用品", "票券"],
-    "食物": ["假日早餐", "假日午餐", "假日晚餐", "平日早餐", "平日午餐", "平日晚餐", "水果", "飲料", "點心"],
-    "家用品": ["消耗品", "非消耗品"],
-    "電話費": ["小額支付", "會員費", "電話費"],
-    "稅金": ["所得稅", "牌照燃料稅"]
+    "餐飲": [
+      "假日早餐",
+      "假日午餐",
+      "假日晚餐",
+      "平日早餐",
+      "平日午餐",
+      "平日晚餐",
+      "水果",
+      "飲料",
+      "點心"
+    ],
+    "居住": [
+      "房租",
+      "水費",
+      "電費",
+      "瓦斯費",
+      "修繕"
+    ],
+    "居家用品": [
+      "清潔消耗品",
+      "生活消耗品",
+      "廚房用品",
+      "家具家電",
+      "其他耐用品"
+    ],
+    "交通": [
+      "汽車油資",
+      "機車油資",
+      "停車費",
+      "汽車保養",
+      "機車保養",
+      "洗車",
+      "交通票券",
+      "罰款"
+    ],
+    "通訊數位": [
+      "電信費",
+      "軟體訂閱"
+    ],
+    "娛樂興趣": [
+      "書籍",
+      "展演票券",
+      "休閒活動"
+    ],
+    "玩樂": [
+      "出國"
+    ],
+    "教育學習": [
+      "課程學費",
+      "考試證照",
+      "教材書籍"
+    ],
+    "人情社交": [
+      "禮金",
+      "禮品",
+      "聚餐",
+      "家庭支援"
+    ],
+    "稅費保險": [
+      "所得稅",
+      "車輛稅費",
+      "汽車保險",
+      "機車保險",
+      "其他保險"
+    ]
   },
   "黃支出": {
-    "人情往來": ["餐費", "禮金", "禮品"],
-    "玩樂": ["用品", "服飾", "玩具", "學費", "書籍", "行程", "電玩", "票券", "運動"],
-    "食物": ["個人早餐", "個人午餐", "個人晚餐", "公司午餐", "飲料", "點心", "水果"],
-    "健康": ["保健品", "看診", "藥品", "減重"]
+    "餐飲": [
+      "個人早餐",
+      "個人午餐",
+      "個人晚餐",
+      "公司午餐",
+      "飲料",
+      "點心",
+      "水果"
+    ],
+    "個人用品": [
+      "3C用品",
+      "衛生用品",
+      "日常用品",
+      "旅行用品",
+      "購物附加費"
+    ],
+    "通訊數位": [
+      "數位服務"
+    ],
+    "醫療健康": [
+      "看診",
+      "藥品",
+      "保健品",
+      "減重療程",
+      "健身運動"
+    ],
+    "服飾美容": [
+      "衣服",
+      "鞋包",
+      "配件",
+      "保養品",
+      "美容服務"
+    ],
+    "娛樂興趣": [
+      "電玩",
+      "玩具",
+      "書籍",
+      "展演票券",
+      "休閒活動"
+    ],
+    "玩樂": [
+      "出國",
+      "用品",
+      "行程"
+    ],
+    "教育學習": [
+      "課程學費",
+      "考試證照",
+      "教材書籍"
+    ],
+    "人情社交": [
+      "禮金",
+      "禮品",
+      "聚餐",
+      "家庭支援"
+    ]
   },
   "蕭支出": {
-    "人情往來": ["餐費", "禮金", "禮品"],
-    "玩樂": ["用品", "服飾", "玩具", "書籍", "保養品", "票券", "運動"],
-    "食物": ["個人早餐", "個人午餐", "個人晚餐", "飲料", "點心"],
-    "健康": ["保健品", "看診", "藥品", "減重"]
+    "餐飲": [
+      "個人早餐",
+      "個人午餐",
+      "個人晚餐",
+      "飲料",
+      "點心"
+    ],
+    "個人用品": [
+      "3C用品",
+      "衛生用品",
+      "日常用品",
+      "旅行用品",
+      "購物附加費"
+    ],
+    "通訊數位": [
+      "數位服務"
+    ],
+    "醫療健康": [
+      "看診",
+      "藥品",
+      "保健品",
+      "減重療程",
+      "健身運動"
+    ],
+    "服飾美容": [
+      "衣服",
+      "鞋包",
+      "配件",
+      "保養品",
+      "美容服務"
+    ],
+    "娛樂興趣": [
+      "電玩",
+      "玩具",
+      "書籍",
+      "展演票券",
+      "休閒活動"
+    ],
+    "玩樂": [
+      "出國"
+    ],
+    "教育學習": [
+      "課程學費",
+      "考試證照",
+      "教材書籍"
+    ],
+    "人情社交": [
+      "禮金",
+      "禮品",
+      "聚餐",
+      "家庭支援"
+    ]
   },
   "洋支出": {
-    "食物": ["零食", "飼料"],
-    "用品": ["貓砂", "玩具", "衣服"],
-    "服務": ["洗澡", "住宿"]
+    "寵物": [
+      "飼料",
+      "零食",
+      "貓砂",
+      "用品",
+      "醫療",
+      "住宿服務"
+    ]
   },
   "公司代墊": {
-    "公司代墊": ["公司代墊"],
-    "食物": ["公司午餐"]
-  },
-  "信用卡": {
-    "國泰世華": ["國泰世華"],
-    "華南銀行": ["華南銀行"],
-    "聯邦銀行": ["聯邦銀行"]
-  },
-  "負債": {
-    "中國信託": ["中國信託(黃)"],
-    "裕融": ["裕融"],
-    "喬猷朋友": ["喬猷朋友"],
-    "合作金庫": ["合作金庫"]
+    "餐飲": [
+      "公司午餐"
+    ],
+    "交通": [
+      "停車費",
+      "汽車油資",
+      "機車油資",
+      "交通票券"
+    ],
+    "公司代墊": [
+      "工作採購",
+      "運費",
+      "住宿",
+      "其他代墊"
+    ]
   },
   "收入": {
-    "欣宜薪資": ["欣宜薪資", "欣宜獎金"],
-    "喬猷薪資": ["喬猷薪資", "喬猷獎金"],
-    "補貼": ["租金補貼", "發票中獎"]
+    "喬猷收入": [
+      "薪資",
+      "獎金"
+    ],
+    "欣宜收入": [
+      "薪資",
+      "獎金"
+    ],
+    "補貼": [
+      "政府補助",
+      "發票中獎",
+      "返利退款"
+    ],
+    "其他收入": [
+      "其他收入"
+    ]
   },
   "平衡": {
-    "內控互轉": ["內控互轉"],
-    "刷卡平衡": ["刷卡平衡", "刷卡帳單"],
-    "結帳": ["承上期", "盤差", "轉下期"]
+    "財務移轉": [
+      "帳戶互轉"
+    ],
+    "帳務調整": [
+      "期初餘額",
+      "期末結轉",
+      "盤點差額",
+      "對帳調整"
+    ]
+  },
+  "信用卡": {
+    "信用卡繳款": [
+      "國泰世華",
+      "華南銀行",
+      "聯邦銀行",
+      "玉山銀行"
+    ]
+  },
+  "負債": {
+    "貸款還款": [
+      "中國信託（喬猷）",
+      "中國信託（欣宜）",
+      "裕融",
+      "合作金庫",
+      "匯豐",
+      "國泰世華"
+    ],
+    "借款收付": [
+      "喬猷朋友",
+      "其他"
+    ]
   },
   "其他": {
-    "國泰證券": ["國泰證券"],
-    "存款": ["喬猷存款", "欣宜存款"]
+    "財務移轉": [
+      "儲蓄",
+      "投資",
+      "借款收付"
+    ]
   }
 };
 
@@ -1270,9 +1480,9 @@ function handleTransferToggle() {
     $('category').value = '平衡';
     $('category').disabled = true;
     renderItems();
-    $('itemSelect').value = '內控互轉';
+    $('itemSelect').value = '財務移轉';
     renderSubItems();
-    $('subSelect').value = '內控互轉';
+    $('subSelect').value = '帳戶互轉';
     setDirection('支出');
     if (currentSplits.length > 0) { toast('互轉模式：已清除分帳'); currentSplits = []; renderSplits(); }
   } else {
@@ -1884,7 +2094,7 @@ async function handleStocktake() {
 async function handleCloseMonth() {
   const month = $('closeMonthInput').value;
   if (!/^\d{4}-\d{2}$/.test(month)) return toast('請選擇結算月份');
-  if (!confirm(`即將對 ${month} 執行月結:\n每個帳戶產生「${month} 月底轉下期」與「次月 1 日承上期」。\n已月結的帳戶會自動跳過。\n\n建議先完成盤差。確定執行?`)) return;
+  if (!confirm(`即將對 ${month} 執行月結:\n每個帳戶產生「${month} 月底期末結轉」與「次月 1 日期初餘額」。\n已月結的帳戶會自動跳過。\n\n建議先完成盤差。確定執行?`)) return;
 
   const btn = $('btnCloseMonth');
   btn.disabled = true;
@@ -1916,7 +2126,7 @@ async function handleCloseMonth() {
     }
   } catch (e) { toast('網路錯誤,請稍後再試'); }
   btn.disabled = false;
-  btn.textContent = '執行月結(轉下期+承上期)';
+  btn.textContent = '執行月結(期末結轉+期初餘額)';
 }
 
 /* ─────────────────────────────────────────────
@@ -1981,12 +2191,18 @@ let currentModalOrig = { amount: 0, item: '' };   // v6.9:開啟編輯當下的�
 let currentModalIsXfer = false;
 let currentModalDir = '支出';
 
+function selectOptions(values, selected) {
+  const list = values.slice();
+  if (selected && !list.includes(selected)) list.unshift(selected);
+  return list.map(v => `<option value="${escapeAttr(v)}"${v === selected ? ' selected' : ''}>${escapeHtml(v)}</option>`).join('');
+}
+
 function openEditModal(r) {
   modalSelectedImages = [];
-  const isXfer = (r.category === '平衡' && r.item === '內控互轉');
+  const isXfer = (r.category === '平衡' && (r.item === '內控互轉' || (r.item === '財務移轉' && r.subItem === '帳戶互轉')));
   const isOut = r.direction === '支出';
-  const catOpts = CATEGORIES.map(c => `<option value="${c}" ${c === r.category ? 'selected' : ''}>${c}</option>`).join('');
-  const accOpts = ACCOUNTS.map(a => `<option value="${a}" ${a === r.account ? 'selected' : ''}>${a}</option>`).join('');
+  const catOpts = selectOptions(CATEGORIES, r.category);
+  const accOpts = selectOptions(ACCOUNTS, r.account);
 
   currentModalKey = r.createdAt;
   currentModalId = r.id || '';
